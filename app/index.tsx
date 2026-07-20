@@ -1,46 +1,72 @@
-import React from "react";
-import { StyleSheet, TouchableOpacity, Text, View, Dimensions, Image, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import React from "react";
+import { ActivityIndicator, Dimensions, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 const diagonal = Math.sqrt(width * width + height * height);
 const angle = Math.atan2(height, width) * (180 / Math.PI);
 
+import { useAppContent } from "@/contexts/AppContentContext";
+
 export default function LandingScreen() {
+    const { brandData, apiStatus } = useAppContent();
+
+
+
+
+
+    const bgColor = brandData?.brand_color_primary;
+    const secColor = brandData?.brand_color__secondary;
+
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#E5E5E5" />
+            <StatusBar barStyle="light-content" backgroundColor="#E5E5E5" />
 
             {/* Background Wireframe Crossed Lines */}
             <View style={styles.diagonalLineContainer} pointerEvents="none">
-                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `${angle}deg` }] }]} />
-                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `-${angle}deg` }] }]} />
+                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `${angle}deg` }] }, secColor ? { backgroundColor: secColor } : {}]} />
+                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `-${angle}deg` }] }, secColor ? { backgroundColor: secColor } : {}]} />
             </View>
 
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.content}>
-                    <Image
-                        source={require("../assets/images/logo.png")}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
+                    {apiStatus !== 'fetching' && (
+                        <>
+                            {brandData?.logo_primary?.url ? (
+                                <Image
+                                    source={{ uri: brandData.logo_primary.url }}
+                                    style={styles.logo}
+                                    resizeMode="contain"
+                                />
+                            ) : null}
 
-                    <Image
-                        source={require("../assets/images/Explorer.png")}
-                        style={styles.explorer}
-                        resizeMode="contain"
-                    />
+                            {brandData?.logo_secondary?.url ? (
+                                <Image
+                                    source={{ uri: brandData.logo_secondary.url }}
+                                    style={styles.explorer}
+                                    resizeMode="contain"
+                                />
+                            ) : null}
 
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        style={styles.button}
-                        onPress={() => router.push("/(tabs)")}
-                    >
-                        <Text style={styles.buttonText}>
-                            Find your Adventure
-                        </Text>
-                    </TouchableOpacity>
+                            {apiStatus === 'loading' ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
+                                    <ActivityIndicator size="small" color="#000000" style={{ marginRight: 8 }} />
+                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000000' }}>Loading...</Text>
+                                </View>
+                            ) : (
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
+                                    onPress={() => router.push("/(tabs)")}
+                                >
+                                    <Text style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
+                                        {brandData?.app_tagline}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
                 </View>
             </SafeAreaView>
         </View>
@@ -63,7 +89,6 @@ const styles = StyleSheet.create({
     line: {
         position: "absolute",
         height: 1,
-        backgroundColor: "#CCCCCC", // Thin light grey wireframe crossed lines
     },
 
     safeArea: {
@@ -86,7 +111,14 @@ const styles = StyleSheet.create({
     explorer: {
         width: 220,
         height: 75,
+        marginBottom: 20,
+    },
+
+    tagline: {
+        fontSize: 32,
+        fontWeight: "bold",
         marginBottom: 40,
+        textAlign: "center",
     },
 
     button: {

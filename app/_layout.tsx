@@ -9,6 +9,7 @@ import "react-native-reanimated";
 import { createTables, inspectDatabaseSchema } from "@/database/schema";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useNetInfo } from "@react-native-community/netinfo";
+import { AppContentProvider } from "@/contexts/AppContentContext";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -51,38 +52,40 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider
-      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-    >
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false }}
-        />
+    <AppContentProvider>
+      <ThemeProvider
+        value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+      >
+        <Stack>
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false }}
+          />
 
-        <Stack.Screen
-          name="(tabs)"
-          options={{ headerShown: false }}
-        />
+          <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false }}
+          />
 
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: "modal",
-            title: "Modal",
-          }}
-        />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: "modal",
+              title: "Modal",
+            }}
+          />
 
-        {/* Your test screen */}
-        <Stack.Screen
-          name="(api)/dummy"
-          options={{
-            title: "Movies",
-          }}
-        />
-      </Stack>
+          {/* Your test screen */}
+          <Stack.Screen
+            name="(api)/dummy"
+            options={{
+              title: "Movies",
+            }}
+          />
+        </Stack>
 
-      <StatusBar style="auto" />
-    </ThemeProvider>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AppContentProvider>
   );
 }

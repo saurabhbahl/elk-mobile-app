@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 import {
-    StyleSheet,
-    Text,
-    View,
-    ScrollView,
+    ActivityIndicator,
+    Dimensions,
     Image,
     ImageBackground,
-    TouchableOpacity,
     Modal,
-    Dimensions,
+    ScrollView,
     StatusBar,
-    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Get screen dimensions for dynamic calculations
 const { width } = Dimensions.get("window");
@@ -71,43 +71,17 @@ const WireframePlaceholder = ({ style, children }: { style?: any; children?: Rea
     );
 };
 
-interface PopupContent {
-    popup_enabled: boolean;
-    popup_title: string;
-    popup_body_copy: string;
-    popup_image?: {
-        url: string;
-    };
-    cta_button_label?: string;
-    cta_button_link_?: string;
-}
-
-interface ApiResponse {
-    popup_content?: PopupContent;
-}
+import { useAppContent } from "@/contexts/AppContentContext";
 
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
-    const [popupData, setPopupData] = useState<PopupContent | null>(null);
+    const { popupData, homeData } = useAppContent();
 
     useEffect(() => {
-        const fetchPopupData = async () => {
-            try {
-                const response = await fetch("https://ftfgifts.com/elk/wp-json/elk/v1/data");
-                const json: ApiResponse = await response.json();
-                if (json.popup_content) {
-                    setPopupData(json.popup_content);
-                    if (json.popup_content.popup_enabled) {
-                        setShowPopup(true);
-                    }
-                }
-            } catch (error) {
-                console.log("Failed to fetch popup data:", error);
-            }
-        };
-
-        fetchPopupData();
-    }, []);
+        if (popupData && popupData.popup_enabled) {
+            setShowPopup(true);
+        }
+    }, [popupData]);
 
     return (
         <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -167,46 +141,60 @@ export default function HomeScreen() {
                 </ScrollView>
 
                 {/* Welcome Message */}
-                <Text style={styles.welcomeTitle}>
-                    Welcome to the Home of the{"\n"}Keystone Elk Country Alliance
-                </Text>
+                {homeData?.hero_welcome_heading ? (
+                    <Text style={styles.welcomeTitle}>
+                        {homeData.hero_welcome_heading}
+                    </Text>
+                ) : null}
 
                 {/* Welcome Banner */}
                 <WireframePlaceholder style={styles.welcomeBanner} />
 
                 {/* Welcome Description */}
-                <Text style={styles.welcomeDescription}>
-                    {"The Keystone Elk Country Alliance (KECA) is a Pennsylvania-based 501(c)(3) nonprofit wildlife conservation organization dedicated to conserving and enhancing Pennsylvania's Elk Country for future generations."}
-                </Text>
+                {homeData?.hero_intro_paragraph ? (
+                    <Text style={styles.welcomeDescription}>
+                        {homeData.hero_intro_paragraph.replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                    </Text>
+                ) : null}
 
                 {/* Read More Button */}
-                <TouchableOpacity style={styles.readMoreButton} activeOpacity={0.8}>
-                    <Text style={styles.readMoreButtonText}>Read More about KECA</Text>
-                </TouchableOpacity>
+                {homeData?.hero_cta_button_label ? (
+                    <TouchableOpacity style={styles.readMoreButton} activeOpacity={0.8}>
+                        <Text style={styles.readMoreButtonText}>{homeData.hero_cta_button_label}</Text>
+                    </TouchableOpacity>
+                ) : null}
 
                 {/* Find Your Next Adventure Section */}
-                <Text style={styles.sectionHeader}>Find you next adventure</Text>
+                <Text style={styles.sectionHeader}>Find your next adventure</Text>
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
-                <View style={styles.subSectionTitleRow}>
-                    <Ionicons name="map-outline" size={18} color="#333333" />
-                    <Text style={styles.subSectionTitle}>Elk Viewing & Scenic Map</Text>
-                </View>
+                {homeData?.map_block_heading ? (
+                    <View style={styles.subSectionTitleRow}>
+                        <Ionicons name="map-outline" size={18} color="#333333" />
+                        <Text style={styles.subSectionTitle}>{homeData.map_block_heading}</Text>
+                    </View>
+                ) : null}
 
                 {/* Map Card */}
-                <View style={styles.mapCardContainer}>
-                    <WireframePlaceholder style={styles.mapCard}>
-                        <TouchableOpacity style={styles.viewMapButton} activeOpacity={0.9}>
-                            <Text style={styles.viewMapButtonText}>View Map</Text>
-                        </TouchableOpacity>
-                    </WireframePlaceholder>
-                </View>
+                {homeData?.map_block_heading ? (
+                    <View style={styles.mapCardContainer}>
+                        <WireframePlaceholder style={styles.mapCard}>
+                            {homeData?.map_view_button_label ? (
+                                <TouchableOpacity style={styles.viewMapButton} activeOpacity={0.9}>
+                                    <Text style={styles.viewMapButtonText}>{homeData.map_view_button_label}</Text>
+                                </TouchableOpacity>
+                            ) : null}
+                        </WireframePlaceholder>
+                    </View>
+                ) : null}
 
                 {/* Weekend Programs Sub-section */}
-                <View style={styles.subSectionTitleRow}>
-                    <Ionicons name="calendar-outline" size={18} color="#333333" />
-                    <Text style={styles.subSectionTitle}>Weekend Programs</Text>
-                </View>
+                {homeData?.programs_block_heading ? (
+                    <View style={styles.subSectionTitleRow}>
+                        <Ionicons name="calendar-outline" size={18} color="#333333" />
+                        <Text style={styles.subSectionTitle}>{homeData.programs_block_heading}</Text>
+                    </View>
+                ) : null}
 
                 {/* Horizontal Weekend Programs List */}
                 <ScrollView
@@ -214,94 +202,77 @@ export default function HomeScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.programsHorizontalList}
                 >
-                    <TouchableOpacity style={styles.programCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.programCardImage} />
-                        <View style={styles.programCardContent}>
-                            <Text style={styles.programCardName} numberOfLines={1}>Program Name</Text>
-                            <Text style={styles.programCardDate}>July 5, 2026</Text>
-                            <View style={styles.arrowCircle}>
-                                <Ionicons name="arrow-forward" size={12} color="#333333" />
+                    {Array.from({ length: Number(homeData?.programs_to_display) || 3 }).map((_, index) => (
+                        <TouchableOpacity key={index} style={styles.programCard} activeOpacity={0.8}>
+                            <WireframePlaceholder style={styles.programCardImage} />
+                            <View style={styles.programCardContent}>
+                                <Text style={styles.programCardName} numberOfLines={1}>Program Name</Text>
+                                <Text style={styles.programCardDate}>July 5, 2026</Text>
+                                <View style={styles.arrowCircle}>
+                                    <Ionicons name="arrow-forward" size={12} color="#333333" />
+                                </View>
                             </View>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.programCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.programCardImage} />
-                        <View style={styles.programCardContent}>
-                            <Text style={styles.programCardName} numberOfLines={1}>Program Name</Text>
-                            <Text style={styles.programCardDate}>July 5, 2026</Text>
-                            <View style={styles.arrowCircle}>
-                                <Ionicons name="arrow-forward" size={12} color="#333333" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.programCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.programCardImage} />
-                        <View style={styles.programCardContent}>
-                            <Text style={styles.programCardName} numberOfLines={1}>Program Name</Text>
-                            <Text style={styles.programCardDate}>July 5, 2026</Text>
-                            <View style={styles.arrowCircle}>
-                                <Ionicons name="arrow-forward" size={12} color="#333333" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    ))}
                 </ScrollView>
 
                 {/* Featured Event Section */}
-                <View style={styles.featuredEventHeaderRow}>
-                    <View style={styles.featuredTitleContainer}>
-                        <Ionicons name="calendar" size={18} color="#000000" />
-                        <Text style={styles.featuredSectionTitle}>Featured Event</Text>
+                {homeData?.event_block_heading ? (
+                    <View style={styles.featuredEventHeaderRow}>
+                        <View style={styles.featuredTitleContainer}>
+                            <Ionicons name="calendar" size={18} color="#000000" />
+                            <Text style={styles.featuredSectionTitle}>{homeData.event_block_heading}</Text>
+                        </View>
+                        {homeData?.event_view_all_label ? (
+                            <TouchableOpacity>
+                                <Text style={styles.viewAllEventsText}>{homeData.event_view_all_label}</Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
-                    <TouchableOpacity>
-                        <Text style={styles.viewAllEventsText}>View All Events</Text>
-                    </TouchableOpacity>
-                </View>
+                ) : null}
 
                 {/* Featured Event Card */}
-                <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
-                    <View style={styles.featuredCardLeft}>
-                        <WireframePlaceholder style={styles.featuredCardImage} />
-                        <View style={styles.featuredArrowCircle}>
-                            <Ionicons name="arrow-forward" size={12} color="#333333" />
+                {homeData?.event_block_heading && homeData?.featured_event && Array.isArray(homeData.featured_event) && homeData.featured_event.length > 0 ? (
+                    <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
+                        <View style={styles.featuredCardLeft}>
+                            <WireframePlaceholder style={styles.featuredCardImage} />
+                            <View style={styles.featuredArrowCircle}>
+                                <Ionicons name="arrow-forward" size={12} color="#333333" />
+                            </View>
                         </View>
-                    </View>
-                    <View style={styles.featuredCardRight}>
-                        <Text style={styles.featuredEventName}>Event Name</Text>
-                        <Text style={styles.featuredEventDate}>July 10, 2026</Text>
-                        <Text style={styles.featuredEventDesc} numberOfLines={3}>
-                            Praesent dapibus neque id cursus faucibus tortor neque egestas auguae eu vulputate magna eros eu
-                            erat. Aliquam erat volutpat.
-                        </Text>
-                    </View>
-                </TouchableOpacity>
+                        <View style={styles.featuredCardRight}>
+                            <Text style={styles.featuredEventName}>{homeData.featured_event[0].post_title || "Featured Event"}</Text>
+                            <Text style={styles.featuredEventDate}>
+                                {homeData.featured_event[0].post_date ? new Date(homeData.featured_event[0].post_date.replace(/-/g, '/')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "Coming Soon"}
+                            </Text>
+                            <Text style={styles.featuredEventDesc} numberOfLines={3}>
+                                {homeData.featured_event[0].post_content ? homeData.featured_event[0].post_content.replace(/<\/?[^>]+(>|$)/g, "").trim() : "Details for this event will be announced soon."}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                ) : null}
 
                 {/* Hit the Trails Section */}
-                <View style={styles.trailsContainer}>
-                    <View style={styles.trailsHeaderRow}>
-                        <MaterialCommunityIcons name="image-filter-hdr" size={20} color="#FFFFFF" />
-                        <Text style={styles.trailsTitle}>Hit the Trails</Text>
+                {homeData?.trails_block_heading ? (
+                    <View style={styles.trailsContainer}>
+                        <View style={styles.trailsHeaderRow}>
+                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color="#FFFFFF" />
+                            <Text style={styles.trailsTitle}>{homeData.trails_block_heading}</Text>
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.trailsHorizontalList}
+                        >
+                            {Array.from({ length: Number(homeData?.trail_links_to_show) || 3 }).map((_, index) => (
+                                <View key={index} style={styles.trailPill}>
+                                    <Text style={styles.trailName}>Trail Name</Text>
+                                    <Text style={styles.trailDistance}>{(1.5 + index * 0.7).toFixed(1)}mi</Text>
+                                </View>
+                            ))}
+                        </ScrollView>
                     </View>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.trailsHorizontalList}
-                    >
-                        <View style={styles.trailPill}>
-                            <Text style={styles.trailName}>Trail Name</Text>
-                            <Text style={styles.trailDistance}>1.5mi</Text>
-                        </View>
-                        <View style={styles.trailPill}>
-                            <Text style={styles.trailName}>Trail Name</Text>
-                            <Text style={styles.trailDistance}>2.2mi</Text>
-                        </View>
-                        <View style={styles.trailPill}>
-                            <Text style={styles.trailName}>Trail Name</Text>
-                            <Text style={styles.trailDistance}>3.0mi</Text>
-                        </View>
-                    </ScrollView>
-                </View>
+                ) : null}
             </ScrollView>
 
             {/* Elk Smart Modal Popup */}
@@ -323,11 +294,11 @@ export default function HomeScreen() {
                                     <View style={styles.modalImageOverlay}>
                                         {/* Close Button */}
                                         <TouchableOpacity
-                                            style={styles.closeButton}
+                                            style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
                                             onPress={() => setShowPopup(false)}
                                             activeOpacity={0.8}
                                         >
-                                            <Ionicons name="close" size={18} color="#FFFFFF" />
+                                            <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
                                         </TouchableOpacity>
 
                                         {/* Dynamic content */}
@@ -341,11 +312,11 @@ export default function HomeScreen() {
                                 <WireframePlaceholder style={styles.modalCard}>
                                     {/* Close Button */}
                                     <TouchableOpacity
-                                        style={styles.closeButton}
+                                        style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
                                         onPress={() => setShowPopup(false)}
                                         activeOpacity={0.8}
                                     >
-                                        <Ionicons name="close" size={18} color="#FFFFFF" />
+                                        <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
                                     </TouchableOpacity>
 
                                     {/* Dynamic content */}
@@ -761,7 +732,7 @@ const styles = StyleSheet.create({
     },
 
     modalContentWrapper: {
-        width: width * 0.82,
+        width: width * 0.95,
         height: width * 0.82,
         borderRadius: 20,
         borderWidth: 1,
