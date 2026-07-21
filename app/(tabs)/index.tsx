@@ -1,4 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image, ImageBackground } from "expo-image";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -12,63 +14,13 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Image, ImageBackground } from "expo-image";
+
+import Navbar from "@/components/Navbar";
+import QuickLinks from "@/components/QuickLinks";
+import WireframePlaceholder from "@/components/WireframePlaceholder";
 
 // Get screen dimensions for dynamic calculations
 const { width } = Dimensions.get("window");
-
-// Wireframe Placeholder Component with dynamic crossed lines
-const WireframePlaceholder = ({ style, children }: { style?: any; children?: React.ReactNode }) => {
-    const [dims, setDims] = useState({ width: 0, height: 0 });
-
-    const onLayout = (event: any) => {
-        const { width: w, height: h } = event.nativeEvent.layout;
-        setDims({ width: w, height: h });
-    };
-
-    const diagonal = Math.sqrt(dims.width * dims.width + dims.height * dims.height);
-    const angle = Math.atan2(dims.height, dims.width) * (180 / Math.PI);
-
-    return (
-        <View
-            onLayout={onLayout}
-            style={[
-                {
-                    backgroundColor: "#D9D9D9",
-                    overflow: "hidden",
-                    position: "relative",
-                    justifyContent: "center",
-                    alignItems: "center",
-                },
-                style,
-            ]}
-        >
-            {dims.width > 0 && dims.height > 0 && (
-                <>
-                    <View
-                        style={{
-                            position: "absolute",
-                            width: diagonal,
-                            height: 1,
-                            backgroundColor: "#B8B8B8",
-                            transform: [{ rotate: `${angle}deg` }],
-                        }}
-                    />
-                    <View
-                        style={{
-                            position: "absolute",
-                            width: diagonal,
-                            height: 1,
-                            backgroundColor: "#B8B8B8",
-                            transform: [{ rotate: `-${angle}deg` }],
-                        }}
-                    />
-                </>
-            )}
-            {children}
-        </View>
-    );
-};
 
 import { useAppContent } from "@/contexts/AppContentContext";
 
@@ -93,68 +45,26 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <Image
-                    source={require("@/assets/images/logo.png")}
-                    style={styles.headerLogo}
-                    contentFit="contain"
-                />
-                <Image
-                    source={require("@/assets/images/Explorer.png")}
-                    style={styles.headerExplorer}
-                    contentFit="contain"
-                />
-
-                {/* TIPS Badge */}
-                <TouchableOpacity style={styles.tipsContainer} activeOpacity={0.7}>
-                    <View style={styles.tipsCircle}>
-                        <MaterialCommunityIcons name="paw" size={22} color="#333333" />
-                    </View>
-                    <View style={styles.tipsBadge}>
-                        <Text style={styles.tipsBadgeText}>TIPS →</Text>
-                    </View>
-                </TouchableOpacity>
-            </View>
+            <Navbar />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Horizontal Quick Links */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.horizontalMenu}
-                >
-                    <TouchableOpacity style={styles.menuCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.menuCardImage} />
-                        <View style={styles.menuCardTitleContainer}>
-                            <Text style={styles.menuCardTitle} numberOfLines={1}>Visitors Center</Text>
-                        </View>
-                    </TouchableOpacity>
+                {/* Unified QuickLinks and Welcome Section Wrapper */}
+                <View style={{ position: 'relative' }}>
+                    {/* Background Block covering QuickLinks, Title, and 75% of the banner height (banner is 160px, so bottom 40 leaves 75% coverage) */}
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 40, backgroundColor: primaryColor }} />
+                    
+                    <QuickLinks />
+                    
+                    {/* Welcome Message */}
+                    {homeData?.hero_welcome_heading ? (
+                        <Text style={[styles.welcomeTitle, { color: secondaryColor }]}>
+                            {homeData.hero_welcome_heading}
+                        </Text>
+                    ) : null}
 
-                    <TouchableOpacity style={styles.menuCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.menuCardImage} />
-                        <View style={styles.menuCardTitleContainer}>
-                            <Text style={styles.menuCardTitle} numberOfLines={1}>Elk Scenic Map</Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.menuCard} activeOpacity={0.8}>
-                        <WireframePlaceholder style={styles.menuCardImage} />
-                        <View style={styles.menuCardTitleContainer}>
-                            <Text style={styles.menuCardTitle} numberOfLines={1}>Weekend Programs</Text>
-                        </View>
-                    </TouchableOpacity>
-                </ScrollView>
-
-                {/* Welcome Message */}
-                {homeData?.hero_welcome_heading ? (
-                    <Text style={[styles.welcomeTitle, { color: primaryColor }]}>
-                        {homeData.hero_welcome_heading}
-                    </Text>
-                ) : null}
-
-                {/* Welcome Banner */}
-                <Image source={require("@/assets/images/welcome.jpg")} style={styles.welcomeBanner} contentFit="cover" />
+                    {/* Welcome Banner */}
+                    <Image source={require("../../assets/images/welcome.jpg")} style={styles.welcomeBanner} contentFit="cover" />
+                </View>
 
                 {/* Welcome Description */}
                 {homeData?.hero_intro_paragraph ? (
@@ -184,7 +94,7 @@ export default function HomeScreen() {
                 {/* Map Card */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.mapCardContainer}>
-                        <ImageBackground source={require("@/assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 12 }}>
+                        <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 12 }}>
                             {homeData?.map_view_button_label ? (
                                 <TouchableOpacity style={[styles.viewMapButton, { backgroundColor: primaryColor }]} activeOpacity={0.9}>
                                     <Text style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</Text>
@@ -211,7 +121,12 @@ export default function HomeScreen() {
                             contentContainerStyle={styles.programsHorizontalList}
                         >
                             {homeData.programs.map((program: any, index: number) => (
-                                <TouchableOpacity key={program.id || index} style={styles.programCard} activeOpacity={0.8}>
+                                <TouchableOpacity
+                                    key={program.id || index}
+                                    style={styles.programCard}
+                                    activeOpacity={0.8}
+                                    onPress={() => router.push(`/programs` as any)}
+                                >
                                     {program.thumbnail_image?.url ? (
                                         <Image source={{ uri: program.thumbnail_image.url }} style={styles.programCardImage} />
                                     ) : (

@@ -68,6 +68,16 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
+            name="programs/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="programs/[id]"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
             name="modal"
             options={{
               presentation: "modal",
