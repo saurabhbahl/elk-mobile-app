@@ -35,6 +35,17 @@ export default function QuickLinks() {
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Weekend Programs</Text>
                     </View>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/events" as any)}
+                >
+                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <View style={styles.menuCardTitleContainer}>
+                        <Text style={styles.menuCardTitle} numberOfLines={1}>Upcoming Events</Text>
+                    </View>
+                </TouchableOpacity>
             </ScrollView>
         </View>
     );

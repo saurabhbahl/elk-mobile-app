@@ -26,34 +26,33 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function ProgramsScreen() {
-    const { homeData, brandData, programsData, apiStatus } = useAppContent();
+export default function EventsScreen() {
+    const { homeData, brandData, eventsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
-    const programs = programsData || [];
+    const events = eventsData || [];
 
-    const renderProgramCard = ({ item, index }: { item: any; index: number }) => (
+    const renderEventCard = ({ item, index }: { item: any; index: number }) => (
         <TouchableOpacity
-            style={styles.programCard}
+            style={styles.eventCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/programs/${item.id || index}` as any)}
+            onPress={() => router.push(`/events/${item.id || index}` as any)}
         >
             {item.thumbnail_image?.url ? (
                 <Image
                     source={{ uri: item.thumbnail_image.url }}
-                    style={styles.programCardImage}
+                    style={styles.eventCardImage}
                     contentFit="cover"
                 />
             ) : (
-                <WireframePlaceholder style={styles.programCardImage} />
+                <WireframePlaceholder style={styles.eventCardImage} />
             )}
-            <View style={styles.programCardContent}>
-                <Text style={styles.programCardName} numberOfLines={2}>
-                    {item.program_name || "Program Name"}
+            <View style={styles.eventCardContent}>
+                <Text style={styles.eventCardName} numberOfLines={2}>
+                    {item.event_name || "Event Name"}
                 </Text>
-                <Text style={styles.programCardDate} numberOfLines={1}>
-                    {item.schedule__dates || "No Date"}
+                <Text style={styles.eventCardDate} numberOfLines={1}>
+                    {item["start_date_&_time"] || "No Date"}
                 </Text>
             </View>
         </TouchableOpacity>
@@ -71,7 +70,7 @@ export default function ProgramsScreen() {
             <View style={styles.headerRow}>
                 <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
                 <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    {homeData?.programs_block_heading}
+                    Events
                 </Text>
             </View>
 
@@ -81,15 +80,15 @@ export default function ProgramsScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={programs}
+                    data={events}
                     keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderProgramCard}
+                    renderItem={renderEventCard}
                     numColumns={2}
                     contentContainerStyle={styles.gridContainer}
                     columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No programs available</Text>
+                        <Text style={styles.emptyText}>No events available</Text>
                     }
                 />
             )}
@@ -118,11 +117,6 @@ const styles = StyleSheet.create({
         paddingBottom: 12,
     },
 
-    backButton: {
-        marginRight: 8,
-        padding: 4,
-    },
-
     headerIcon: {
         width: 18,
         height: 18,
@@ -144,7 +138,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
 
-    programCard: {
+    eventCard: {
         width: cardWidth,
         borderRadius: 12,
         borderWidth: 1,
@@ -158,26 +152,26 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
 
-    programCardImage: {
+    eventCardImage: {
         width: "100%",
         height: 110,
     },
 
-    programCardContent: {
+    eventCardContent: {
         paddingHorizontal: 10,
         paddingVertical: 8,
         minHeight: 64,
         justifyContent: "center",
     },
 
-    programCardName: {
+    eventCardName: {
         fontSize: 13,
         fontWeight: "700",
         color: "#333333",
         lineHeight: 16,
     },
 
-    programCardDate: {
+    eventCardDate: {
         fontSize: 11,
         color: "#888888",
         marginTop: 4,

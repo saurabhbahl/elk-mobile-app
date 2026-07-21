@@ -48,6 +48,7 @@ export interface AppContentData {
     popup_content?: PopupContent;
     home_screen?: HomeScreenData;
     programs?: any[];
+    events?: any[];
 }
 
 interface AppContentContextType {
@@ -55,6 +56,7 @@ interface AppContentContextType {
     popupData: PopupContent | null;
     homeData: HomeScreenData | null;
     programsData: any[] | null;
+    eventsData: any[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     refreshData: () => void;
 }
@@ -66,6 +68,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [popupData, setPopupData] = useState<PopupContent | null>(null);
     const [homeData, setHomeData] = useState<HomeScreenData | null>(null);
     const [programsData, setProgramsData] = useState<any[] | null>(null);
+    const [eventsData, setEventsData] = useState<any[] | null>(null);
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
     const fetchData = async () => {
@@ -92,6 +95,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (json.programs) {
                 setProgramsData(json.programs);
             }
+            if (json.events) {
+                setEventsData(json.events);
+            }
         } catch (error) {
             console.log("Failed to fetch app data:", error);
         } finally {
@@ -107,7 +113,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AppContentContext.Provider value={{ brandData, popupData, homeData, programsData, apiStatus, refreshData: fetchData }}>
+        <AppContentContext.Provider value={{ brandData, popupData, homeData, programsData, eventsData, apiStatus, refreshData: fetchData }}>
             {children}
         </AppContentContext.Provider>
     );

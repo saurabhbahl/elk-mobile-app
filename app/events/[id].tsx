@@ -4,6 +4,7 @@ import React from "react";
 import {
     ActivityIndicator,
     Dimensions,
+    Linking,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -12,6 +13,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -25,14 +27,14 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function ProgramDetailScreen() {
+export default function EventDetailScreen() {
     const { id } = useLocalSearchParams();
-    const { brandData, programsData, apiStatus } = useAppContent();
+    const { brandData, eventsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
-    const program = programsData?.find(
-        (p: any, index: number) => String(p.id || index) === String(id)
+    const event = eventsData?.find(
+        (e: any, index: number) => String(e.id || index) === String(id)
     );
 
     if (apiStatus === "fetching") {
@@ -48,14 +50,14 @@ export default function ProgramDetailScreen() {
         );
     }
 
-    if (!program) {
+    if (!event) {
         return (
             <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
                 <Navbar />
                 <QuickLinks />
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Program not found.</Text>
+                    <Text style={styles.errorText}>Event not found.</Text>
                     <TouchableOpacity
                         style={[styles.backTextButton, { backgroundColor: primaryColor }]}
                         onPress={() => router.back()}
@@ -68,10 +70,23 @@ export default function ProgramDetailScreen() {
     }
 
     // Strip HTML tags from description if present
-    const rawDescription = program.full_description || "";
+    const rawDescription = event.full_description || "";
     const cleanDescription = typeof rawDescription === "string"
         ? rawDescription.replace(/<\/?[^>]+(>|$)/g, "").replace(/&nbsp;/g, " ").trim()
         : "";
+
+    const handleRegister = () => {
+        const url = event.registration__ticket_link;
+        if (url) {
+            Linking.canOpenURL(url).then((supported) => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    console.log("Don't know how to open URI: " + url);
+                }
+            });
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -87,15 +102,15 @@ export default function ProgramDetailScreen() {
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
                     <Text style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
-                        {program.program_name || "Program Details"}
+                        {event.event_name || "Event Details"}
                     </Text>
                 </View>
 
                 {/* Banner Image */}
                 <View style={styles.bannerContainer}>
-                    {program.thumbnail_image?.url ? (
+                    {event.thumbnail_image?.url ? (
                         <Image
-                            source={{ uri: program.thumbnail_image.url }}
+                            source={{ uri: event.thumbnail_image.url }}
                             style={styles.bannerImage}
                             contentFit="cover"
                         />
@@ -106,15 +121,47 @@ export default function ProgramDetailScreen() {
 
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
-                    {/* Schedule / Date & Time */}
-                    <Text style={styles.scheduleText}>
-                        {program.schedule__dates || "No Date Scheduled"}
-                    </Text>
+                    {/* Date & Time */}
+                    <View style={styles.infoRow}>
+                        <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
+                        <Text style={styles.scheduleText}>
+                            {event["start_date_&_time"] || "No Date Scheduled"}
+                            {event["end_date_&_time"] ? ` - ${event["end_date_&_time"]}` : ""}
+                        </Text>
+                    </View>
+
+                    {/* Location */}
+                    {(event.location_name || event.location_address) && (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
+                            <View>
+                                {event.location_name && (
+                                    <Text style={styles.locationNameText}>{event.location_name}</Text>
+                                )}
+                                {event.location_address && (
+                                    <Text style={styles.locationAddressText}>{event.location_address}</Text>
+                                )}
+                            </View>
+                        </View>
+                    )}
 
                     {/* Description Paragraph */}
                     <Text style={styles.descriptionText}>
                         {cleanDescription}
                     </Text>
+
+                    {/* Register Button */}
+                    {event.registration__ticket_link && (
+                        <TouchableOpacity
+                            style={[styles.registerButton, { backgroundColor: primaryColor }]}
+                            onPress={handleRegister}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.registerButtonText, { color: secondaryColor || "#FFFFFF" }]}>
+                                Register / Buy Tickets
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -171,11 +218,6 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
 
-    backButton: {
-        marginRight: 8,
-        padding: 4,
-    },
-
     headerIcon: {
         width: 18,
         height: 18,
@@ -203,16 +245,53 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
 
+    infoRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 12,
+    },
+
+    infoIcon: {
+        marginRight: 8,
+    },
+
     scheduleText: {
         fontSize: 14,
         fontWeight: "bold",
         color: "#333333",
-        marginBottom: 14,
+        flex: 1,
+    },
+
+    locationNameText: {
+        fontSize: 14,
+        fontWeight: "bold",
+        color: "#333333",
+    },
+
+    locationAddressText: {
+        fontSize: 13,
+        color: "#666666",
+        marginTop: 2,
     },
 
     descriptionText: {
         fontSize: 14,
         color: "#444444",
         lineHeight: 22,
+        marginTop: 10,
+        marginBottom: 20,
+    },
+
+    registerButton: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginTop: 10,
+    },
+
+    registerButtonText: {
+        fontSize: 15,
+        fontWeight: "bold",
     },
 });

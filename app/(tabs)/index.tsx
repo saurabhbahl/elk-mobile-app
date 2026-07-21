@@ -31,7 +31,7 @@ const getValidColor = (color: string | undefined) => {
 
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
-    const { popupData, homeData, brandData } = useAppContent();
+    const { popupData, homeData, brandData, eventsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -135,8 +135,8 @@ export default function HomeScreen() {
                                     <View style={styles.programCardContent}>
                                         <Text style={styles.programCardName} numberOfLines={1}>{program.program_name || "Program Name"}</Text>
                                         <Text style={styles.programCardDate}>{program.schedule__dates || "No Date"}</Text>
-                                        <View style={styles.arrowCircle}>
-                                            <Ionicons name="arrow-forward" size={12} color="#333333" />
+                                        <View style={[styles.arrowCircle, { backgroundColor: primaryColor }]}>
+                                            <Ionicons name="arrow-forward" size={12} color={secondaryColor || "#FFFFFF"} />
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -155,7 +155,7 @@ export default function HomeScreen() {
                                     <Text style={[styles.featuredSectionTitle, { color: primaryColor }]}>{homeData.event_block_heading}</Text>
                                 </View>
                                 {homeData?.event_view_all_label ? (
-                                    <TouchableOpacity>
+                                    <TouchableOpacity onPress={() => router.push("/events" as any)}>
                                         <Text style={[styles.viewAllEventsText, { color: primaryColor }]}>{homeData.event_view_all_label}</Text>
                                     </TouchableOpacity>
                                 ) : null}
@@ -163,15 +163,24 @@ export default function HomeScreen() {
                         ) : null}
 
                         {/* Featured Event Card */}
-                        <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
+                        <TouchableOpacity
+                             style={styles.featuredCard}
+                             activeOpacity={0.8}
+                             onPress={() => {
+                                 const eventId = homeData.featured_event[0].id;
+                                 const eventIndex = eventsData?.findIndex((e: any) => String(e.id) === String(eventId));
+                                 const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
+                                 router.push(`/events/${targetId}` as any);
+                             }}
+                        >
                             <View style={styles.featuredCardLeft}>
                                 {homeData.featured_event[0].thumbnail_image?.url ? (
                                     <Image source={{ uri: homeData.featured_event[0].thumbnail_image.url }} style={styles.featuredCardImage} />
                                 ) : (
                                     <WireframePlaceholder style={styles.featuredCardImage} />
                                 )}
-                                <View style={styles.featuredArrowCircle}>
-                                    <Ionicons name="arrow-forward" size={12} color="#333333" />
+                                <View style={[styles.featuredArrowCircle, { backgroundColor: primaryColor }]}>
+                                    <Ionicons name="arrow-forward" size={12} color={secondaryColor || "#FFFFFF"} />
                                 </View>
                             </View>
                             <View style={styles.featuredCardRight}>
