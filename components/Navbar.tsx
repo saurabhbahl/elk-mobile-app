@@ -2,15 +2,18 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 
 export default function Navbar() {
     return (
         <View style={styles.header}>
-            <Image
-                source={require("@/assets/images/logo.png")}
-                style={styles.headerLogo}
-                contentFit="contain"
-            />
+            <TouchableOpacity onPress={() => router.push("/(tabs)")} activeOpacity={0.8}>
+                <Image
+                    source={require("@/assets/images/logo.png")}
+                    style={styles.headerLogo}
+                    contentFit="contain"
+                />
+            </TouchableOpacity>
             <Image
                 source={require("@/assets/images/Explorer.png")}
                 style={styles.headerExplorer}
@@ -18,7 +21,11 @@ export default function Navbar() {
             />
 
             {/* TIPS Badge */}
-            <TouchableOpacity style={styles.tipsContainer} activeOpacity={0.7}>
+            <TouchableOpacity 
+                style={styles.tipsContainer} 
+                activeOpacity={0.7}
+                onPress={() => router.push("/tips" as any)}
+            >
                 <View style={styles.tipsCircle}>
                     <MaterialCommunityIcons name="paw" size={22} color="#333333" />
                 </View>

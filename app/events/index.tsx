@@ -68,7 +68,7 @@ export default function EventsScreen() {
             </View>
 
             <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
+                <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
                 <Text style={[styles.sectionTitle, { color: primaryColor }]}>
                     Events
                 </Text>

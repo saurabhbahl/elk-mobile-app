@@ -49,6 +49,10 @@ export interface AppContentData {
     home_screen?: HomeScreenData;
     programs?: any[];
     events?: any[];
+    trails?: any[];
+    rentals?: any[];
+    tips?: any[];
+    plan_your_trip?: any;
 }
 
 interface AppContentContextType {
@@ -57,6 +61,10 @@ interface AppContentContextType {
     homeData: HomeScreenData | null;
     programsData: any[] | null;
     eventsData: any[] | null;
+    trailsData: any[] | null;
+    rentalsData: any[] | null;
+    tipsData: any[] | null;
+    planTripData: any | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     refreshData: () => void;
 }
@@ -69,6 +77,10 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [homeData, setHomeData] = useState<HomeScreenData | null>(null);
     const [programsData, setProgramsData] = useState<any[] | null>(null);
     const [eventsData, setEventsData] = useState<any[] | null>(null);
+    const [trailsData, setTrailsData] = useState<any[] | null>(null);
+    const [rentalsData, setRentalsData] = useState<any[] | null>(null);
+    const [tipsData, setTipsData] = useState<any[] | null>(null);
+    const [planTripData, setPlanTripData] = useState<any | null>(null);
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
     const fetchData = async () => {
@@ -98,6 +110,18 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (json.events) {
                 setEventsData(json.events);
             }
+            if (json.trails) {
+                setTrailsData(json.trails);
+            }
+            if (json.rentals) {
+                setRentalsData(json.rentals);
+            }
+            if (json.tips) {
+                setTipsData(json.tips);
+            }
+            if (json.plan_your_trip) {
+                setPlanTripData(json.plan_your_trip);
+            }
         } catch (error) {
             console.log("Failed to fetch app data:", error);
         } finally {
@@ -113,7 +137,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AppContentContext.Provider value={{ brandData, popupData, homeData, programsData, eventsData, apiStatus, refreshData: fetchData }}>
+        <AppContentContext.Provider value={{ brandData, popupData, homeData, programsData, eventsData, trailsData, rentalsData, tipsData, planTripData, apiStatus, refreshData: fetchData }}>
             {children}
         </AppContentContext.Provider>
     );

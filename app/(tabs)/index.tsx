@@ -203,7 +203,9 @@ export default function HomeScreen() {
                         <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: 1000, backgroundColor: primaryColor }} />
                         <View style={styles.trailsHeaderRow}>
                             <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || "#FFFFFF"} />
-                            <Text style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</Text>
+                            <TouchableOpacity onPress={() => router.push("/trails" as any)}>
+                                <Text style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</Text>
+                            </TouchableOpacity>
                         </View>
                         <ScrollView
                             horizontal

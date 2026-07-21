@@ -88,6 +88,26 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
+            name="trails/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="rentals/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="plan-trip/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="tips/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
             name="modal"
             options={{
               presentation: "modal",

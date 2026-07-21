@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
 import WireframePlaceholder from "./WireframePlaceholder";
 
 export default function QuickLinks() {
@@ -44,6 +45,50 @@ export default function QuickLinks() {
                     <WireframePlaceholder style={styles.menuCardImage} />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Upcoming Events</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/trails" as any)}
+                >
+                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <View style={styles.menuCardTitleContainer}>
+                        <Text style={styles.menuCardTitle} numberOfLines={1}>Trails</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/rentals" as any)}
+                >
+                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <View style={styles.menuCardTitleContainer}>
+                        <Text style={styles.menuCardTitle} numberOfLines={1}>Rental Opportunities</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/plan-trip" as any)}
+                >
+                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <View style={styles.menuCardTitleContainer}>
+                        <Text style={styles.menuCardTitle} numberOfLines={1}>Plan Your Trip</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuCard}
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/tips" as any)}
+                >
+                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <View style={styles.menuCardTitleContainer}>
+                        <Text style={styles.menuCardTitle} numberOfLines={1}>Elk Viewing Tips</Text>
                     </View>
                 </TouchableOpacity>
             </ScrollView>
