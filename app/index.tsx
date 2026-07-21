@@ -1,6 +1,7 @@
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator, Dimensions, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
@@ -11,11 +12,6 @@ import { useAppContent } from "@/contexts/AppContentContext";
 
 export default function LandingScreen() {
     const { brandData, apiStatus } = useAppContent();
-
-
-
-
-
     const bgColor = brandData?.brand_color_primary;
     const secColor = brandData?.brand_color__secondary;
 
@@ -37,7 +33,7 @@ export default function LandingScreen() {
                                 <Image
                                     source={{ uri: brandData.logo_primary.url }}
                                     style={styles.logo}
-                                    resizeMode="contain"
+                                    contentFit="contain"
                                 />
                             ) : null}
 
@@ -45,7 +41,7 @@ export default function LandingScreen() {
                                 <Image
                                     source={{ uri: brandData.logo_secondary.url }}
                                     style={styles.explorer}
-                                    resizeMode="contain"
+                                    contentFit="contain"
                                 />
                             ) : null}
 

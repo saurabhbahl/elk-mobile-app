@@ -3,8 +3,6 @@ import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
-    Image,
-    ImageBackground,
     Modal,
     ScrollView,
     StatusBar,
@@ -14,6 +12,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, ImageBackground } from "expo-image";
 
 // Get screen dimensions for dynamic calculations
 const { width } = Dimensions.get("window");
@@ -73,9 +72,16 @@ const WireframePlaceholder = ({ style, children }: { style?: any; children?: Rea
 
 import { useAppContent } from "@/contexts/AppContentContext";
 
+const getValidColor = (color: string | undefined) => {
+    if (!color) return undefined;
+    return color.startsWith('#') ? color : `#${color}`;
+};
+
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
-    const { popupData, homeData } = useAppContent();
+    const { popupData, homeData, brandData } = useAppContent();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
     useEffect(() => {
         if (popupData && popupData.popup_enabled) {
@@ -92,12 +98,12 @@ export default function HomeScreen() {
                 <Image
                     source={require("@/assets/images/logo.png")}
                     style={styles.headerLogo}
-                    resizeMode="contain"
+                    contentFit="contain"
                 />
                 <Image
                     source={require("@/assets/images/Explorer.png")}
                     style={styles.headerExplorer}
-                    resizeMode="contain"
+                    contentFit="contain"
                 />
 
                 {/* TIPS Badge */}
@@ -142,13 +148,13 @@ export default function HomeScreen() {
 
                 {/* Welcome Message */}
                 {homeData?.hero_welcome_heading ? (
-                    <Text style={styles.welcomeTitle}>
+                    <Text style={[styles.welcomeTitle, { color: primaryColor }]}>
                         {homeData.hero_welcome_heading}
                     </Text>
                 ) : null}
 
                 {/* Welcome Banner */}
-                <WireframePlaceholder style={styles.welcomeBanner} />
+                <Image source={require("@/assets/images/welcome.jpg")} style={styles.welcomeBanner} contentFit="cover" />
 
                 {/* Welcome Description */}
                 {homeData?.hero_intro_paragraph ? (
@@ -159,117 +165,137 @@ export default function HomeScreen() {
 
                 {/* Read More Button */}
                 {homeData?.hero_cta_button_label ? (
-                    <TouchableOpacity style={styles.readMoreButton} activeOpacity={0.8}>
-                        <Text style={styles.readMoreButtonText}>{homeData.hero_cta_button_label}</Text>
+                    <TouchableOpacity style={[styles.readMoreButton, { backgroundColor: primaryColor }]} activeOpacity={0.8}>
+                        <Text style={[styles.readMoreButtonText, { color: secondaryColor }]}>{homeData.hero_cta_button_label}</Text>
                     </TouchableOpacity>
                 ) : null}
 
                 {/* Find Your Next Adventure Section */}
-                <Text style={styles.sectionHeader}>Find your next adventure</Text>
+                <Text style={[styles.sectionHeader, { color: primaryColor }]}>Find your next adventure</Text>
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.subSectionTitleRow}>
                         <Ionicons name="map-outline" size={18} color="#333333" />
-                        <Text style={styles.subSectionTitle}>{homeData.map_block_heading}</Text>
+                        <Text style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.map_block_heading}</Text>
                     </View>
                 ) : null}
 
                 {/* Map Card */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.mapCardContainer}>
-                        <WireframePlaceholder style={styles.mapCard}>
+                        <ImageBackground source={require("@/assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 12 }}>
                             {homeData?.map_view_button_label ? (
-                                <TouchableOpacity style={styles.viewMapButton} activeOpacity={0.9}>
-                                    <Text style={styles.viewMapButtonText}>{homeData.map_view_button_label}</Text>
+                                <TouchableOpacity style={[styles.viewMapButton, { backgroundColor: primaryColor }]} activeOpacity={0.9}>
+                                    <Text style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</Text>
                                 </TouchableOpacity>
                             ) : null}
-                        </WireframePlaceholder>
+                        </ImageBackground>
                     </View>
                 ) : null}
 
-                {/* Weekend Programs Sub-section */}
-                {homeData?.programs_block_heading ? (
-                    <View style={styles.subSectionTitleRow}>
-                        <Ionicons name="calendar-outline" size={18} color="#333333" />
-                        <Text style={styles.subSectionTitle}>{homeData.programs_block_heading}</Text>
-                    </View>
+                {/* Weekend Programs Section */}
+                {homeData?.programs && Array.isArray(homeData.programs) && homeData.programs.length > 0 ? (
+                    <>
+                        {homeData?.programs_block_heading ? (
+                            <View style={styles.subSectionTitleRow}>
+                                <Ionicons name="calendar-outline" size={18} color="#333333" />
+                                <Text style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.programs_block_heading}</Text>
+                            </View>
+                        ) : null}
+
+                        {/* Horizontal Weekend Programs List */}
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.programsHorizontalList}
+                        >
+                            {homeData.programs.map((program: any, index: number) => (
+                                <TouchableOpacity key={program.id || index} style={styles.programCard} activeOpacity={0.8}>
+                                    {program.thumbnail_image?.url ? (
+                                        <Image source={{ uri: program.thumbnail_image.url }} style={styles.programCardImage} />
+                                    ) : (
+                                        <WireframePlaceholder style={styles.programCardImage} />
+                                    )}
+                                    <View style={styles.programCardContent}>
+                                        <Text style={styles.programCardName} numberOfLines={1}>{program.program_name || "Program Name"}</Text>
+                                        <Text style={styles.programCardDate}>{program.schedule__dates || "No Date"}</Text>
+                                        <View style={styles.arrowCircle}>
+                                            <Ionicons name="arrow-forward" size={12} color="#333333" />
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </>
                 ) : null}
 
-                {/* Horizontal Weekend Programs List */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.programsHorizontalList}
-                >
-                    {Array.from({ length: Number(homeData?.programs_to_display) || 3 }).map((_, index) => (
-                        <TouchableOpacity key={index} style={styles.programCard} activeOpacity={0.8}>
-                            <WireframePlaceholder style={styles.programCardImage} />
-                            <View style={styles.programCardContent}>
-                                <Text style={styles.programCardName} numberOfLines={1}>Program Name</Text>
-                                <Text style={styles.programCardDate}>July 5, 2026</Text>
-                                <View style={styles.arrowCircle}>
+                {/* Featured Event Section */}
+                {homeData?.featured_event && Array.isArray(homeData.featured_event) && homeData.featured_event.length > 0 ? (
+                    <>
+                        {homeData?.event_block_heading ? (
+                            <View style={styles.featuredEventHeaderRow}>
+                                <View style={styles.featuredTitleContainer}>
+                                    <Ionicons name="calendar" size={18} color="#000000" />
+                                    <Text style={[styles.featuredSectionTitle, { color: primaryColor }]}>{homeData.event_block_heading}</Text>
+                                </View>
+                                {homeData?.event_view_all_label ? (
+                                    <TouchableOpacity>
+                                        <Text style={[styles.viewAllEventsText, { color: primaryColor }]}>{homeData.event_view_all_label}</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
+                        ) : null}
+
+                        {/* Featured Event Card */}
+                        <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
+                            <View style={styles.featuredCardLeft}>
+                                {homeData.featured_event[0].thumbnail_image?.url ? (
+                                    <Image source={{ uri: homeData.featured_event[0].thumbnail_image.url }} style={styles.featuredCardImage} />
+                                ) : (
+                                    <WireframePlaceholder style={styles.featuredCardImage} />
+                                )}
+                                <View style={styles.featuredArrowCircle}>
                                     <Ionicons name="arrow-forward" size={12} color="#333333" />
                                 </View>
                             </View>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* Featured Event Section */}
-                {homeData?.event_block_heading ? (
-                    <View style={styles.featuredEventHeaderRow}>
-                        <View style={styles.featuredTitleContainer}>
-                            <Ionicons name="calendar" size={18} color="#000000" />
-                            <Text style={styles.featuredSectionTitle}>{homeData.event_block_heading}</Text>
-                        </View>
-                        {homeData?.event_view_all_label ? (
-                            <TouchableOpacity>
-                                <Text style={styles.viewAllEventsText}>{homeData.event_view_all_label}</Text>
-                            </TouchableOpacity>
-                        ) : null}
-                    </View>
-                ) : null}
-
-                {/* Featured Event Card */}
-                {homeData?.event_block_heading && homeData?.featured_event && Array.isArray(homeData.featured_event) && homeData.featured_event.length > 0 ? (
-                    <TouchableOpacity style={styles.featuredCard} activeOpacity={0.8}>
-                        <View style={styles.featuredCardLeft}>
-                            <WireframePlaceholder style={styles.featuredCardImage} />
-                            <View style={styles.featuredArrowCircle}>
-                                <Ionicons name="arrow-forward" size={12} color="#333333" />
+                            <View style={styles.featuredCardRight}>
+                                <Text style={styles.featuredEventName}>{homeData.featured_event[0].event_name || "Featured Event"}</Text>
+                                <Text style={styles.featuredEventDate}>
+                                    {homeData.featured_event[0]['start_date_&_time'] || "Coming Soon"}
+                                </Text>
+                                <Text style={styles.featuredEventDesc} numberOfLines={3}>
+                                    {homeData.featured_event[0].short_description ? homeData.featured_event[0].short_description.replace(/<\/?[^>]+(>|$)/g, "").trim() : "Details for this event will be announced soon."}
+                                </Text>
                             </View>
-                        </View>
-                        <View style={styles.featuredCardRight}>
-                            <Text style={styles.featuredEventName}>{homeData.featured_event[0].post_title || "Featured Event"}</Text>
-                            <Text style={styles.featuredEventDate}>
-                                {homeData.featured_event[0].post_date ? new Date(homeData.featured_event[0].post_date.replace(/-/g, '/')).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "Coming Soon"}
-                            </Text>
-                            <Text style={styles.featuredEventDesc} numberOfLines={3}>
-                                {homeData.featured_event[0].post_content ? homeData.featured_event[0].post_content.replace(/<\/?[^>]+(>|$)/g, "").trim() : "Details for this event will be announced soon."}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    </>
                 ) : null}
 
                 {/* Hit the Trails Section */}
                 {homeData?.trails_block_heading ? (
-                    <View style={styles.trailsContainer}>
+                    <View style={[styles.trailsContainer, { backgroundColor: primaryColor }]}>
+                        {/* Extension view for overscroll */}
+                        <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: 1000, backgroundColor: primaryColor }} />
                         <View style={styles.trailsHeaderRow}>
-                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color="#FFFFFF" />
-                            <Text style={styles.trailsTitle}>{homeData.trails_block_heading}</Text>
+                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || "#FFFFFF"} />
+                            <Text style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</Text>
                         </View>
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.trailsHorizontalList}
                         >
-                            {Array.from({ length: Number(homeData?.trail_links_to_show) || 3 }).map((_, index) => (
-                                <View key={index} style={styles.trailPill}>
-                                    <Text style={styles.trailName}>Trail Name</Text>
-                                    <Text style={styles.trailDistance}>{(1.5 + index * 0.7).toFixed(1)}mi</Text>
-                                </View>
-                            ))}
+                            {homeData?.trails && Array.isArray(homeData.trails) && homeData.trails.length > 0 ? (
+                                homeData.trails.map((trail: any, index: number) => (
+                                    <View key={trail.id || index} style={styles.trailPill}>
+                                        <Text style={styles.trailName}>{trail.trail_name || "Trail Name"}</Text>
+                                        <Text style={styles.trailDistance}>{trail.distance ? `${trail.distance}` : "N/A"}</Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <Text style={{ color: "#FFFFFF", fontSize: 13 }}>No trails available</Text>
+                            )}
                         </ScrollView>
                     </View>
                 ) : null}
@@ -289,7 +315,7 @@ export default function HomeScreen() {
                                 <ImageBackground
                                     source={{ uri: popupData.popup_image.url }}
                                     style={styles.modalCardBackground}
-                                    resizeMode="cover"
+                                    contentFit="cover"
                                 >
                                     <View style={styles.modalImageOverlay}>
                                         {/* Close Button */}
@@ -452,6 +478,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "#CCCCCC",
+        width: "auto",
     },
 
     welcomeDescription: {

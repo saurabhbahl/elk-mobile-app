@@ -34,11 +34,13 @@ export interface HomeScreenData {
     map_view_button_label?: string;
     programs_block_heading?: string;
     programs_to_display?: number | string;
+    programs?: any[];
     event_block_heading?: string;
     event_view_all_label?: string;
     featured_event?: any; // WordPress Post Object structure
     trails_block_heading?: string;
     trail_links_to_show?: number | string;
+    trails?: any[];
 }
 
 export interface AppContentData {
