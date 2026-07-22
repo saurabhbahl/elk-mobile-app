@@ -53,7 +53,7 @@ export default function QuickLinks() {
                     activeOpacity={0.8}
                     onPress={() => router.push("/trails" as any)}
                 >
-                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <Image source={require("../assets/images/trails.jpg")} style={styles.menuCardImage} contentFit="cover" />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Trails</Text>
                     </View>
@@ -64,7 +64,7 @@ export default function QuickLinks() {
                     activeOpacity={0.8}
                     onPress={() => router.push("/rentals" as any)}
                 >
-                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <Image source={require("../assets/images/rentals.jpg")} style={styles.menuCardImage} contentFit="cover" />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Rental Opportunities</Text>
                     </View>
@@ -75,7 +75,7 @@ export default function QuickLinks() {
                     activeOpacity={0.8}
                     onPress={() => router.push("/plan-trip" as any)}
                 >
-                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <Image source={require("../assets/images/planyourtrip.jpg")} style={styles.menuCardImage} contentFit="cover" />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Plan Your Trip</Text>
                     </View>
@@ -86,7 +86,7 @@ export default function QuickLinks() {
                     activeOpacity={0.8}
                     onPress={() => router.push("/tips" as any)}
                 >
-                    <WireframePlaceholder style={styles.menuCardImage} />
+                    <Image source={require("../assets/images/tips.jpg")} style={styles.menuCardImage} contentFit="cover" />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Elk Viewing Tips</Text>
                     </View>
