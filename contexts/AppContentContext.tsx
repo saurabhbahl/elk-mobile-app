@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export interface AppBranding {
     app_name?: string;
@@ -53,6 +53,15 @@ export interface AppContentData {
     rentals?: any[];
     tips?: any[];
     plan_your_trip?: any;
+    cameras?: any[];
+    visitors?: any;
+    programs_setting?: any;
+    event_settings?: any;
+    live_cam_settings?: any;
+    trail_settings?: any;
+    rental_settings?: any;
+    tips_screen_settings?: any;
+    map_settings?: any;
 }
 
 interface AppContentContextType {
@@ -65,6 +74,15 @@ interface AppContentContextType {
     rentalsData: any[] | null;
     tipsData: any[] | null;
     planTripData: any | null;
+    camerasData: any[] | null;
+    visitorsData: any | null;
+    programsSettingData: any | null;
+    eventSettingsData: any | null;
+    liveCamSettingsData: any | null;
+    trailSettingsData: any | null;
+    rentalSettingsData: any | null;
+    tipsScreenSettingsData: any | null;
+    mapSettingsData: any | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     refreshData: () => void;
 }
@@ -81,6 +99,15 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [rentalsData, setRentalsData] = useState<any[] | null>(null);
     const [tipsData, setTipsData] = useState<any[] | null>(null);
     const [planTripData, setPlanTripData] = useState<any | null>(null);
+    const [camerasData, setCamerasData] = useState<any[] | null>(null);
+    const [visitorsData, setVisitorsData] = useState<any | null>(null);
+    const [programsSettingData, setProgramsSettingData] = useState<any | null>(null);
+    const [eventSettingsData, setEventSettingsData] = useState<any | null>(null);
+    const [liveCamSettingsData, setLiveCamSettingsData] = useState<any | null>(null);
+    const [trailSettingsData, setTrailSettingsData] = useState<any | null>(null);
+    const [rentalSettingsData, setRentalSettingsData] = useState<any | null>(null);
+    const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<any | null>(null);
+    const [mapSettingsData, setMapSettingsData] = useState<any | null>(null);
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
     const fetchData = async () => {
@@ -94,7 +121,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 }
             });
             const json: AppContentData = await response.json();
-            
+
             if (json.app_branding) {
                 setBrandData(json.app_branding);
             }
@@ -122,6 +149,33 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (json.plan_your_trip) {
                 setPlanTripData(json.plan_your_trip);
             }
+            if (json.cameras) {
+                setCamerasData(json.cameras);
+            }
+            if (json.visitors) {
+                setVisitorsData(json.visitors);
+            }
+            if (json.programs_setting) {
+                setProgramsSettingData(json.programs_setting);
+            }
+            if (json.event_settings) {
+                setEventSettingsData(json.event_settings);
+            }
+            if (json.live_cam_settings) {
+                setLiveCamSettingsData(json.live_cam_settings);
+            }
+            if (json.trail_settings) {
+                setTrailSettingsData(json.trail_settings);
+            }
+            if (json.rental_settings) {
+                setRentalSettingsData(json.rental_settings);
+            }
+            if (json.tips_screen_settings) {
+                setTipsScreenSettingsData(json.tips_screen_settings);
+            }
+            if (json.map_settings) {
+                setMapSettingsData(json.map_settings);
+            }
         } catch (error) {
             console.log("Failed to fetch app data:", error);
         } finally {
@@ -137,7 +191,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <AppContentContext.Provider value={{ brandData, popupData, homeData, programsData, eventsData, trailsData, rentalsData, tipsData, planTripData, apiStatus, refreshData: fetchData }}>
+        <AppContentContext.Provider value={{
+            brandData, popupData, homeData, programsData, eventsData, trailsData, rentalsData, tipsData, planTripData, camerasData, visitorsData,
+            programsSettingData, eventSettingsData, liveCamSettingsData, trailSettingsData, rentalSettingsData, tipsScreenSettingsData, mapSettingsData,
+            apiStatus, refreshData: fetchData
+        }}>
             {children}
         </AppContentContext.Provider>
     );
