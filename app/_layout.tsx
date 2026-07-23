@@ -1,18 +1,40 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import "react-native-reanimated";
 
+import { ThemeProvider as CustomThemeProvider } from "@/context/ThemeContext";
+import { AppContentProvider } from "@/contexts/AppContentContext";
 import { createTables, inspectDatabaseSchema } from "@/database/schema";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useNetInfo } from "@react-native-community/netinfo";
-import { AppContentProvider } from "@/contexts/AppContentContext";
+
+export const MapResetContext = createContext<{ mapKey: number; resetMap: () => void }>({
+  mapKey: 0,
+  resetMap: () => { },
+});
+
+export function useMapReset() {
+  return useContext(MapResetContext);
+}
+
+export const NavigationModeContext = createContext<{
+  isNavigating: boolean;
+  setIsNavigating: (v: boolean) => void;
+}>({
+  isNavigating: false,
+  setIsNavigating: () => { },
+});
+
+export function useNavigationMode() {
+  return useContext(NavigationModeContext);
+}
 
 export const unstable_settings = {
-  anchor: "(tabs)",
+  anchor: "(home)",
 };
 
 export default function RootLayout() {
@@ -20,6 +42,13 @@ export default function RootLayout() {
   const { type } = useNetInfo();
 
   const [dbReady, setDbReady] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const resetMap = useCallback(() => {
+    setMapKey(k => k + 1);
+    setIsNavigating(false);
+  }, []);
 
   useEffect(() => {
     try {
@@ -53,94 +82,112 @@ export default function RootLayout() {
 
   return (
     <AppContentProvider>
-      <ThemeProvider
-        value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-      >
-        <Stack>
-          <Stack.Screen
-            name="index"
-            options={{ headerShown: false }}
-          />
+      <CustomThemeProvider>
+        <MapResetContext.Provider value={{ mapKey, resetMap }}>
+          <NavigationModeContext.Provider value={{ isNavigating, setIsNavigating }}>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack>
+                <Stack.Screen
+                  name="index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="(tabs)"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="(home)"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="programs/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="map/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="programs/[id]"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="programs/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="events/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="programs/[id]"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="events/[id]"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="events/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="trails/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="events/[id]"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="rentals/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="trails/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="plan-trip/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="rentals/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="tips/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="plan-trip/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="map/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="map/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="visitors/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="visitors/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="cameras/index"
-            options={{ headerShown: false }}
-          />
+                <Stack.Screen
+                  name="cameras/index"
+                  options={{ headerShown: false }}
+                />
 
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-              title: "Modal",
-            }}
-          />
+                <Stack.Screen
+                  name="modal"
+                  options={{
+                    presentation: "modal",
+                    title: "Modal",
+                  }}
+                />
+                <Stack.Screen
+                  name="tips/index"
+                  options={{ headerShown: false }}
+                />
 
-          {/* Your test screen */}
-          <Stack.Screen
-            name="(api)/dummy"
-            options={{
-              title: "Movies",
-            }}
-          />
-        </Stack>
+                <Stack.Screen
+                  name="modal"
+                  options={{
+                    presentation: "modal",
+                    title: "Modal",
+                  }}
+                />
 
-        <StatusBar style="auto" />
-      </ThemeProvider>
+                {/* Your test screen */}
+                <Stack.Screen
+                  name="(api)/dummy"
+                  options={{
+                    title: "Movies",
+                  }}
+                />
+              </Stack>
+
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </NavigationModeContext.Provider>
+        </MapResetContext.Provider>
+      </CustomThemeProvider>
     </AppContentProvider>
   );
 }

@@ -54,7 +54,7 @@ export default function LandingScreen() {
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
-                                    onPress={() => router.push("/(tabs)")}
+                                    onPress={() => router.push("/(home)" as any)}
                                 >
                                     <Text style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
                                         {brandData?.app_tagline}

@@ -1,7 +1,7 @@
 import * as SQLite from "expo-sqlite";
 import { Platform } from "react-native";
 
-export const db = Platform.OS === 'web' 
+export const db: any = Platform.OS === 'web' 
     ? {
         execSync: () => {},
         runSync: () => {},

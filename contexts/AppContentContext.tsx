@@ -197,13 +197,51 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         fetchData();
     }, []);
 
+    const contextValue = React.useMemo(() => ({
+        brandData,
+        popupData,
+        homeData,
+        programsData,
+        eventsData,
+        trailsData,
+        rentalsData,
+        tipsData,
+        planTripData,
+        camerasData,
+        visitorsData,
+        programsSettingData,
+        eventSettingsData,
+        liveCamSettingsData,
+        trailSettingsData,
+        rentalSettingsData,
+        tipsScreenSettingsData,
+        mapSettingsData,
+        apiStatus,
+        refreshData: fetchData
+    }), [
+        brandData,
+        popupData,
+        homeData,
+        programsData,
+        eventsData,
+        trailsData,
+        rentalsData,
+        tipsData,
+        planTripData,
+        camerasData,
+        visitorsData,
+        programsSettingData,
+        eventSettingsData,
+        liveCamSettingsData,
+        trailSettingsData,
+        rentalSettingsData,
+        tipsScreenSettingsData,
+        mapSettingsData,
+        apiStatus
+    ]);
+
     return (
-        <AppContentContext.Provider value={{
-            brandData, popupData, homeData, programsData, eventsData, trailsData, rentalsData, tipsData, planTripData, camerasData, visitorsData,
-            programsSettingData, eventSettingsData, liveCamSettingsData, trailSettingsData, rentalSettingsData, tipsScreenSettingsData, mapSettingsData,
-            navigationData,
-            apiStatus, refreshData: fetchData
-        }}>
+        <AppContentContext.Provider value={contextValue}>
             {children}
         </AppContentContext.Provider>
     );

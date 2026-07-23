@@ -29,12 +29,11 @@ export function inspectDatabaseSchema() {
             console.log(`Creation SQL: ${table.sql}`);
             try {
                 const columns = db.getAllSync(`PRAGMA table_info("${table.name}");`) as any[];
-                
+
                 console.log("Columns:");
                 columns.forEach((col: any) => {
                     console.log(
-                        `  - ${col.name} (${col.type || "BLOB"}) ${
-                            col.pk ? "🔑 [PRIMARY KEY]" : ""
+                        `  - ${col.name} (${col.type || "BLOB"}) ${col.pk ? "🔑 [PRIMARY KEY]" : ""
                         } ${col.notnull ? "⚠️ [NOT NULL]" : ""}`
                     );
                 });

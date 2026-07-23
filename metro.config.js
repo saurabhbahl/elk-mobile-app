@@ -6,6 +6,9 @@ const config = getDefaultConfig(__dirname);
 // Add 'wasm' to asset extensions so Metro resolves the wa-sqlite WebAssembly file
 config.resolver.assetExts.push('wasm');
 
+// Allow Metro to bundle .mbtiles files as binary assets (used by the native MapLibre build)
+config.resolver.assetExts.push('mbtiles');
+
 // Add headers required for SharedArrayBuffer to work on the web (for synchronous SQLite)
 config.server = {
   ...config.server,
