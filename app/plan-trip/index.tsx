@@ -29,8 +29,8 @@ export default function PlanTripScreen() {
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
-    const title = planTripData?.screen_title || "Plan Your Trip";
-    const intro = planTripData?.intro_paragraph || "";
+    const title = planTripData?.screen_title;
+    const intro = planTripData?.intro_paragraph;
     
     // Check if hero_image is an ACF image array/object or just a string URL
     let heroImageUrl = null;
@@ -65,12 +65,14 @@ export default function PlanTripScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    {title}
-                </Text>
-            </View>
+            {title ? (
+                <View style={styles.headerRow}>
+                    <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {title}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>

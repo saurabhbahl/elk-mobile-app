@@ -24,7 +24,7 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function TrailsScreen() {
-    const { homeData, brandData, trailsData, apiStatus } = useAppContent();
+    const { homeData, brandData, trailsData, apiStatus, trailSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -53,12 +53,14 @@ export default function TrailsScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    {homeData?.trails_block_heading || "Trails"}
-                </Text>
-            </View>
+            {trailSettingsData?.screen_title ? (
+                <View style={styles.headerRow}>
+                    <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {trailSettingsData.screen_title}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>

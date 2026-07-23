@@ -23,7 +23,7 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function TipsScreen() {
-    const { brandData, tipsData, apiStatus } = useAppContent();
+    const { brandData, tipsData, apiStatus, tipsScreenSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -66,12 +66,26 @@ export default function TipsScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/tips.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    Elk Viewing Tips
-                </Text>
-            </View>
+            {tipsScreenSettingsData?.screen_title ? (
+                <View style={styles.headerRow}>
+                    {tipsScreenSettingsData?.header_icon?.url ? (
+                        <Image source={{ uri: tipsScreenSettingsData.header_icon.url }} style={styles.headerIcon} />
+                    ) : (
+                        <Image source={require("../../assets/images/tips.png")} style={styles.headerIcon} />
+                    )}
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {tipsScreenSettingsData.screen_title}
+                    </Text>
+                </View>
+            ) : null}
+
+            {tipsScreenSettingsData?.intro_paragraph ? (
+                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                    <Text style={{ fontSize: 14, color: "#333", lineHeight: 20, textAlign: "center" }}>
+                        {tipsScreenSettingsData.intro_paragraph}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>

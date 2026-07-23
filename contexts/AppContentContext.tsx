@@ -21,7 +21,7 @@ export interface PopupContent {
         url: string;
     };
     cta_button_label?: string;
-    cta_button_link_?: string;
+    cta_button_link?: string;
     close_button_style?: string;
 }
 
@@ -62,6 +62,7 @@ export interface AppContentData {
     rental_settings?: any;
     tips_screen_settings?: any;
     map_settings?: any;
+    navigation?: any[];
 }
 
 interface AppContentContextType {
@@ -83,6 +84,7 @@ interface AppContentContextType {
     rentalSettingsData: any | null;
     tipsScreenSettingsData: any | null;
     mapSettingsData: any | null;
+    navigationData: any[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     refreshData: () => void;
 }
@@ -108,6 +110,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [rentalSettingsData, setRentalSettingsData] = useState<any | null>(null);
     const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<any | null>(null);
     const [mapSettingsData, setMapSettingsData] = useState<any | null>(null);
+    const [navigationData, setNavigationData] = useState<any[] | null>(null);
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
     const fetchData = async () => {
@@ -117,7 +120,8 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             const response = await fetch(`https://ftfgifts.com/elk/wp-json/elk/v1/data?_t=${timestamp}`, {
                 headers: {
                     'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
+                    'Pragma': 'no-cache',
+                    'Cookie': 'wordpress_logged_in_cache_bypass=1'
                 }
             });
             const json: AppContentData = await response.json();
@@ -176,6 +180,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (json.map_settings) {
                 setMapSettingsData(json.map_settings);
             }
+            if (json.navigation) {
+                setNavigationData(json.navigation);
+            }
         } catch (error) {
             console.log("Failed to fetch app data:", error);
         } finally {
@@ -194,6 +201,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         <AppContentContext.Provider value={{
             brandData, popupData, homeData, programsData, eventsData, trailsData, rentalsData, tipsData, planTripData, camerasData, visitorsData,
             programsSettingData, eventSettingsData, liveCamSettingsData, trailSettingsData, rentalSettingsData, tipsScreenSettingsData, mapSettingsData,
+            navigationData,
             apiStatus, refreshData: fetchData
         }}>
             {children}

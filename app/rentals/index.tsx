@@ -26,7 +26,7 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function RentalsScreen() {
-    const { brandData, rentalsData, apiStatus } = useAppContent();
+    const { brandData, rentalsData, apiStatus, rentalSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -125,12 +125,22 @@ export default function RentalsScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/rentals.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    Rental Opportunities
-                </Text>
-            </View>
+            {rentalSettingsData?.screen_title ? (
+                <View style={styles.headerRow}>
+                    <Image source={require("../../assets/images/rentals.png")} style={styles.headerIcon} />
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {rentalSettingsData.screen_title}
+                    </Text>
+                </View>
+            ) : null}
+
+            {rentalSettingsData?.intro_text ? (
+                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                    <Text style={{ fontSize: 14, color: "#333", lineHeight: 20, textAlign: "center" }}>
+                        {rentalSettingsData.intro_text}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>

@@ -25,11 +25,11 @@ export const MovieRepository = {
     },
 
     getAll(): Movie[] {
-        return db.getAllSync<Movie>(`
+        return db.getAllSync(`
       SELECT *
       FROM movies
       ORDER BY title
-    `);
+    `) as Movie[];
     },
 
     deleteAll() {

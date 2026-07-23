@@ -108,6 +108,21 @@ export default function RootLayout() {
           />
 
           <Stack.Screen
+            name="map/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="visitors/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="cameras/index"
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
             name="modal"
             options={{
               presentation: "modal",

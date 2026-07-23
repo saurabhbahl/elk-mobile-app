@@ -27,7 +27,7 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function EventsScreen() {
-    const { homeData, brandData, eventsData, apiStatus } = useAppContent();
+    const { homeData, brandData, eventsData, apiStatus, eventSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
 
     const events = eventsData || [];
@@ -67,12 +67,14 @@ export default function EventsScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    Events
-                </Text>
-            </View>
+            {eventSettingsData?.screen_title ? (
+                <View style={styles.headerRow}>
+                    <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {eventSettingsData.screen_title}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>

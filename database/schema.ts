@@ -19,26 +19,19 @@ export function inspectDatabaseSchema() {
     console.log("🔍 SQLITE DATABASE SCHEMA INSPECTION");
     console.log("=========================================");
     try {
-        const tables = db.getAllSync<{ name: string; sql: string }>(
+        const tables = db.getAllSync(
             "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
-        );
-        console.log(`Found ${tables.length} User Table(s):`, tables.map(t => t.name));
+        ) as any[];
+        console.log(`Found ${tables.length} User Table(s):`, tables.map((t: any) => t.name));
 
-        tables.forEach((table) => {
+        tables.forEach((table: any) => {
             console.log(`\nTable Name: "${table.name}"`);
             console.log(`Creation SQL: ${table.sql}`);
             try {
-                const columns = db.getAllSync<{
-                    cid: number;
-                    name: string;
-                    type: string;
-                    notnull: number;
-                    dflt_value: any;
-                    pk: number;
-                }>(`PRAGMA table_info("${table.name}");`);
+                const columns = db.getAllSync(`PRAGMA table_info("${table.name}");`) as any[];
                 
                 console.log("Columns:");
-                columns.forEach((col) => {
+                columns.forEach((col: any) => {
                     console.log(
                         `  - ${col.name} (${col.type || "BLOB"}) ${
                             col.pk ? "🔑 [PRIMARY KEY]" : ""

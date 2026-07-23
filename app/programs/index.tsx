@@ -27,32 +27,36 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function ProgramsScreen() {
-    const { homeData, brandData, programsData, apiStatus } = useAppContent();
+    const { homeData, brandData, programsData, apiStatus, programsSettingData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
     const programs = programsData || [];
+    
+    // ACF select fields sometimes return an object { value: 'list', label: 'List' }
+    const layoutValue = typeof programsSettingData?.layout === 'object' ? programsSettingData.layout.value : programsSettingData?.layout;
+    const isGrid = (layoutValue || "").toLowerCase() !== "list";
 
     const renderProgramCard = ({ item, index }: { item: any; index: number }) => (
         <TouchableOpacity
-            style={styles.programCard}
+            style={isGrid ? styles.programCard : styles.programListCard}
             activeOpacity={0.8}
             onPress={() => router.push(`/programs/${item.id || index}` as any)}
         >
             {item.thumbnail_image?.url ? (
                 <Image
                     source={{ uri: item.thumbnail_image.url }}
-                    style={styles.programCardImage}
+                    style={isGrid ? styles.programCardImage : styles.programListCardImage}
                     contentFit="cover"
                 />
             ) : (
-                <WireframePlaceholder style={styles.programCardImage} />
+                <WireframePlaceholder style={isGrid ? styles.programCardImage : styles.programListCardImage} />
             )}
-            <View style={styles.programCardContent}>
-                <Text style={styles.programCardName} numberOfLines={2}>
+            <View style={isGrid ? styles.programCardContent : styles.programListCardContent}>
+                <Text style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
                     {item.program_name || "Program Name"}
                 </Text>
-                <Text style={styles.programCardDate} numberOfLines={1}>
+                <Text style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
                     {item.schedule__dates || "No Date"}
                 </Text>
             </View>
@@ -68,12 +72,14 @@ export default function ProgramsScreen() {
                 <QuickLinks />
             </View>
 
-            <View style={styles.headerRow}>
-                <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
-                    {homeData?.programs_block_heading}
-                </Text>
-            </View>
+            {programsSettingData?.screen_title ? (
+                <View style={styles.headerRow}>
+                    <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
+                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                        {programsSettingData.screen_title}
+                    </Text>
+                </View>
+            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -81,12 +87,13 @@ export default function ProgramsScreen() {
                 </View>
             ) : (
                 <FlatList
+                    key={isGrid ? "grid" : "list"}
                     data={programs}
                     keyExtractor={(item, index) => item.id?.toString() || index.toString()}
                     renderItem={renderProgramCard}
-                    numColumns={2}
+                    numColumns={isGrid ? 2 : 1}
                     contentContainerStyle={styles.gridContainer}
-                    columnWrapperStyle={styles.columnWrapper}
+                    columnWrapperStyle={isGrid ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <Text style={styles.emptyText}>No programs available</Text>
@@ -181,6 +188,46 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: "#888888",
         marginTop: 4,
+    },
+
+    programListCard: {
+        width: "100%",
+        flexDirection: "row",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#E0E0E0",
+        overflow: "hidden",
+        backgroundColor: "#FFFFFF",
+        marginBottom: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+
+    programListCardImage: {
+        width: 110,
+        height: 110,
+    },
+
+    programListCardContent: {
+        flex: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        justifyContent: "center",
+    },
+
+    programListCardName: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#333333",
+        marginBottom: 6,
+    },
+
+    programListCardDate: {
+        fontSize: 12,
+        color: "#888888",
     },
 
     emptyText: {
