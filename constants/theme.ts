@@ -51,3 +51,91 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const LIGHT_COLORS = {
+  primary: '#061b0e',
+  onPrimary: '#ffffff',
+  primaryContainer: '#1b3022',
+  onPrimaryContainer: '#819986',
+  inversePrimary: '#b4cdb8',
+  
+  secondary: '#6f5a4f',
+  secondaryContainer: '#f7dacc',
+  onSecondaryContainer: '#745e53',
+  
+  tertiary: '#735c00',
+  tertiaryContainer: '#cba72f',
+  onTertiaryContainer: '#4e3d00',
+  
+  surface: '#f8faf9',
+  onSurface: '#191c1c',
+  surfaceVariant: '#e1e3e2',
+  onSurfaceVariant: '#434843',
+  surfaceContainer: '#eceeed',
+  surfaceContainerHigh: '#e6e9e8',
+  surfaceContainerLow: '#f2f4f3',
+  surfaceContainerLowest: '#ffffff',
+  
+  outline: '#737973',
+  outlineVariant: '#c3c8c1',
+  background: '#f8faf9',
+  error: '#ba1a1a',
+  onError: '#ffffff',
+};
+
+export const DARK_COLORS = {
+  primary: '#bccbba',
+  onPrimary: '#273428',
+  primaryContainer: '#2d3a2e',
+  onPrimaryContainer: '#95a494',
+  inversePrimary: '#546254',
+  
+  secondary: '#e9c176',
+  secondaryContainer: '#604403',
+  onSecondaryContainer: '#dab36a',
+  
+  tertiary: '#e9c176',
+  tertiaryContainer: '#604403',
+  onTertiaryContainer: '#dab36a',
+  
+  surface: '#111413',
+  onSurface: '#e1e3e0',
+  surfaceVariant: '#323534',
+  onSurfaceVariant: '#c4c8c0',
+  surfaceContainer: '#1d201f',
+  surfaceContainerHigh: '#272b29',
+  surfaceContainerLow: '#191c1b',
+  surfaceContainerLowest: '#0c0f0d',
+  
+  outline: '#8e928b',
+  outlineVariant: '#434843',
+  background: '#111413',
+  error: '#ffb4ab',
+  onError: '#690005',
+};
+
+export const LIGHT_FONTS = {
+  heading: 'EBGaramond-Medium',
+  headingSemiBold: 'EBGaramond-SemiBold',
+  headingBold: 'EBGaramond-Bold',
+  body: 'Inter-Regular',
+  bodyMedium: 'Inter-Medium',
+  bodySemiBold: 'Inter-SemiBold',
+  bodyBold: 'Inter-Bold',
+  caption: 'Inter-Medium',
+};
+
+export const DARK_FONTS = {
+  heading: 'EBGaramond-Medium',
+  headingSemiBold: 'EBGaramond-SemiBold',
+  headingBold: 'EBGaramond-Bold',
+  body: 'Manrope-Regular',
+  bodyMedium: 'Manrope-Medium',
+  bodySemiBold: 'Manrope-SemiBold',
+  bodyBold: 'Manrope-Bold',
+  caption: 'Manrope-Medium',
+};
+
+// Default exports for backwards compatibility
+export const COLORS = LIGHT_COLORS;
+export const FONTS = LIGHT_FONTS;

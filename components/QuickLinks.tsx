@@ -19,7 +19,11 @@ export default function QuickLinks() {
                     </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.menuCard} activeOpacity={0.8}>
+                <TouchableOpacity 
+                    style={styles.menuCard} 
+                    activeOpacity={0.8}
+                    onPress={() => router.push("/map" as any)}
+                >
                     <WireframePlaceholder style={styles.menuCardImage} />
                     <View style={styles.menuCardTitleContainer}>
                         <Text style={styles.menuCardTitle} numberOfLines={1}>Elk Scenic Map</Text>

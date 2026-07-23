@@ -7,7 +7,7 @@ import { router } from "expo-router";
 export default function Navbar() {
     return (
         <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.push("/(tabs)")} activeOpacity={0.8}>
+            <TouchableOpacity onPress={() => router.push("/(home)" as any)} activeOpacity={0.8}>
                 <Image
                     source={require("@/assets/images/logo.png")}
                     style={styles.headerLogo}

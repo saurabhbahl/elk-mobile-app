@@ -52,9 +52,9 @@ export default function HomeScreen() {
                 <View style={{ position: 'relative' }}>
                     {/* Background Block covering QuickLinks, Title, and 75% of the banner height (banner is 160px, so bottom 40 leaves 75% coverage) */}
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 40, backgroundColor: primaryColor }} />
-                    
+
                     <QuickLinks />
-                    
+
                     {/* Welcome Message */}
                     {homeData?.hero_welcome_heading ? (
                         <Text style={[styles.welcomeTitle, { color: secondaryColor }]}>
@@ -96,7 +96,11 @@ export default function HomeScreen() {
                     <View style={styles.mapCardContainer}>
                         <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 12 }}>
                             {homeData?.map_view_button_label ? (
-                                <TouchableOpacity style={[styles.viewMapButton, { backgroundColor: primaryColor }]} activeOpacity={0.9}>
+                                <TouchableOpacity 
+                                    style={[styles.viewMapButton, { backgroundColor: primaryColor }]} 
+                                    activeOpacity={0.9}
+                                    onPress={() => router.push("/map" as any)}
+                                >
                                     <Text style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</Text>
                                 </TouchableOpacity>
                             ) : null}
@@ -164,14 +168,14 @@ export default function HomeScreen() {
 
                         {/* Featured Event Card */}
                         <TouchableOpacity
-                             style={styles.featuredCard}
-                             activeOpacity={0.8}
-                             onPress={() => {
-                                 const eventId = homeData.featured_event[0].id;
-                                 const eventIndex = eventsData?.findIndex((e: any) => String(e.id) === String(eventId));
-                                 const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
-                                 router.push(`/events/${targetId}` as any);
-                             }}
+                            style={styles.featuredCard}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                const eventId = homeData.featured_event[0].id;
+                                const eventIndex = eventsData?.findIndex((e: any) => String(e.id) === String(eventId));
+                                const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
+                                router.push(`/events/${targetId}` as any);
+                            }}
                         >
                             <View style={styles.featuredCardLeft}>
                                 {homeData.featured_event[0].thumbnail_image?.url ? (
