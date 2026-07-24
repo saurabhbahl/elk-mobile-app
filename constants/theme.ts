@@ -129,11 +129,11 @@ export const DARK_FONTS = {
   heading: 'EBGaramond-Medium',
   headingSemiBold: 'EBGaramond-SemiBold',
   headingBold: 'EBGaramond-Bold',
-  body: 'Manrope-Regular',
-  bodyMedium: 'Manrope-Medium',
-  bodySemiBold: 'Manrope-SemiBold',
-  bodyBold: 'Manrope-Bold',
-  caption: 'Manrope-Medium',
+  body: 'Inter-Regular',
+  bodyMedium: 'Inter-Medium',
+  bodySemiBold: 'Inter-SemiBold',
+  bodyBold: 'Inter-Bold',
+  caption: 'Inter-Medium',
 };
 
 // Default exports for backwards compatibility

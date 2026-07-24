@@ -11,6 +11,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -38,9 +39,20 @@ export default function TrailsScreen() {
                     <Text style={styles.trailDistance}>{item.distance}</Text>
                 ) : null}
             </View>
-            <Text style={styles.trailDescription}>
-                {item.description ? item.description.replace(/<\/?[^>]+(>|$)/g, "").trim() : "No description available."}
-            </Text>
+            {item.description ? (
+                <RenderHTML
+                    contentWidth={width - 32}
+                    source={{ html: item.description }}
+                    baseStyle={{
+                        fontSize: 13,
+                        color: "#555555",
+                        lineHeight: 18,
+                    }}
+                    tagsStyles={{ p: { marginVertical: 4 } }}
+                />
+            ) : (
+                <Text style={styles.trailDescription}>No description available.</Text>
+            )}
         </View>
     );
 

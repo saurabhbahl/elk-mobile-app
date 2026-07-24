@@ -8,6 +8,15 @@ export interface Waypoint {
   coordinate: Coordinate;
   title: string;
   description: string;
+  full_description?: string;
+  address?: string;
+  featured_image?: any;
+  image_gallery?: any[];
+  handicap_accessible?: boolean | number | string;
+  open_year_round?: boolean | number | string;
+  seasonal_notes?: string;
+  external_link?: any;
+  pin_icon_override?: any;
 }
 
 export const waypoints: Waypoint[] = [

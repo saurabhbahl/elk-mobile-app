@@ -5,7 +5,7 @@
  * the encoded polylines in SQLite for offline use.
  */
 import { useState, useCallback, useRef } from 'react';
-import { waypoints } from '../data/waypoints';
+import { useAppContent } from '../contexts/AppContentContext';
 import { saveRoute, hasRoute } from '../utils/routeDatabase';
 
 interface PreloadProgress {
@@ -18,6 +18,8 @@ export function useRoutePreloader() {
   const [isPreloading, setIsPreloading] = useState(false);
   const [progress, setProgress] = useState<PreloadProgress>({ current: 0, total: 0, percentage: 0 });
   const abortRef = useRef(false);
+  const { poisData } = useAppContent();
+  const waypoints = poisData || [];
 
   const fetchAndCache = useCallback(async (fromId: number, toId: number): Promise<boolean> => {
     const from = waypoints.find(w => w.id === fromId);
@@ -44,7 +46,7 @@ export function useRoutePreloader() {
       console.warn(`[RoutePreloader] Failed to fetch route ${fromId}→${toId}:`, err);
     }
     return false;
-  }, []);
+  }, [waypoints]);
 
   const preloadPair = useCallback(async (fromId: number, toId: number): Promise<boolean> => {
     return fetchAndCache(fromId, toId);
@@ -95,7 +97,7 @@ export function useRoutePreloader() {
 
     setIsPreloading(false);
     return { success: true, cached: successCount, total };
-  }, [isPreloading, fetchAndCache]);
+  }, [isPreloading, fetchAndCache, waypoints]);
 
   const cancelPreload = useCallback(() => {
     abortRef.current = true;

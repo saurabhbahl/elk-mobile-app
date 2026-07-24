@@ -63,6 +63,7 @@ export interface AppContentData {
     tips_screen_settings?: any;
     map_settings?: any;
     navigation?: any[];
+    pois?: any[];
 }
 
 interface AppContentContextType {
@@ -85,6 +86,7 @@ interface AppContentContextType {
     tipsScreenSettingsData: any | null;
     mapSettingsData: any | null;
     navigationData: any[] | null;
+    poisData: any[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     refreshData: () => void;
 }
@@ -111,6 +113,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<any | null>(null);
     const [mapSettingsData, setMapSettingsData] = useState<any | null>(null);
     const [navigationData, setNavigationData] = useState<any[] | null>(null);
+    const [poisData, setPoisData] = useState<any[] | null>(null);
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
     const fetchData = async () => {
@@ -183,6 +186,19 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (json.navigation) {
                 setNavigationData(json.navigation);
             }
+            if (json.pois) {
+                const mappedPois = json.pois.map((poi: any) => ({
+                    ...poi,
+                    id: parseInt(poi.id, 10),
+                    coordinate: {
+                        latitude: parseFloat(poi.latitude),
+                        longitude: parseFloat(poi.longitude),
+                    },
+                    title: poi.poi_name || '',
+                    description: poi.pin_popup_summary || poi.full_description || '',
+                }));
+                setPoisData(mappedPois);
+            }
         } catch (error) {
             console.log("Failed to fetch app data:", error);
         } finally {
@@ -216,6 +232,8 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         rentalSettingsData,
         tipsScreenSettingsData,
         mapSettingsData,
+        navigationData,
+        poisData,
         apiStatus,
         refreshData: fetchData
     }), [
@@ -237,6 +255,8 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         rentalSettingsData,
         tipsScreenSettingsData,
         mapSettingsData,
+        navigationData,
+        poisData,
         apiStatus
     ]);
 

@@ -14,6 +14,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -176,9 +177,19 @@ export default function VisitorsCenterScreen() {
 
                     {/* Body Copy Section */}
                     {visitorsData?.body_copy ? (
-                        <Text style={styles.bodyCopy}>
-                            {visitorsData.body_copy.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                        </Text>
+                        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                            <RenderHTML
+                                contentWidth={width - 32}
+                                source={{ html: visitorsData.body_copy }}
+                                baseStyle={{
+                                    fontSize: 13,
+                                    color: "#333333",
+                                    lineHeight: 18,
+                                    textAlign: "justify",
+                                }}
+                                tagsStyles={{ p: { textAlign: "justify", marginVertical: 4 } }}
+                            />
+                        </View>
                     ) : null}
                 </ScrollView>
             )}

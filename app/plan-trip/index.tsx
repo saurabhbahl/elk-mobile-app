@@ -12,6 +12,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -92,9 +93,17 @@ export default function PlanTripScreen() {
 
                     {intro ? (
                         <View style={styles.introContainer}>
-                            <Text style={styles.introText}>
-                                {intro.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                            </Text>
+                            <RenderHTML
+                                contentWidth={width - 32}
+                                source={{ html: intro }}
+                                baseStyle={{
+                                    fontSize: 14,
+                                    color: "#333333",
+                                    lineHeight: 20,
+                                    fontWeight: "500",
+                                }}
+                                tagsStyles={{ p: { marginVertical: 4 } }}
+                            />
                         </View>
                     ) : null}
 
@@ -110,9 +119,16 @@ export default function PlanTripScreen() {
                                         <Text style={styles.sectionHeading}>{sec.section_heading || "Trip Section"}</Text>
                                     </View>
                                     {sec.section_body ? (
-                                        <Text style={styles.sectionBody}>
-                                            {sec.section_body.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                                        </Text>
+                                        <RenderHTML
+                                            contentWidth={width - 32 - 32} // padding inside section card
+                                            source={{ html: sec.section_body }}
+                                            baseStyle={{
+                                                fontSize: 13,
+                                                color: "#444444",
+                                                lineHeight: 18,
+                                            }}
+                                            tagsStyles={{ p: { marginVertical: 4 } }}
+                                        />
                                     ) : null}
                                 </View>
                             );

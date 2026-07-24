@@ -10,6 +10,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -48,9 +49,16 @@ export default function TipsScreen() {
                     </View>
 
                     {item.tip_body ? (
-                        <Text style={styles.tipBody}>
-                            {item.tip_body.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                        </Text>
+                        <RenderHTML
+                            contentWidth={width - 32}
+                            source={{ html: item.tip_body }}
+                            baseStyle={{
+                                fontSize: 13,
+                                color: "#666666",
+                                lineHeight: 18,
+                            }}
+                            tagsStyles={{ p: { marginVertical: 4 } }}
+                        />
                     ) : null}
                 </View>
             </View>
@@ -81,9 +89,17 @@ export default function TipsScreen() {
 
             {tipsScreenSettingsData?.intro_paragraph ? (
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    <Text style={{ fontSize: 14, color: "#333", lineHeight: 20, textAlign: "center" }}>
-                        {tipsScreenSettingsData.intro_paragraph}
-                    </Text>
+                    <RenderHTML
+                        contentWidth={width - 32}
+                        source={{ html: tipsScreenSettingsData.intro_paragraph }}
+                        baseStyle={{
+                            fontSize: 14,
+                            color: "#333",
+                            lineHeight: 20,
+                            textAlign: "center"
+                        }}
+                        tagsStyles={{ p: { textAlign: "center", marginVertical: 4 } }}
+                    />
                 </View>
             ) : null}
 

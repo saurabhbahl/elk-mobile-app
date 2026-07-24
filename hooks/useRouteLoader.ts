@@ -54,7 +54,6 @@ export const useRouteLoader = () => {
     const poly = (staticRoutes as any).mainRoute;
     const coords = tryDecode(poly);
     if (coords) {
-      console.log('[useRouteLoader] Initialized main route from static polyline, points:', coords.length);
       return coords;
     }
     console.error('[useRouteLoader] FAILED to decode main route from static polyline!');
@@ -65,7 +64,6 @@ export const useRouteLoader = () => {
     const poly = (staticRoutes as any).orangeRoute;
     const coords = tryDecode(poly);
     if (coords) {
-      console.log('[useRouteLoader] Initialized orange route from static polyline, points:', coords.length);
       return coords;
     }
     console.error('[useRouteLoader] FAILED to decode orange route from static polyline!');

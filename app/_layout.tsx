@@ -3,6 +3,18 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import {
+  EBGaramond_500Medium,
+  EBGaramond_600SemiBold,
+  EBGaramond_700Bold,
+  useFonts,
+} from '@expo-google-fonts/eb-garamond';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 import "react-native-reanimated";
 
@@ -45,6 +57,16 @@ export default function RootLayout() {
   const [mapKey, setMapKey] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
 
+  const [fontsLoaded] = useFonts({
+    'EBGaramond-Medium': EBGaramond_500Medium,
+    'EBGaramond-SemiBold': EBGaramond_600SemiBold,
+    'EBGaramond-Bold': EBGaramond_700Bold,
+    'Inter-Regular': Inter_400Regular,
+    'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
+  });
+
   const resetMap = useCallback(() => {
     setMapKey(k => k + 1);
     setIsNavigating(false);
@@ -65,7 +87,7 @@ export default function RootLayout() {
   }, []);
 
   console.log("Network Type:", type);
-  if (!dbReady) {
+  if (!dbReady || !fontsLoaded) {
     return (
       <View
         style={{
@@ -99,10 +121,7 @@ export default function RootLayout() {
                   options={{ headerShown: false }}
                 />
 
-                <Stack.Screen
-                  name="map/index"
-                  options={{ headerShown: false }}
-                />
+
 
                 <Stack.Screen
                   name="programs/index"
@@ -145,6 +164,11 @@ export default function RootLayout() {
                 />
 
                 <Stack.Screen
+                  name="map/[id]"
+                  options={{ headerShown: false }}
+                />
+
+                <Stack.Screen
                   name="visitors/index"
                   options={{ headerShown: false }}
                 />
@@ -166,13 +190,7 @@ export default function RootLayout() {
                   options={{ headerShown: false }}
                 />
 
-                <Stack.Screen
-                  name="modal"
-                  options={{
-                    presentation: "modal",
-                    title: "Modal",
-                  }}
-                />
+
 
                 {/* Your test screen */}
                 <Stack.Screen

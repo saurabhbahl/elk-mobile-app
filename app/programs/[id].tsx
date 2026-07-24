@@ -12,6 +12,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -67,11 +68,7 @@ export default function ProgramDetailScreen() {
         );
     }
 
-    // Strip HTML tags from description if present
     const rawDescription = program.full_description || "";
-    const cleanDescription = typeof rawDescription === "string"
-        ? rawDescription.replace(/<\/?[^>]+(>|$)/g, "").replace(/&nbsp;/g, " ").trim()
-        : "";
 
     return (
         <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -112,9 +109,20 @@ export default function ProgramDetailScreen() {
                     </Text>
 
                     {/* Description Paragraph */}
-                    <Text style={styles.descriptionText}>
-                        {cleanDescription}
-                    </Text>
+                    {rawDescription ? (
+                        <RenderHTML
+                            contentWidth={width - 32} // paddingHorizontal is 16 on each side
+                            source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
+                            baseStyle={{
+                                fontSize: 14,
+                                color: "#444444",
+                                lineHeight: 22,
+                            }}
+                            tagsStyles={{
+                                p: { marginVertical: 8 }
+                            }}
+                        />
+                    ) : null}
                 </View>
             </ScrollView>
         </SafeAreaView>

@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -69,11 +70,7 @@ export default function EventDetailScreen() {
         );
     }
 
-    // Strip HTML tags from description if present
     const rawDescription = event.full_description || "";
-    const cleanDescription = typeof rawDescription === "string"
-        ? rawDescription.replace(/<\/?[^>]+(>|$)/g, "").replace(/&nbsp;/g, " ").trim()
-        : "";
 
     const handleRegister = () => {
         const url = event.registration__ticket_link;
@@ -146,9 +143,22 @@ export default function EventDetailScreen() {
                     )}
 
                     {/* Description Paragraph */}
-                    <Text style={styles.descriptionText}>
-                        {cleanDescription}
-                    </Text>
+                    {rawDescription ? (
+                        <RenderHTML
+                            contentWidth={width - 32} // paddingHorizontal is 16 on each side
+                            source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
+                            baseStyle={{
+                                fontSize: 14,
+                                color: "#444444",
+                                lineHeight: 22,
+                                marginTop: 10,
+                                marginBottom: 20,
+                            }}
+                            tagsStyles={{
+                                p: { marginVertical: 8 }
+                            }}
+                        />
+                    ) : null}
 
                     {/* Register Button */}
                     {event.registration__ticket_link && (

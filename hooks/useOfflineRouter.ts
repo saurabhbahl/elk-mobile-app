@@ -6,7 +6,7 @@
  * Falls back to straight-line distance if OSRM fails.
  */
 import { useState, useCallback } from 'react';
-import { waypoints } from '../data/waypoints';
+import { useAppContent } from '../contexts/AppContentContext';
 import { getRoute, saveRoute } from '../utils/routeDatabase';
 import { decodePolyline, calcDistance } from '../utils/mapUtils';
 
@@ -19,6 +19,8 @@ interface OfflineRouteResult {
 
 export function useOfflineRouter() {
   const [isLoading, setIsLoading] = useState(false);
+  const { poisData } = useAppContent();
+  const waypoints = poisData || [];
 
   const getRouteBetween = useCallback(async (
     fromId: number,
@@ -158,7 +160,7 @@ export function useOfflineRouter() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [waypoints]);
 
   return { getRouteBetween, isLoading };
 }

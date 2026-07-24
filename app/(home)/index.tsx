@@ -14,6 +14,8 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
+import { useIsFocused } from '@react-navigation/native';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -31,15 +33,19 @@ const getValidColor = (color: string | undefined) => {
 
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
+    const hasShownPopupRef = React.useRef(false);
+    const isFocused = useIsFocused();
+    
     const { popupData, homeData, brandData, eventsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
     useEffect(() => {
-        if (popupData && popupData.popup_enabled) {
+        if (isFocused && popupData && popupData.popup_enabled && !hasShownPopupRef.current) {
             setShowPopup(true);
+            hasShownPopupRef.current = true;
         }
-    }, [popupData]);
+    }, [isFocused, popupData]);
 
     return (
         <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
@@ -68,9 +74,18 @@ export default function HomeScreen() {
 
                 {/* Welcome Description */}
                 {homeData?.hero_intro_paragraph ? (
-                    <Text style={styles.welcomeDescription}>
-                        {homeData.hero_intro_paragraph.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                    </Text>
+                    <RenderHTML
+                        contentWidth={width - 40}
+                        source={{ html: homeData.hero_intro_paragraph }}
+                        baseStyle={{
+                            fontSize: 13,
+                            color: "#333333",
+                            textAlign: "center",
+                            lineHeight: 18,
+                            marginBottom: 12,
+                        }}
+                        tagsStyles={{ p: { textAlign: "center", margin: 0 } }}
+                    />
                 ) : null}
 
                 {/* Read More Button */}
@@ -259,9 +274,21 @@ export default function HomeScreen() {
 
                                         {/* Dynamic content */}
                                         <Text style={styles.modalTitleDynamic}>{popupData.popup_title}</Text>
-                                        <Text style={styles.modalBodyDynamic}>
-                                            {popupData.popup_body_copy ? popupData.popup_body_copy.replace(/<\/?[^>]+(>|$)/g, "").trim() : ""}
-                                        </Text>
+                                        {popupData.popup_body_copy ? (
+                                            <RenderHTML
+                                                contentWidth={width * 0.95 - 48}
+                                                source={{ html: popupData.popup_body_copy }}
+                                                baseStyle={{
+                                                    fontSize: 14,
+                                                    color: "#E5E5E5",
+                                                    textAlign: "center",
+                                                    lineHeight: 18,
+                                                }}
+                                                tagsStyles={{
+                                                    p: { textAlign: "center", margin: 0, marginTop: 12 }
+                                                }}
+                                            />
+                                        ) : null}
                                     </View>
                                 </ImageBackground>
                             ) : (
@@ -277,9 +304,21 @@ export default function HomeScreen() {
 
                                     {/* Dynamic content */}
                                     <Text style={styles.modalTitle}>{popupData.popup_title}</Text>
-                                    <Text style={styles.modalBody}>
-                                        {popupData.popup_body_copy ? popupData.popup_body_copy.replace(/<\/?[^>]+(>|$)/g, "").trim() : ""}
-                                    </Text>
+                                    {popupData.popup_body_copy ? (
+                                        <RenderHTML
+                                            contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
+                                            source={{ html: popupData.popup_body_copy }}
+                                            baseStyle={{
+                                                fontSize: 14,
+                                                color: "#666666",
+                                                textAlign: "center",
+                                                lineHeight: 18,
+                                            }}
+                                            tagsStyles={{
+                                                p: { textAlign: "center", margin: 0, marginTop: 12 }
+                                            }}
+                                        />
+                                    ) : null}
                                 </WireframePlaceholder>
                             )
                         ) : (

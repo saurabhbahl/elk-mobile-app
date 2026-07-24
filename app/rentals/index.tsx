@@ -13,6 +13,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import RenderHTML from 'react-native-render-html';
 
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
@@ -69,9 +70,17 @@ export default function RentalsScreen() {
                     ) : null}
 
                     {item.full_description ? (
-                        <Text style={styles.fullDesc}>
-                            {item.full_description.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                        </Text>
+                        <RenderHTML
+                            contentWidth={width - 32 - 32} // main padding 16*2 + inner padding 16*2
+                            source={{ html: item.full_description }}
+                            baseStyle={{
+                                fontSize: 13,
+                                color: "#666666",
+                                lineHeight: 18,
+                                marginBottom: 12,
+                            }}
+                            tagsStyles={{ p: { marginVertical: 4 } }}
+                        />
                     ) : null}
 
                     {item.availability_notes ? (
@@ -136,9 +145,17 @@ export default function RentalsScreen() {
 
             {rentalSettingsData?.intro_text ? (
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    <Text style={{ fontSize: 14, color: "#333", lineHeight: 20, textAlign: "center" }}>
-                        {rentalSettingsData.intro_text}
-                    </Text>
+                    <RenderHTML
+                        contentWidth={width - 32}
+                        source={{ html: rentalSettingsData.intro_text }}
+                        baseStyle={{
+                            fontSize: 14,
+                            color: "#333",
+                            lineHeight: 20,
+                            textAlign: "center"
+                        }}
+                        tagsStyles={{ p: { textAlign: "center", marginVertical: 4 } }}
+                    />
                 </View>
             ) : null}
 

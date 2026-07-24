@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native'
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
-import { waypoints, Coordinate } from '../data/waypoints';
+import { Coordinate } from '../data/waypoints';
+import { useAppContent } from '../contexts/AppContentContext';
 import { HeaderOverlay } from './HeaderOverlay';
 
 interface MapFallbackProps {
@@ -21,6 +22,9 @@ export const MapFallback = ({
   orangeRouteCoordinates,
   onPointSelect,
 }: MapFallbackProps) => {
+  const { poisData } = useAppContent();
+  const waypoints = poisData || [];
+
   return (
     <View style={styles.container}>
       <MapView
