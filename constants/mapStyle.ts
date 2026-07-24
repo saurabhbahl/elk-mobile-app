@@ -66,13 +66,15 @@ export const BASE_OFFLINE_STYLE = {
       tileSize: 256,
       maxzoom: 19,
     },
+    // Primary vector source — overridden at runtime in getMapStyle()
     [OFFLINE_VECTOR_SOURCE_ID]: {
       type: 'vector',
       url: `mbtiles://${MBTILES_FILE_PATH}`,
     },
+    // Secondary source reuses primary as fallback (only overridden when 2nd file is downloaded)
     'india-vector-source': {
       type: 'vector',
-      url: `mbtiles://${SECONDARY_MBTILES_FILE_PATH}`,
+      url: `mbtiles://${MBTILES_FILE_PATH}`,
     },
   },
   layers: [
@@ -318,11 +320,26 @@ export const BASE_OFFLINE_STYLE = {
   ],
 };
 
-export function getMapStyle(isDark: boolean, hasMap: boolean) {
+export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: string[] = []) {
   const base = hasMap ? BASE_OFFLINE_STYLE : ONLINE_FALLBACK_STYLE;
   
   // Deep clone the base style so we don't mutate static constants
   const style = JSON.parse(JSON.stringify(base));
+  
+  // Inject/override vector sources using downloaded file paths.
+  // secondary always falls back to primary (never references a file that may not exist).
+  if (hasMap) {
+    const primary = downloadedMaps && downloadedMaps.length > 0 ? downloadedMaps[0] : MBTILES_FILE_PATH;
+    const secondary = downloadedMaps && downloadedMaps.length > 1 ? downloadedMaps[1] : primary;
+    style.sources[OFFLINE_VECTOR_SOURCE_ID] = {
+      type: 'vector',
+      url: `mbtiles://${primary}`,
+    };
+    style.sources['india-vector-source'] = {
+      type: 'vector',
+      url: `mbtiles://${secondary}`,
+    };
+  }
   
   if (!isDark) {
     return style;

@@ -32,6 +32,7 @@ import {
 } from 'react-native';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { addOpacity, normalizeHex } from '../../utils/colorUtils';
 
 // Constants & theme
 import { getMapStyle } from '../../constants/mapStyle';
@@ -68,7 +69,6 @@ import { preloadRouteIndex } from '../../utils/routeLookup';
 import { useMapReset, useNavigationMode } from '../_layout';
 
 const isExpoGo = Constants.appOwnership === 'expo';
-const DROP_PIN_TARGET_OFFSET_Y = 0;
 
 /** Convert heading degrees to cardinal direction label */
 function headingToCardinal(deg: number): string {
@@ -86,7 +86,8 @@ export default function MapScreenWrapper() {
 function MapScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const { poisData, mapSettingsData } = useAppContent();
+  console.log(windowWidth, windowHeight)
+  const { poisData, mapSettingsData, brandData } = useAppContent();
   const waypoints = poisData || [];
 
   useEffect(() => {
@@ -96,7 +97,9 @@ function MapScreen() {
   }, []);
 
   const { colors, fonts, isDark, setTheme } = useTheme();
-  const styles = createStyles(colors, fonts, isDark);
+  const brandPrimary = normalizeHex(brandData?.brand_color_primary, colors.primary);
+  const brandSecondary = normalizeHex(brandData?.brand_color__secondary, colors.secondary);
+  const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
   // ── Map engine ──────────────────────────────────────────────────────────────
   const [mapEngineError, setMapEngineError] = useState<string | null>(null);
@@ -129,7 +132,7 @@ function MapScreen() {
   // ── Offline map ─────────────────────────────────────────────────────────────
   const {
     hasMap, mbtilesError, downloadProgress, isDownloading,
-    consentStatus, saveConsent, downloadMap, isInitializing,
+    consentStatus, saveConsent, downloadMap, isInitializing, downloadedMapFiles,
   } = useOfflineMap();
 
   const [mapTimestamp, setMapTimestamp] = useState(Date.now());
@@ -174,7 +177,7 @@ function MapScreen() {
   const headingRef = useRef(0);
   const [headingCardinal, setHeadingCardinal] = useState('N');
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+
   const [navigationData, setNavigationData] = useState({
     distanceRemaining: '0.0 mi',
     timeRemaining: '0 min',
@@ -846,7 +849,7 @@ function MapScreen() {
   }
 
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = mapComponents;
-  const showConsentOverlay = !hasMap && consentStatus === null && !isExpoGo;
+  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading;
   const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -863,7 +866,7 @@ function MapScreen() {
         <Map
           ref={mapRef}
           style={styles.map}
-          mapStyle={getMapStyle(isDark, hasMap)}
+          mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
           logo={false}
           attribution={false}
           compass={false}
@@ -880,22 +883,9 @@ function MapScreen() {
             if (Array.isArray(center) && center.length === 2) {
               const [lng, lat] = center;
               setMapCenter({ lng, lat });
-            }
-            if (isSelectingPin) {
-              const targetPixel: [number, number] = [
-                windowWidth / 2,
-                windowHeight / 2 + DROP_PIN_TARGET_OFFSET_Y,
-              ];
-              mapRef.current?.unproject(targetPixel)
-                .then((targetCoordinate: [number, number]) => {
-                  if (Array.isArray(targetCoordinate) && targetCoordinate.length === 2) {
-                    setDropPinPreviewCoordinate({
-                      longitude: targetCoordinate[0],
-                      latitude: targetCoordinate[1],
-                    });
-                  }
-                })
-                .catch(() => { });
+              if (isSelectingPin) {
+                setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
+              }
             }
           }}
         >
@@ -984,6 +974,17 @@ function MapScreen() {
           ))}
         </Map>
 
+        {/* ── Drop-pin mode: crosshair ── */}
+        {isSelectingPin && (
+          <View style={styles.crosshairContainer} pointerEvents="none">
+            <View style={styles.crosshairTarget}>
+              <View style={styles.crosshairOuter}>
+                <View style={styles.crosshairInner} />
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Floating Title & Search bar capsule + Side Controls */}
         {!isNavigating && !showPointPicker && !isSelectingPin && (
           <>
@@ -1063,14 +1064,14 @@ function MapScreen() {
               <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate()}>
                 <MaterialIcons name="navigation" size={24} color={colors.error} style={{ transform: [{ rotate: '45deg' }] }} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sideButton} onPress={() => { }}>
-                <MaterialIcons name="layers" size={24} color={colors.onSurface} />
-              </TouchableOpacity>
               <TouchableOpacity style={styles.sideButton} onPress={handleRecenter}>
                 <MaterialIcons name="my-location" size={24} color={colors.onSurface} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.sideButton} onPress={() => setTheme(isDark ? 'light' : 'dark')}>
                 <MaterialIcons name={isDark ? 'wb-sunny' : 'nights-stay'} size={24} color={colors.onSurface} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sideButton} onPress={() => router.push('/map/settings')}>
+                <MaterialIcons name="settings" size={24} color={colors.onSurface} />
               </TouchableOpacity>
             </View>
           </>
@@ -1117,12 +1118,6 @@ function MapScreen() {
           onUpdateStop={(idx, wp) => setStopPoints(prev => prev.map((s, i) => i === idx ? wp : s))}
           onSetPickerType={setPickerType}
           onSelectOnMap={async (type, stopIndex) => {
-            console.log(`[DropPin] Selecting ${type}${stopIndex !== undefined ? ` #${stopIndex + 1}` : ''} on map`, {
-              currentMapCenter: mapCenter,
-              currentLocation: location
-                ? { latitude: location.latitude, longitude: location.longitude }
-                : null,
-            });
             setPinPickerType(type);
             if (type === 'stop' && stopIndex !== undefined) {
               setPinPickerStopIndex(stopIndex);
@@ -1188,23 +1183,22 @@ function MapScreen() {
           </View>
         )}
 
-        {/* ── Drop-pin mode: crosshair + compass + confirm/cancel ── */}
         {isSelectingPin && (
           <>
-            {/* Crosshair target. Its red dot is the exact pixel converted to coordinates. */}
-            <View style={styles.crosshairContainer} pointerEvents="none">
-              <View style={[styles.crosshairTarget, { transform: [{ translateY: DROP_PIN_TARGET_OFFSET_Y }] }]}>
-                <View style={styles.crosshairOuter}>
-                  <View style={styles.crosshairInner} />
-                </View>
-              </View>
-            </View>
 
             {/* Top label */}
             <View style={[styles.pinLabelBar, { top: insets.top + 12 }]}>
               <MaterialIcons name="location-searching" size={18} color={colors.primary} />
               <Text style={styles.pinLabelText}>
                 Move map to place {pinPickerType === 'start' ? 'start' : pinPickerType === 'stop' ? 'stop' : 'destination'}
+              </Text>
+            </View>
+
+            {/* Debug Coordinate Display (to verify drop pin accuracy) */}
+            <View style={[styles.pinLabelBar, { top: insets.top + 60, backgroundColor: 'rgba(0,0,0,0.8)' }]}>
+              <Text style={{ color: 'white', fontSize: 12, fontFamily: fonts.body, textAlign: 'center' }}>
+                Center Lat: {dropPinPreviewCoordinate?.latitude?.toFixed(6) ?? mapCenter?.lat?.toFixed(6) ?? '...'}{'\n'}
+                Center Lng: {dropPinPreviewCoordinate?.longitude?.toFixed(6) ?? mapCenter?.lng?.toFixed(6) ?? '...'}
               </Text>
             </View>
 
@@ -1233,21 +1227,6 @@ function MapScreen() {
                   let lng = mapCenter?.lng ?? (currentRegion?.longitude ?? 0);
                   let lat = mapCenter?.lat ?? (currentRegion?.latitude ?? 0);
                   let source = mapCenter ? 'tracked-region-center' : 'default-region-center';
-                  const targetPixel: [number, number] = [
-                    windowWidth / 2,
-                    windowHeight / 2 + DROP_PIN_TARGET_OFFSET_Y,
-                  ];
-
-                  try {
-                    const targetCoordinate = await mapRef.current?.unproject(targetPixel);
-                    if (targetCoordinate && Array.isArray(targetCoordinate) && targetCoordinate.length === 2) {
-                      lng = targetCoordinate[0];
-                      lat = targetCoordinate[1];
-                      source = 'mapRef.unproject(targetPixel)';
-                    }
-                  } catch (e) {
-                    console.warn('[DropPin] mapRef.unproject failed, using fallback center', e);
-                  }
 
                   const pin: Waypoint = {
                     id: -Date.now(), title: 'Dropped Pin',
@@ -1255,35 +1234,19 @@ function MapScreen() {
                     description: 'Custom point selected on map',
                   };
                   setDropPinPreviewCoordinate(pin.coordinate);
-                  console.log('[DropPin] Confirmed dropped pin', {
-                    type: pinPickerType,
-                    stopIndex: pinPickerStopIndex,
-                    source,
-                    targetPixel,
-                    targetOffsetY: DROP_PIN_TARGET_OFFSET_Y,
-                    coordinate: pin.coordinate,
-                    previousMapCenter: mapCenter,
-                    currentLocation: location
-                      ? { latitude: location.latitude, longitude: location.longitude }
-                      : null,
-                  });
                   if (pinPickerType === 'start') {
-                    console.log('[DropPin] Applied as start point', pin);
                     setStartPoint(pin);
                   }
                   else if (pinPickerType === 'stop') {
                     if (pinPickerStopIndex !== null) {
                       // Update existing stop at the specified index
-                      console.log(`[DropPin] Updated stop #${pinPickerStopIndex + 1}`, pin);
                       setStopPoints(prev => prev.map((s, i) => i === pinPickerStopIndex ? pin : s));
                     } else {
                       // Add new stop if no index specified
-                      console.log('[DropPin] Added stop', pin);
                       setStopPoints(prev => [...prev, pin]);
                     }
                   }
                   else {
-                    console.log('[DropPin] Applied as destination point', pin);
                     setDestinationPoint(pin);
                   }
                   setPinPickerStopIndex(null);
@@ -1315,20 +1278,10 @@ function MapScreen() {
                 >
                   <Text style={styles.modalButtonTextPrimary}>Download Offline Map</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed')}>
+                <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed', false)}>
                   <Text style={styles.modalButtonTextSecondary}>Maybe Later</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => setDontShowAgain(!dontShowAgain)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, dontShowAgain && styles.checkboxChecked]}>
-                  {dontShowAgain && <MaterialIcons name="check" size={14} color="white" />}
-                </View>
-                <Text style={styles.checkboxLabel}>Don&apos;t show this again</Text>
-              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -1345,7 +1298,7 @@ function MapScreen() {
               <TouchableOpacity style={styles.modalButtonPrimary} onPress={downloadMap}>
                 <Text style={styles.modalButtonTextPrimary}>Retry Download</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed')}>
+              <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed', false)}>
                 <Text style={styles.modalButtonTextSecondary}>Continue with Online Map</Text>
               </TouchableOpacity>
             </View>
@@ -1357,7 +1310,7 @@ function MapScreen() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) =>
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string, brandSecondary: string) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface },
@@ -1367,6 +1320,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       backgroundColor: '#FFFFFF',
       borderBottomWidth: 1,
       borderBottomColor: '#E0E0E0',
+      zIndex: 50,
+      elevation: 50,
     },
     mapContainer: {
       flex: 1,
@@ -1523,8 +1478,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     crosshairOuter: {
       width: 42, height: 42, borderRadius: 21,
-      borderWidth: 2.5, borderColor: colors.primary,
-      backgroundColor: colors.primary + '1f', // 12% opacity
+      borderWidth: 2.5, borderColor: brandPrimary,
+      backgroundColor: addOpacity(brandPrimary, '1f'), // 12% opacity
       justifyContent: 'center', alignItems: 'center',
     },
     crosshairInner: {
@@ -1538,13 +1493,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     pinLabelBar: {
       position: 'absolute', left: 24, right: 24, zIndex: 600,
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      backgroundColor: colors.surface + 'f2', // 95% opacity
+      backgroundColor: addOpacity(colors.surface, 'f2'), // 95% opacity
       paddingHorizontal: 16, paddingVertical: 10,
       borderRadius: 99,
       shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
       shadowOpacity: isDark ? 0.25 : 0.1, shadowRadius: 10, elevation: 6,
     },
-    pinLabelText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.primary, flex: 1 },
+    pinLabelText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: brandPrimary, flex: 1 },
     compassContainer: {
       position: 'absolute', right: 16, zIndex: 600,
       alignItems: 'center',
@@ -1555,7 +1510,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderWidth: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.08)',
     },
     compassArrow: { marginBottom: 1 },
-    compassLabel: { fontFamily: fonts.caption, fontSize: 9, color: colors.primary, letterSpacing: 0.5 },
+    compassLabel: { fontFamily: fonts.caption, fontSize: 9, color: brandPrimary, letterSpacing: 0.5 },
     pinActionBar: {
       position: 'absolute', left: 16, right: 16, zIndex: 600,
       flexDirection: 'row', gap: 12,
@@ -1566,10 +1521,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       backgroundColor: colors.surface + 'f7',
       flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
     },
-    pinCancelText: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.primary },
+    pinCancelText: { fontFamily: fonts.bodyBold, fontSize: 15, color: brandPrimary },
     pinConfirmBtn: {
       flex: 2, height: 52, borderRadius: 12,
-      backgroundColor: colors.primary,
+      backgroundColor: brandPrimary,
       flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
       shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
     },
@@ -1579,7 +1534,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     navCompassBadge: {
       position: 'absolute', right: 16, zIndex: 95,
       alignItems: 'center',
-      backgroundColor: colors.primary,
+      backgroundColor: brandPrimary,
       width: 56, height: 56, borderRadius: 28,
       justifyContent: 'center',
       shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
@@ -1597,35 +1552,35 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       position: 'absolute',
       top: 0, left: 0, right: 0, bottom: 0,
       width: 48, height: 48, borderRadius: 24,
-      backgroundColor: colors.primary + '26', // 15% opacity
-      borderWidth: 2, borderColor: colors.primary + '4d', // 30% opacity
+      backgroundColor: addOpacity(brandPrimary, '26'), // 15% opacity
+      borderWidth: 2, borderColor: addOpacity(brandPrimary, '4d'), // 30% opacity
     },
     userArrowInner: {
       width: 36, height: 36, borderRadius: 18,
-      backgroundColor: colors.primary,
+      backgroundColor: brandPrimary,
       justifyContent: 'center', alignItems: 'center',
       shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, elevation: 6,
     },
 
     // Waypoint markers
-    waypointCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#111413' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.22, shadowRadius: 3, elevation: 4 },
-    waypointCircleSelected: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.tertiaryContainer, borderColor: colors.primary },
+    waypointCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: brandPrimary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#111413' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.22, shadowRadius: 3, elevation: 4 },
+    waypointCircleSelected: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.tertiaryContainer, borderColor: brandPrimary },
     waypointText: { color: colors.onPrimary, fontSize: 12, fontWeight: 'bold' },
 
     // Modals
     modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(6, 27, 14, 0.2)', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: 24 },
     modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.surface + 'f2', borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant + '33', shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 32, elevation: 12 },
     modalIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primaryContainer, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
-    modalTitle: { fontFamily: fonts.headingBold, fontSize: 32, color: colors.primary, textAlign: 'center', marginBottom: 16 },
+    modalTitle: { fontFamily: fonts.headingBold, fontSize: 32, color: brandPrimary, textAlign: 'center', marginBottom: 16 },
     modalDescription: { fontFamily: fonts.body, fontSize: 16, color: colors.onSurfaceVariant, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 8 },
     modalActions: { width: '100%', gap: 12 },
-    modalButtonPrimary: { backgroundColor: colors.primary, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
+    modalButtonPrimary: { backgroundColor: brandPrimary, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
     modalButtonTextPrimary: { color: colors.onPrimary, fontFamily: fonts.bodySemiBold, fontSize: 16 },
     modalButtonSecondary: { height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
-    modalButtonTextSecondary: { color: colors.primary, fontFamily: fonts.bodySemiBold, fontSize: 15 },
+    modalButtonTextSecondary: { color: brandPrimary, fontFamily: fonts.bodySemiBold, fontSize: 15 },
     checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 32, gap: 8 },
     checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: colors.outline, justifyContent: 'center', alignItems: 'center' },
-    checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+    checkboxChecked: { backgroundColor: brandPrimary, borderColor: brandPrimary },
     checkboxLabel: { fontFamily: fonts.caption, fontSize: 12, color: colors.onSurfaceVariant },
 
     // Arrival popup
@@ -1648,7 +1603,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: colors.primary,
+      backgroundColor: brandPrimary,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 24,
@@ -1661,7 +1616,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     arrivalTitle: {
       fontFamily: fonts.headingBold,
       fontSize: 26,
-      color: colors.primary,
+      color: brandPrimary,
       textAlign: 'center',
       marginBottom: 8,
       lineHeight: 32,
@@ -1683,7 +1638,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       paddingHorizontal: 8,
     },
     arrivalButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: brandPrimary,
       height: 56,
       borderRadius: 14,
       flexDirection: 'row',

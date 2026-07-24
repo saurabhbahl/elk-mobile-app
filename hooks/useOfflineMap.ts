@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as FileSystem from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system/legacy';
+import { useCallback, useEffect, useState } from 'react';
 import { safeStorage as AsyncStorage } from '../utils/asyncStorage';
 
-const BASE_URL = process.env.EXPO_PUBLIC_MBTILES_URL ? process.env.EXPO_PUBLIC_MBTILES_URL.replace(/\/elk-vector\.mbtiles$/, '') : '';
+const BASE_URL = process.env.EXPO_PUBLIC_MBTILES_URL
+  ? process.env.EXPO_PUBLIC_MBTILES_URL.replace(/\/elk-vector\.mbtiles$/, '')
+  : '';
 
 export const MBTILES_FILES = [
   'elk-vector.mbtiles',
-  'asia_india.mbtiles'
 ];
 
 const docDir = FileSystem.documentDirectory || '';
@@ -17,15 +18,31 @@ export const MBTILES_PATHS = MBTILES_FILES.map(filename => {
   return {
     name: filename,
     path: uri.replace('file://', ''),
-    uri: uri
+    uri: uri,
   };
 });
 
 export const MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
-export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[1].path;
+// Fallback secondary path reuses primary to avoid crashes when only 1 file is present
+export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
 
 const isExpoGo = Constants.appOwnership === 'expo';
 const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
+
+/** Check if a file at the given URI is a valid SQLite/MBTiles database */
+async function isValidMbtiles(uri: string): Promise<boolean> {
+  try {
+    const header = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+      length: 16,
+      position: 0,
+    });
+    const decoded = atob(header);
+    return decoded.startsWith('SQLite format 3');
+  } catch {
+    return false;
+  }
+}
 
 export const useOfflineMap = () => {
   const [hasMap, setHasMap] = useState(false);
@@ -34,17 +51,43 @@ export const useOfflineMap = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [consentStatus, setConsentStatus] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [downloadedMapFiles, setDownloadedMapFiles] = useState<string[]>([]);
 
   const checkMapStatus = useCallback(async () => {
     try {
+      // Use dynamically saved list if available, else fall back to static list
+      let expectedFiles = MBTILES_PATHS;
+      try {
+        const storedList = await AsyncStorage.getItem('@elk_downloaded_maps');
+        if (storedList) {
+          const filenames = JSON.parse(storedList);
+          if (Array.isArray(filenames) && filenames.length > 0) {
+            expectedFiles = filenames.map((name: string) => ({ uri: docDir + name } as any));
+          }
+        }
+      } catch (e) {}
+
       let allExist = true;
-      for (const file of MBTILES_PATHS) {
+      const existingFiles: string[] = [];
+
+      for (const file of expectedFiles) {
         const fileInfo = await FileSystem.getInfoAsync(file.uri);
         if (!fileInfo.exists) {
           allExist = false;
           break;
         }
+        // Validate it's actually a SQLite/MBTiles file, not a cached error page
+        const valid = await isValidMbtiles(file.uri);
+        if (!valid) {
+          console.warn(`${file.uri} exists but is not a valid MBTiles database. Deleting corrupted file.`);
+          await FileSystem.deleteAsync(file.uri, { idempotent: true });
+          allExist = false;
+          break;
+        }
+        existingFiles.push(file.uri.replace('file://', ''));
       }
+
+      setDownloadedMapFiles(allExist ? existingFiles : []);
       setHasMap(allExist);
       return allExist;
     } catch (e) {
@@ -62,9 +105,11 @@ export const useOfflineMap = () => {
     }
   }, []);
 
-  const saveConsent = async (status: 'yes' | 'no' | 'dismissed') => {
+  const saveConsent = async (status: 'yes' | 'no' | 'dismissed', persist: boolean = true) => {
     try {
-      await AsyncStorage.setItem(CONSENT_KEY, status);
+      if (persist) {
+        await AsyncStorage.setItem(CONSENT_KEY, status);
+      }
       setConsentStatus(status);
     } catch (e) {
       console.log('Error saving consent', e);
@@ -88,29 +133,59 @@ export const useOfflineMap = () => {
       setMbtilesError(false);
       setDownloadProgress(0);
 
+      // Try to fetch dynamic list from WP API
+      let filesToDownload = MBTILES_PATHS.map(f => ({ ...f, downloadUrl: `${BASE_URL}/${f.name}` }));
+      try {
+        const wpBase = BASE_URL.replace(/\/map-download\/?$/, '');
+        const listRes = await fetch(`${wpBase}/map-files`);
+        if (listRes.ok) {
+          const remoteFiles = await listRes.json();
+          if (Array.isArray(remoteFiles) && remoteFiles.length > 0) {
+            filesToDownload = remoteFiles.map(rf => ({
+              name: rf.filename,
+              path: docDir.replace('file://', '') + rf.filename,
+              uri: docDir + rf.filename,
+              downloadUrl: rf.url,
+            }));
+            await AsyncStorage.setItem(
+              '@elk_downloaded_maps',
+              JSON.stringify(remoteFiles.map((rf: any) => rf.filename))
+            );
+          }
+        }
+      } catch (e) {
+        console.log('Failed to fetch dynamic map list, falling back to hardcoded list', e);
+      }
+
       let completedDownloads = 0;
 
-      for (let i = 0; i < MBTILES_PATHS.length; i++) {
-        const file = MBTILES_PATHS[i];
+      for (let i = 0; i < filesToDownload.length; i++) {
+        const file = filesToDownload[i];
         const fileInfo = await FileSystem.getInfoAsync(file.uri);
 
         if (fileInfo.exists) {
-          console.log(`${file.name} already exists, skipping...`);
-          completedDownloads++;
-          continue;
+          // Validate the existing file is a real MBTiles database, not a cached error page
+          const valid = await isValidMbtiles(file.uri);
+          if (valid) {
+            console.log(`${file.name} already exists and is valid, skipping...`);
+            completedDownloads++;
+            continue;
+          } else {
+            console.warn(`${file.name} exists but is NOT a valid MBTiles database. Deleting and re-downloading...`);
+            await FileSystem.deleteAsync(file.uri, { idempotent: true });
+          }
         }
 
-        const downloadUrl = `${BASE_URL}/${file.name}`;
-        console.log(`Downloading ${file.name} from: ${downloadUrl}`);
+        console.log(`Downloading ${file.name} from: ${file.downloadUrl}`);
 
         const downloadResumable = FileSystem.createDownloadResumable(
-          downloadUrl,
+          file.downloadUrl,
           file.uri,
           {},
           (progress) => {
             if (progress.totalBytesExpectedToWrite > 0) {
               const filePercent = progress.totalBytesWritten / progress.totalBytesExpectedToWrite;
-              const overallPercent = (completedDownloads + filePercent) / MBTILES_PATHS.length;
+              const overallPercent = (completedDownloads + filePercent) / filesToDownload.length;
               setDownloadProgress(overallPercent);
             }
           }
@@ -118,9 +193,19 @@ export const useOfflineMap = () => {
 
         const result = await downloadResumable.downloadAsync();
         if (result && result.status === 200) {
+          // Validate downloaded file is a real SQLite/MBTiles database
+          const valid = await isValidMbtiles(file.uri);
+          if (!valid) {
+            await FileSystem.deleteAsync(file.uri, { idempotent: true });
+            throw new Error(
+              `Downloaded file "${file.name}" is not a valid MBTiles database.\n` +
+              `The server may be returning an error page instead of the file.\n` +
+              `Check: ${file.downloadUrl}`
+            );
+          }
           completedDownloads++;
         } else {
-          throw new Error(`Download failed with status ${result?.status}`);
+          throw new Error(`Download failed with HTTP status ${result?.status}`);
         }
       }
 
@@ -131,7 +216,6 @@ export const useOfflineMap = () => {
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
-
     } catch (error) {
       console.error('Error downloading maps:', error);
       setMbtilesError(true);
@@ -143,15 +227,32 @@ export const useOfflineMap = () => {
 
   const deleteMap = async () => {
     try {
-      for (const file of MBTILES_PATHS) {
-        const fileInfo = await FileSystem.getInfoAsync(file.uri);
+      // Delete all dynamically tracked files
+      let filesToDelete = MBTILES_PATHS.map(f => f.uri);
+      try {
+        const storedList = await AsyncStorage.getItem('@elk_downloaded_maps');
+        if (storedList) {
+          const filenames = JSON.parse(storedList);
+          if (Array.isArray(filenames) && filenames.length > 0) {
+            filesToDelete = filenames.map((name: string) => docDir + name);
+          }
+        }
+      } catch (e) {}
+
+      for (const uri of filesToDelete) {
+        const fileInfo = await FileSystem.getInfoAsync(uri);
         if (fileInfo.exists) {
-          await FileSystem.deleteAsync(file.uri);
+          await FileSystem.deleteAsync(uri);
         }
       }
+
+      await AsyncStorage.removeItem('@elk_downloaded_maps');
       setHasMap(false);
+      setDownloadedMapFiles([]);
       setDownloadProgress(0);
-      console.log('Maps deleted successfully');
+      setConsentStatus(null);
+      await AsyncStorage.removeItem(CONSENT_KEY);
+      console.log('Maps and consent deleted successfully');
     } catch (error) {
       console.log('Error deleting maps', error);
     }
@@ -161,15 +262,9 @@ export const useOfflineMap = () => {
     (async () => {
       setIsInitializing(true);
       await loadConsent();
-      const mapExists = await checkMapStatus();
-
-      if (!mapExists && !isExpoGo) {
-        const storedConsent = await AsyncStorage.getItem(CONSENT_KEY);
-        if (storedConsent === 'yes') {
-          await downloadMap();
-        }
-      }
-
+      await checkMapStatus();
+      // Do NOT auto-download here — the consent modal in the UI must be shown
+      // and the user must explicitly agree before downloading starts.
       setIsInitializing(false);
     })();
   }, [checkMapStatus, loadConsent]);
@@ -185,7 +280,7 @@ export const useOfflineMap = () => {
     downloadMap,
     deleteMap,
     checkMapStatus,
-    isInitializing
+    isInitializing,
+    downloadedMapFiles,
   };
 };
-
