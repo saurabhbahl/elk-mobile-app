@@ -86,7 +86,6 @@ export default function MapScreenWrapper() {
 function MapScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  console.log(windowWidth, windowHeight)
   const { poisData, mapSettingsData, brandData } = useAppContent();
   const waypoints = poisData || [];
 
@@ -1288,20 +1287,17 @@ function MapScreen() {
 
         {/* ── Download error overlay ── */}
         {showDownloadErrorOverlay && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              <MaterialIcons name="error-outline" size={48} color={colors.error} style={{ marginBottom: 20 }} />
-              <Text style={styles.modalTitle}>Download Failed</Text>
-              <Text style={styles.modalDescription}>
-                We couldn&apos;t download the offline map data. Please check your connection and try again.
-              </Text>
-              <TouchableOpacity style={styles.modalButtonPrimary} onPress={downloadMap}>
-                <Text style={styles.modalButtonTextPrimary}>Retry Download</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed', false)}>
-                <Text style={styles.modalButtonTextSecondary}>Continue with Online Map</Text>
-              </TouchableOpacity>
+          <View style={styles.errorToastContainer}>
+            <View style={styles.errorToastIcon}>
+              <MaterialIcons name="error-outline" size={24} color={colors.error} />
             </View>
+            <View style={styles.errorToastTextContent}>
+              <Text style={styles.errorToastTitle}>Something went wrong</Text>
+              <Text style={styles.errorToastDescription}>Map download failed. Online map active.</Text>
+            </View>
+            <TouchableOpacity onPress={() => saveConsent('dismissed', false)} style={styles.errorToastClose}>
+              <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -1582,6 +1578,58 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: colors.outline, justifyContent: 'center', alignItems: 'center' },
     checkboxChecked: { backgroundColor: brandPrimary, borderColor: brandPrimary },
     checkboxLabel: { fontFamily: fonts.caption, fontSize: 12, color: colors.onSurfaceVariant },
+
+    // Error Toast
+    errorToastContainer: {
+      position: 'absolute',
+      bottom: 40,
+      alignSelf: 'center',
+      width: '90%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 100, // Pill shape for modern look
+      padding: 12,
+      paddingRight: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + '40',
+      zIndex: 100,
+    },
+    errorToastIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.error + '26', // 15% opacity of error color
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorToastTextContent: {
+      flex: 1,
+    },
+    errorToastTitle: {
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 14,
+      color: colors.onSurface,
+      marginBottom: 2,
+    },
+    errorToastDescription: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.onSurfaceVariant,
+    },
+    errorToastClose: {
+      padding: 8,
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 20,
+    },
+
 
     // Arrival popup
     arrivalCard: {

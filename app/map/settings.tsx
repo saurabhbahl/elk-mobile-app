@@ -13,7 +13,7 @@ import { normalizeHex } from '../../utils/colorUtils';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
-  const { hasMap, isDownloading, downloadProgress, downloadMap, deleteMap, isInitializing } = useOfflineMap();
+  const { hasMap, isDownloading, downloadProgress, downloadMap, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
   const { theme, setTheme, colors, fonts, isDark } = useTheme();
   const { preloadAll, progress, isPreloading, cancelPreload } = useRoutePreloader();
   const [cachedCount, setCachedCount] = useState<number>(0);
@@ -83,7 +83,8 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top + 20 }]} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <ScrollView style={[styles.container, { paddingTop: insets.top + 20 }]} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>Configure your app</Text>
 
@@ -211,6 +212,23 @@ export default function SettingsScreen() {
 
       <View style={{ height: 120 + safeBottom }} />
     </ScrollView>
+
+    {/* ── Error Toast ── */}
+    {mbtilesError && (
+      <View style={styles.errorToastContainer}>
+        <View style={styles.errorToastIcon}>
+          <MaterialIcons name="error-outline" size={24} color={colors.error} />
+        </View>
+        <View style={styles.errorToastTextContent}>
+          <Text style={styles.errorToastTitle}>Something went wrong</Text>
+          <Text style={styles.errorToastDescription}>Map download failed.</Text>
+        </View>
+        <TouchableOpacity onPress={() => setMbtilesError(false)} style={styles.errorToastClose}>
+          <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+        </TouchableOpacity>
+      </View>
+    )}
+    </View>
   );
 }
 
@@ -363,5 +381,56 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       color: colors.error,
       fontFamily: fonts.bodyBold,
       fontSize: 15,
+    },
+    
+    // Error Toast
+    errorToastContainer: {
+      position: 'absolute',
+      bottom: 40,
+      alignSelf: 'center',
+      width: '90%',
+      maxWidth: 400,
+      backgroundColor: colors.surface,
+      borderRadius: 100, // Pill shape
+      padding: 12,
+      paddingRight: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 24,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + '40',
+      zIndex: 100,
+    },
+    errorToastIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.error + '26', // 15% opacity
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorToastTextContent: {
+      flex: 1,
+    },
+    errorToastTitle: {
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 14,
+      color: colors.onSurface,
+      marginBottom: 2,
+    },
+    errorToastDescription: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.onSurfaceVariant,
+    },
+    errorToastClose: {
+      padding: 8,
+      backgroundColor: colors.surfaceVariant,
+      borderRadius: 20,
     },
   });

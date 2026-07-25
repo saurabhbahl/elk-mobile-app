@@ -61,7 +61,7 @@ export const useOfflineMap = () => {
         const storedList = await AsyncStorage.getItem('@elk_downloaded_maps');
         if (storedList) {
           const filenames = JSON.parse(storedList);
-          if (Array.isArray(filenames) && filenames.length > 0) {
+          if (Array.isArray(filenames)) {
             expectedFiles = filenames.map((name: string) => ({ uri: docDir + name } as any));
           }
         }
@@ -137,10 +137,19 @@ export const useOfflineMap = () => {
       let filesToDownload = MBTILES_PATHS.map(f => ({ ...f, downloadUrl: `${BASE_URL}/${f.name}` }));
       try {
         const wpBase = BASE_URL.replace(/\/map-download\/?$/, '');
-        const listRes = await fetch(`${wpBase}/map-files`);
+        // Add a timestamp to bypass aggressive WordPress/Cloudflare REST API caching
+        const listRes = await fetch(`${wpBase}/map-files?t=${Date.now()}`);
         if (listRes.ok) {
           const remoteFiles = await listRes.json();
-          if (Array.isArray(remoteFiles) && remoteFiles.length > 0) {
+          if (Array.isArray(remoteFiles)) {
+            if (remoteFiles.length === 0) {
+              console.log('Server explicitly returned 0 maps. Going online-only mode.');
+              await AsyncStorage.setItem('@elk_downloaded_maps', '[]');
+              setHasMap(false);
+              setDownloadedMapFiles([]);
+              setIsDownloading(false);
+              return;
+            }
             filesToDownload = remoteFiles.map(rf => ({
               name: rf.filename,
               path: docDir.replace('file://', '') + rf.filename,
@@ -217,7 +226,7 @@ export const useOfflineMap = () => {
         throw new Error('Downloads finished but some files are still missing');
       }
     } catch (error) {
-      console.error('Error downloading maps:', error);
+      console.warn('Error downloading maps:', error);
       setMbtilesError(true);
       setDownloadProgress(0);
     } finally {
@@ -279,6 +288,7 @@ export const useOfflineMap = () => {
     saveConsent,
     downloadMap,
     deleteMap,
+    setMbtilesError,
     checkMapStatus,
     isInitializing,
     downloadedMapFiles,
