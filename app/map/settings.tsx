@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Platform, Switch } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LIGHT_COLORS, LIGHT_FONTS } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { useAppContent } from '../../contexts/AppContentContext';
 import { useOfflineMap } from '../../hooks/useOfflineMap';
 import { useRoutePreloader } from '../../hooks/useRoutePreloader';
-import { clearAllRoutes, getAllCachedRoutes } from '../../utils/routeDatabase';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
-import { LIGHT_COLORS, LIGHT_FONTS } from '../../constants/theme';
-import { useAppContent } from '../../contexts/AppContentContext';
 import { normalizeHex } from '../../utils/colorUtils';
+import { clearAllRoutes, getAllCachedRoutes } from '../../utils/routeDatabase';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -21,9 +21,9 @@ export default function SettingsScreen() {
 
   const { brandData } = useAppContent();
 
-  const brandPrimary = normalizeHex(brandData?.brand_color_primary, colors.primary);
-  const brandSecondary = normalizeHex(brandData?.brand_color__secondary, colors.secondary);
-  const styles = createStyles(colors, fonts, isDark, brandPrimary, brandSecondary);
+  const brandPrimary = normalizeHex(brandData?.brand_color_primary);
+  const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+  const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
   // Load cached route count on mount
   useEffect(() => {
@@ -84,155 +84,155 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
-      <ScrollView style={[styles.container, { paddingTop: insets.top + 20 }]} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Settings</Text>
-      <Text style={styles.subtitle}>Configure your app</Text>
+      <ScrollView style={[styles.container, { paddingTop: insets.top - 20 }]} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.subtitle}>Configure your app</Text>
 
-      {/* ── Theme Selection Section ────────────────────────────────────────── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <Text style={styles.sectionDescription}>
-          Choose between light and dark mode.
-        </Text>
+        {/* ── Theme Selection Section ────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          <Text style={styles.sectionDescription}>
+            Choose between light and dark mode.
+          </Text>
 
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleLabel}>
-            <MaterialIcons name={isDark ? 'nights-stay' : 'wb-sunny'} size={22} color={colors.onSurface} />
-            <Text style={styles.toggleText}>{isDark ? 'Dark Mode' : 'Light Mode'}</Text>
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleLabel}>
+              <MaterialIcons name={isDark ? 'nights-stay' : 'wb-sunny'} size={22} color={colors.onSurface} />
+              <Text style={styles.toggleText}>{isDark ? 'Dark Mode' : 'Light Mode'}</Text>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={(v) => setTheme(v ? 'dark' : 'light')}
+              trackColor={{ false: colors.surfaceContainerHigh, true: colors.primary }}
+              thumbColor={colors.onPrimary}
+            />
           </View>
-          <Switch
-            value={isDark}
-            onValueChange={(v) => setTheme(v ? 'dark' : 'light')}
-            trackColor={{ false: colors.surfaceContainerHigh, true: colors.primary }}
-            thumbColor={colors.onPrimary}
-          />
         </View>
-      </View>
 
-      {/* ── Offline Map Section ────────────────────────────────────────────── */}
-      <View style={[styles.section, { marginTop: 20 }]}>
-        <Text style={styles.sectionTitle}>Offline Map Data</Text>
-        <Text style={styles.sectionDescription}>
-          The offline map allows you to navigate the Elk Scenic Drive without cellular service.
-          It requires approximately 307MB of storage.
-        </Text>
+        {/* ── Offline Map Section ────────────────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <Text style={styles.sectionTitle}>Offline Map Data</Text>
+          <Text style={styles.sectionDescription}>
+            The offline map allows you to navigate the Elk Scenic Drive without cellular service.
+            It requires approximately 307MB of storage.
+          </Text>
 
-        {isInitializing ? (
-          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
-        ) : isDownloading ? (
-          <View style={styles.progressContainer}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.progressText}>
-              Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
-            </Text>
-          </View>
-        ) : hasMap ? (
-          <View style={styles.statusContainer}>
-            <View style={styles.statusRow}>
-              <MaterialIcons name="check-circle" size={20} color={isDark ? colors.primary : '#2e7d32'} />
-              <Text style={styles.statusText}>Map is downloaded and ready.</Text>
-            </View>
-            <TouchableOpacity style={styles.deleteButton} onPress={deleteMap}>
-              <Text style={styles.deleteButtonText}>Delete Offline Map</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.statusContainer}>
-            <View style={styles.statusRow}>
-              <MaterialIcons name="info" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.statusText}>Map is not downloaded.</Text>
-            </View>
-            <TouchableOpacity style={styles.downloadButton} onPress={downloadMap}>
-              <Text style={styles.downloadButtonText}>Download Map Now</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* ── Offline Routes Section ─────────────────────────────────────────── */}
-      <View style={[styles.section, { marginTop: 20 }]}>
-        <Text style={styles.sectionTitle}>Offline Routes</Text>
-        <Text style={styles.sectionDescription}>
-          Pre-download driving routes between all viewing areas. Routes are stored locally in the device database and persist across app restarts — you only need to do this once.
-        </Text>
-
-        {isPreloading ? (
-          <View style={styles.progressContainer}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
+          {isInitializing ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
+          ) : isDownloading ? (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.progressText}>
-                Caching routes... {progress.percentage}%
-              </Text>
-              <Text style={styles.progressSubtext}>
-                {progress.current} / {progress.total} pairs
+                Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
               </Text>
             </View>
-            <TouchableOpacity style={styles.cancelButton} onPress={cancelPreload}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.statusContainer}>
-            <View style={styles.statusRow}>
-              <MaterialIcons name="route" size={20} color={colors.primary} />
-              <Text style={styles.statusText}>
-                {cachedCount > 0
-                  ? `${cachedCount} routes cached`
-                  : 'No routes cached yet'}
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                style={[styles.downloadButton, { flex: 1 }]}
-                onPress={handlePreloadAll}
-              >
-                <MaterialIcons name="download" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
-                <Text style={styles.downloadButtonText}>Preload All</Text>
+          ) : hasMap ? (
+            <View style={styles.statusContainer}>
+              <View style={styles.statusRow}>
+                <MaterialIcons name="check-circle" size={20} color={isDark ? colors.primary : '#2e7d32'} />
+                <Text style={styles.statusText}>Map is downloaded and ready.</Text>
+              </View>
+              <TouchableOpacity style={styles.deleteButton} onPress={deleteMap}>
+                <Text style={styles.deleteButtonText}>Delete Offline Map</Text>
               </TouchableOpacity>
-              {cachedCount > 0 && (
-                <TouchableOpacity
-                  style={[styles.clearButton, isClearing && styles.clearButtonDisabled]}
-                  onPress={handleClearCache}
-                  disabled={isClearing}
-                >
-                  {isClearing ? (
-                    <ActivityIndicator size="small" color={colors.error} />
-                  ) : (
-                    <>
-                      <MaterialIcons name="delete-outline" size={18} color={colors.error} style={{ marginRight: 6 }} />
-                      <Text style={styles.clearButtonText}>Clear</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
             </View>
+          ) : (
+            <View style={styles.statusContainer}>
+              <View style={styles.statusRow}>
+                <MaterialIcons name="info" size={20} color={colors.onSurfaceVariant} />
+                <Text style={styles.statusText}>Map is not downloaded.</Text>
+              </View>
+              <TouchableOpacity style={styles.downloadButton} onPress={downloadMap}>
+                <Text style={styles.downloadButtonText}>Download Map Now</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        {/* ── Offline Routes Section ─────────────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <Text style={styles.sectionTitle}>Offline Routes</Text>
+          <Text style={styles.sectionDescription}>
+            Pre-download driving routes between all viewing areas. Routes are stored locally in the device database and persist across app restarts — you only need to do this once.
+          </Text>
+
+          {isPreloading ? (
+            <View style={styles.progressContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.progressText}>
+                  Caching routes... {progress.percentage}%
+                </Text>
+                <Text style={styles.progressSubtext}>
+                  {progress.current} / {progress.total} pairs
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.cancelButton} onPress={cancelPreload}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.statusContainer}>
+              <View style={styles.statusRow}>
+                <MaterialIcons name="route" size={20} color={colors.primary} />
+                <Text style={styles.statusText}>
+                  {cachedCount > 0
+                    ? `${cachedCount} routes cached`
+                    : 'No routes cached yet'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  style={[styles.downloadButton, { flex: 1 }]}
+                  onPress={handlePreloadAll}
+                >
+                  <MaterialIcons name="download" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
+                  <Text style={styles.downloadButtonText}>Preload All</Text>
+                </TouchableOpacity>
+                {cachedCount > 0 && (
+                  <TouchableOpacity
+                    style={[styles.clearButton, isClearing && styles.clearButtonDisabled]}
+                    onPress={handleClearCache}
+                    disabled={isClearing}
+                  >
+                    {isClearing ? (
+                      <ActivityIndicator size="small" color={colors.error} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="delete-outline" size={18} color={colors.error} style={{ marginRight: 6 }} />
+                        <Text style={styles.clearButtonText}>Clear</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={{ height: 120 + safeBottom }} />
+      </ScrollView>
+
+      {/* ── Error Toast ── */}
+      {mbtilesError && (
+        <View style={styles.errorToastContainer}>
+          <View style={styles.errorToastIcon}>
+            <MaterialIcons name="error-outline" size={24} color={colors.error} />
           </View>
-        )}
-      </View>
-
-      <View style={{ height: 120 + safeBottom }} />
-    </ScrollView>
-
-    {/* ── Error Toast ── */}
-    {mbtilesError && (
-      <View style={styles.errorToastContainer}>
-        <View style={styles.errorToastIcon}>
-          <MaterialIcons name="error-outline" size={24} color={colors.error} />
+          <View style={styles.errorToastTextContent}>
+            <Text style={styles.errorToastTitle}>Something went wrong</Text>
+            <Text style={styles.errorToastDescription}>Map download failed.</Text>
+          </View>
+          <TouchableOpacity onPress={() => setMbtilesError(false)} style={styles.errorToastClose}>
+            <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.errorToastTextContent}>
-          <Text style={styles.errorToastTitle}>Something went wrong</Text>
-          <Text style={styles.errorToastDescription}>Map download failed.</Text>
-        </View>
-        <TouchableOpacity onPress={() => setMbtilesError(false)} style={styles.errorToastClose}>
-          <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
-        </TouchableOpacity>
-      </View>
-    )}
+      )}
     </View>
   );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string, brandSecondary: string) =>
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string | undefined, brandSecondary: string | undefined) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -241,12 +241,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     title: {
       fontFamily: fonts.headingBold,
-      fontSize: 32,
+      fontSize: 20,
       color: brandPrimary,
     },
     subtitle: {
       fontFamily: fonts.body,
-      fontSize: 16,
+      fontSize: 13,
       color: colors.onSurfaceVariant,
       marginTop: 4,
       marginBottom: 32,
@@ -265,13 +265,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     sectionTitle: {
       fontFamily: fonts.headingBold,
-      fontSize: 20,
+      fontSize: 15,
       color: brandPrimary,
       marginBottom: 8,
     },
     sectionDescription: {
       fontFamily: fonts.body,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.onSurfaceVariant,
       lineHeight: 20,
       marginBottom: 20,
@@ -289,7 +289,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     toggleText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 16,
+      fontSize: 13,
       color: colors.onSurface,
     },
     statusContainer: {
@@ -303,7 +303,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     statusText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 14,
+      fontSize: 13,
       color: brandPrimary,
     },
     progressContainer: {
@@ -314,7 +314,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     progressText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 14,
+      fontSize: 13,
       color: brandPrimary,
     },
     downloadButton: {
@@ -329,7 +329,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     downloadButtonText: {
       color: colors.onPrimary,
       fontFamily: fonts.bodyBold,
-      fontSize: 15,
+      fontSize: 13,
     },
     deleteButton: {
       backgroundColor: colors.surfaceContainerLowest,
@@ -343,11 +343,11 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     deleteButtonText: {
       color: colors.error,
       fontFamily: fonts.bodyBold,
-      fontSize: 15,
+      fontSize: 13,
     },
     progressSubtext: {
       fontFamily: fonts.caption,
-      fontSize: 12,
+      fontSize: 11,
       color: colors.onSurfaceVariant,
       marginTop: 2,
     },
@@ -380,9 +380,9 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     clearButtonText: {
       color: colors.error,
       fontFamily: fonts.bodyBold,
-      fontSize: 15,
+      fontSize: 13,
     },
-    
+
     // Error Toast
     errorToastContainer: {
       position: 'absolute',
@@ -419,13 +419,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     errorToastTitle: {
       fontFamily: fonts.bodySemiBold,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.onSurface,
       marginBottom: 2,
     },
     errorToastDescription: {
       fontFamily: fonts.body,
-      fontSize: 12,
+      fontSize: 11,
       color: colors.onSurfaceVariant,
     },
     errorToastClose: {

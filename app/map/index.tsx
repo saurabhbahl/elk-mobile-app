@@ -96,8 +96,8 @@ function MapScreen() {
   }, []);
 
   const { colors, fonts, isDark, setTheme } = useTheme();
-  const brandPrimary = normalizeHex(brandData?.brand_color_primary, colors.primary);
-  const brandSecondary = normalizeHex(brandData?.brand_color__secondary, colors.secondary);
+  const brandPrimary = normalizeHex(brandData?.brand_color_primary);
+  const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
   // ── Map engine ──────────────────────────────────────────────────────────────
@@ -773,7 +773,7 @@ function MapScreen() {
   const renderWaypointCard = useCallback(({ item }: { item: Waypoint }) => (
     <View style={{ width: windowWidth, paddingHorizontal: 0 }}>
       <Pressable
-        style={[styles.hotspotCard, { height: 200 + insets.bottom, paddingBottom: insets.bottom + 12 }]}
+        style={[styles.hotspotCard, { paddingBottom: insets.bottom + 12 }]}
         onPress={(e) => e.stopPropagation()}
       >
         <View style={styles.cardHeaderRow}>
@@ -1105,7 +1105,6 @@ function MapScreen() {
           startPoint={startPoint}
           destinationPoint={destinationPoint}
           stopPoints={stopPoints}
-          waypoints={waypoints}
           location={location}
           isCalculatingRoute={isCalculatingRoute}
           pickerType={pickerType}
@@ -1262,23 +1261,29 @@ function MapScreen() {
         {/* ── Download consent overlay ── */}
         {showConsentOverlay && (
           <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              <View style={styles.modalIconContainer}>
+            <View style={[styles.modalCard, { width: windowWidth * 0.95, height: windowWidth * 0.82, padding: 24, justifyContent: 'center', maxWidth: '100%', marginTop: -120 }]}>
+              {/* Close Button */}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => saveConsent('dismissed', false)}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="close" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              {/* <View style={[styles.modalIconContainer, { marginBottom: 16, marginTop: 0 }]}>
                 <MaterialIcons name="download-for-offline" size={32} color={colors.inversePrimary} />
-              </View>
-              <Text style={styles.modalTitle}>Explore Without Limits</Text>
-              <Text style={styles.modalDescription}>
+              </View> */}
+              <Text style={[styles.modalTitle, { fontSize: 22, fontFamily: fonts.bodyBold, marginBottom: 12 }]}>Explore Without Limits</Text>
+              <Text style={[styles.modalDescription, { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 }]}>
                 Cellular signal is weak in Elk Country. Download this region now to ensure navigation and safety features work offline.
               </Text>
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  style={styles.modalButtonPrimary}
+                  style={[styles.modalButtonPrimary, { height: 44, width: '85%', alignSelf: 'center' }]}
                   onPress={() => { saveConsent('yes'); downloadMap(); }}
                 >
-                  <Text style={styles.modalButtonTextPrimary}>Download Offline Map</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalButtonSecondary} onPress={() => saveConsent('dismissed', false)}>
-                  <Text style={styles.modalButtonTextSecondary}>Maybe Later</Text>
+                  <Text style={[styles.modalButtonTextPrimary, { fontSize: 14, fontFamily: fonts.bodyBold }]}>Download Offline Map</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1306,7 +1311,7 @@ function MapScreen() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string, brandSecondary: string) =>
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string | undefined, brandSecondary: string | undefined) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface },
@@ -1401,7 +1406,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       backgroundColor: isDark ? colors.surface : '#FFFFFF',
       borderRadius: 0,
       padding: 20,
-      height: 200,
       borderWidth: 1,
       borderColor: colors.outlineVariant + '33',
       shadowColor: '#000',
@@ -1424,7 +1428,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     hotspotTitle: {
       fontFamily: fonts.bodyBold,
-      fontSize: 16,
+      fontSize: 14,
       color: isDark ? colors.onSurface : '#000000',
       flex: 1,
     },
@@ -1438,9 +1442,9 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     hotspotDescription: {
       fontFamily: fonts.body,
-      fontSize: 14,
+      fontSize: 12,
       color: isDark ? colors.onSurfaceVariant : '#333333',
-      lineHeight: 20,
+      lineHeight: 18,
       marginBottom: 16,
     },
     cardFooterRow: {
@@ -1456,7 +1460,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     viewMoreButtonText: {
       fontFamily: fonts.bodyBold,
-      fontSize: 14,
+      fontSize: 12,
       color: isDark ? colors.onSurface : '#000000',
     },
 
@@ -1564,9 +1568,43 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     waypointText: { color: colors.onPrimary, fontSize: 12, fontWeight: 'bold' },
 
     // Modals
-    modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(6, 27, 14, 0.2)', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: 24 },
-    modalCard: { width: '100%', maxWidth: 360, backgroundColor: colors.surface + 'f2', borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant + '33', shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.2, shadowRadius: 32, elevation: 12 },
-    modalIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primaryContainer, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+    // Modals
+    modalOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0, 0, 0, 0.65)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 100,
+    },
+    modalCard: {
+      width: '95%',
+      maxWidth: 400,
+      backgroundColor: colors.surface + 'f2',
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: '#CCCCCC',
+      overflow: 'hidden',
+      padding: 32,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.2,
+      shadowRadius: 32,
+      elevation: 12,
+    },
+    closeButton: {
+      position: "absolute",
+      top: 14,
+      right: 14,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: "#000000",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 10,
+    },
+    modalIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primaryContainer, justifyContent: 'center', alignItems: 'center', marginBottom: 24, marginTop: 12 },
     modalTitle: { fontFamily: fonts.headingBold, fontSize: 32, color: brandPrimary, textAlign: 'center', marginBottom: 16 },
     modalDescription: { fontFamily: fonts.body, fontSize: 16, color: colors.onSurfaceVariant, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 8 },
     modalActions: { width: '100%', gap: 12 },

@@ -10,14 +10,17 @@ import Navbar from "../../components/Navbar";
 import QuickLinks from "../../components/QuickLinks";
 import { useTheme } from "../../context/ThemeContext";
 import { useAppContent } from "../../contexts/AppContentContext";
+import { normalizeHex } from "../../utils/colorUtils";
 
 const { width: windowWidth } = Dimensions.get("window");
-
 
 export default function WaypointDetailsScreen() {
     const { id } = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
-    const { poisData } = useAppContent();
+    const { poisData, brandData } = useAppContent();
+    const brandPrimary = normalizeHex(brandData?.brand_color_primary);
+    const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+    
     const waypoints = poisData || [];
 
     const waypoint = useMemo(() => {
@@ -39,7 +42,7 @@ export default function WaypointDetailsScreen() {
                 <View style={styles.errorContainer}>
                     <MaterialIcons name="error-outline" size={48} color={colors.error} />
                     <Text style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</Text>
-                    <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
+                    <TouchableOpacity style={[styles.backButton, { backgroundColor: brandPrimary || colors.primary }]} onPress={() => router.back()}>
                         <Text style={[styles.backButtonText, { color: colors.onPrimary, fontFamily: fonts.bodyBold }]}>Go Back</Text>
                     </TouchableOpacity>
                 </View>
@@ -61,7 +64,7 @@ export default function WaypointDetailsScreen() {
                         style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                         contentFit="contain"
                     />
-                    <Text style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : '#000' }]}>
+                    <Text style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '#000') }]}>
                         {waypoint.title}
                     </Text>
                 </View>
@@ -97,8 +100,8 @@ export default function WaypointDetailsScreen() {
                             </Text>
                         </View>
                     ) : <View style={styles.addressContainer} />}
-                    <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.8}>
-                        <Text style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }]}>
+                    <TouchableOpacity style={[styles.getDirectionsButton, brandPrimary ? { backgroundColor: brandPrimary } : {}]} onPress={handleGetDirections} activeOpacity={0.8}>
+                        <Text style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }, brandSecondary ? { color: brandSecondary } : {}]}>
                             Get Directions
                         </Text>
                     </TouchableOpacity>
@@ -113,7 +116,7 @@ export default function WaypointDetailsScreen() {
                                 style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                 contentFit="contain"
                             />
-                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 13, color: isDark ? '#fff' : '#000' }]}>
+                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
                                 Handicap Accessible
                             </Text>
                         </View>
@@ -125,7 +128,7 @@ export default function WaypointDetailsScreen() {
                                 style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                 contentFit="contain"
                             />
-                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 13, color: isDark ? '#fff' : '#000' }]}>
+                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
                                 Open Year Round
                             </Text>
                         </View>
@@ -139,8 +142,8 @@ export default function WaypointDetailsScreen() {
                         source={{ html: waypoint.full_description || waypoint.description }}
                         baseStyle={{
                             fontFamily: fonts.body,
-                            fontSize: 16,
-                            lineHeight: 24,
+                            fontSize: 13,
+                            lineHeight: 20,
                             color: isDark ? colors.onSurfaceVariant : "#000000",
                             marginBottom: 16
                         }}
@@ -158,9 +161,9 @@ export default function WaypointDetailsScreen() {
                                 source={{ html: waypoint.seasonal_notes }}
                                 baseStyle={{
                                     fontFamily: fonts.bodyMedium,
-                                    fontSize: 14,
+                                    fontSize: 12,
                                     color: isDark ? colors.onSurface : '#000',
-                                    lineHeight: 20
+                                    lineHeight: 18
                                 }}
                                 tagsStyles={{ p: { margin: 0, padding: 0 } }}
                             />
@@ -204,7 +207,7 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     titleText: {
-        fontSize: 22,
+        fontSize: 18,
         color: "#000000",
         flex: 1,
     },
@@ -279,9 +282,9 @@ const styles = StyleSheet.create({
         marginRight: 16,
     },
     addressText: {
-        fontSize: 15,
+        fontSize: 13,
         color: "#000000",
-        lineHeight: 20,
+        lineHeight: 18,
     },
     getDirectionsButton: {
         backgroundColor: "#ECEEED",
@@ -295,7 +298,7 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     getDirectionsButtonText: {
-        fontSize: 14,
+        fontSize: 13,
         color: "#000000",
     },
     badgesSection: {
@@ -312,12 +315,12 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     badgeText: {
-        fontSize: 14,
+        fontSize: 11,
         color: "#000000",
     },
     descriptionText: {
-        fontSize: 16,
-        lineHeight: 24,
+        fontSize: 13,
+        lineHeight: 20,
     },
     cautionContainer: {
         flexDirection: 'row',
@@ -328,9 +331,9 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     cautionText: {
-        fontSize: 14,
+        fontSize: 12,
         flex: 1,
-        lineHeight: 20,
+        lineHeight: 18,
     },
     externalLinkButton: {
         flexDirection: 'row',
@@ -341,7 +344,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     externalLinkText: {
-        fontSize: 15,
+        fontSize: 13,
     },
     errorContainer: {
         flex: 1,
@@ -350,7 +353,7 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     errorText: {
-        fontSize: 18,
+        fontSize: 15,
         marginTop: 16,
         marginBottom: 24,
     },
@@ -360,6 +363,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     backButtonText: {
-        fontSize: 16,
+        fontSize: 13,
     },
 });
