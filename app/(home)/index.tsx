@@ -15,8 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 import { useIsFocused } from '@react-navigation/native';
 
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import WireframePlaceholder from "@/components/WireframePlaceholder";
 
 // Get screen dimensions for dynamic calculations
@@ -46,10 +44,10 @@ export default function HomeScreen() {
     }, [isFocused, popupData]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
+            
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Unified QuickLinks and Welcome Section Wrapper */}
@@ -57,7 +55,7 @@ export default function HomeScreen() {
                     {/* Background Block covering QuickLinks, Title, and 75% of the banner height (banner is 160px, so bottom 40 leaves 75% coverage) */}
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 40, backgroundColor: primaryColor }} />
 
-                    <QuickLinks />
+                    
 
                     {/* Welcome Message */}
                     {homeData?.hero_welcome_heading ? (

@@ -14,8 +14,6 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -61,12 +59,12 @@ export default function VisitorsCenterScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
+            
             <View style={{ backgroundColor: bgColor }}>
-                <QuickLinks />
+                
             </View>
 
             {apiStatus === "fetching" ? (

@@ -12,8 +12,6 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import WireframePlaceholder from "@/components/WireframePlaceholder";
 import { useAppContent } from "@/contexts/AppContentContext";
 
@@ -36,10 +34,10 @@ export default function ProgramDetailScreen() {
 
     if (apiStatus === "fetching") {
         return (
-            <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+            <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                <Navbar />
-                <QuickLinks />
+                
+                
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -49,10 +47,10 @@ export default function ProgramDetailScreen() {
 
     if (!program) {
         return (
-            <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+            <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                <Navbar />
-                <QuickLinks />
+                
+                
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Program not found.</AppText>
                     <TouchableOpacity
@@ -69,13 +67,11 @@ export default function ProgramDetailScreen() {
     const rawDescription = program.full_description || "";
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
-            <View style={{ backgroundColor: primaryColor }}>
-                <QuickLinks />
-            </View>
+            
+            
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}

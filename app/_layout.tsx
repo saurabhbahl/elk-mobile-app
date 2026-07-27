@@ -1,9 +1,14 @@
+import { Lexend_500Medium } from '@expo-google-fonts/lexend';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, usePathname, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { Lexend_500Medium } from '@expo-google-fonts/lexend';
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import Navbar from "@/components/Navbar";
+import QuickLinks from "@/components/QuickLinks";
+import { useAppContent } from "@/contexts/AppContentContext";
 
 import {
   EBGaramond_500Medium,
@@ -113,102 +118,105 @@ export default function RootLayout() {
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
-              <Stack>
-                <Stack.Screen
-                  name="index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="(home)"
-                  options={{ headerShown: false }}
-                />
-
-
-
-                <Stack.Screen
-                  name="programs/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="programs/[id]"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="events/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="events/[id]"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="trails/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="rentals/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="plan-trip/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="map/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="map/[id]"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="visitors/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="cameras/index"
-                  options={{ headerShown: false }}
-                />
-
-                <Stack.Screen
-                  name="modal"
-                  options={{
-                    presentation: "modal",
-                    title: "Modal",
-                  }}
-                />
-                <Stack.Screen
-                  name="tips/index"
-                  options={{ headerShown: false }}
-                />
-
-
-
-                {/* Your test screen */}
-                <Stack.Screen
-                  name="(api)/dummy"
-                  options={{
-                    title: "Movies",
-                  }}
-                />
-              </Stack>
-
+              <RootLayoutContent
+                colorScheme={colorScheme}
+                isNavigating={isNavigating}
+              />
               <StatusBar style="auto" />
             </ThemeProvider>
           </NavigationModeContext.Provider>
         </MapResetContext.Provider>
       </CustomThemeProvider>
     </AppContentProvider>
+  );
+}
+
+function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, isNavigating: boolean }) {
+  const { brandData } = useAppContent();
+  const pathname = usePathname();
+  const segments = useSegments();
+  const primaryColor = brandData?.brand_color_primary || "#007AFF";
+
+  // Hide headers on splash (index) and modal routes
+  const isSplash = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
+  const isModal = pathname === '/modal';
+  const shouldShowHeader = !isSplash && !isModal && !isNavigating;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colorScheme === "dark" ? "#121212" : "#F8F9FA" }}>
+      {shouldShowHeader && (
+        <SafeAreaView style={{ backgroundColor: "#FFFFFF" }} edges={['top', 'left', 'right']}>
+          <Navbar />
+          <View style={{ backgroundColor: primaryColor }}>
+            <QuickLinks />
+          </View>
+        </SafeAreaView>
+      )}
+      <Stack>
+        <Stack.Screen
+          name="index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="(home)"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="programs/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="programs/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="events/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="events/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="trails/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="rentals/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="plan-trip/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="map/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="map/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="visitors/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="cameras/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+        <Stack.Screen
+          name="modal"
+          options={{
+            presentation: "modal",
+            title: "Modal",
+          }}
+        />
+        <Stack.Screen
+          name="tips/index"
+          options={{ headerShown: false, animation: 'none' }}
+        />
+      </Stack>
+    </View>
   );
 }

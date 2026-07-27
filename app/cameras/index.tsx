@@ -14,8 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
 import { STREAM_TYPES } from "@/constants/streamTypes";
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { useNetInfo } from "@react-native-community/netinfo";
 
@@ -151,12 +149,12 @@ export default function LiveCameraScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
+            
             <View style={{ backgroundColor: bgColor }}>
-                <QuickLinks />
+                
             </View>
 
             {apiStatus === "fetching" ? (

@@ -7,8 +7,6 @@ import { Dimensions, Linking, ScrollView, StyleSheet, TouchableOpacity, View } f
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import Navbar from "../../components/Navbar";
-import QuickLinks from "../../components/QuickLinks";
 import { useTheme } from "../../context/ThemeContext";
 import { useAppContent } from "../../contexts/AppContentContext";
 import { normalizeHex } from "../../utils/colorUtils";
@@ -38,8 +36,8 @@ export default function WaypointDetailsScreen() {
 
     if (!waypoint) {
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
-                <Navbar />
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+                
                 <View style={styles.errorContainer}>
                     <MaterialIcons name="error-outline" size={48} color={colors.error} />
                     <AppText style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</AppText>
@@ -53,9 +51,9 @@ export default function WaypointDetailsScreen() {
 
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
-            <Navbar />
-            <QuickLinks />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+            
+            
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Title */}

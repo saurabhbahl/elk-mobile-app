@@ -11,8 +11,6 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import WireframePlaceholder from "@/components/WireframePlaceholder";
 import { useAppContent } from "@/contexts/AppContentContext";
 
@@ -62,13 +60,11 @@ export default function ProgramsScreen() {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
-            <View style={{ backgroundColor: primaryColor }}>
-                <QuickLinks />
-            </View>
+            
+            
 
             {programsSettingData?.screen_title ? (
                 <View style={styles.headerRow}>

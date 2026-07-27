@@ -40,10 +40,8 @@ import { useTheme } from '../../context/ThemeContext';
 
 // Components
 import { MapRouteLayers } from '../../components/MapRouteLayers';
-import Navbar from '../../components/Navbar';
 import { NavigationHeader } from '../../components/NavigationHeader';
 import { NavigationOverlay } from '../../components/NavigationOverlay';
-import QuickLinks from '../../components/QuickLinks';
 import { RoutePlanner } from '../../components/RoutePlanner';
 
 // Data & utils
@@ -805,10 +803,7 @@ function MapScreen() {
   if (!mapComponents && !isExpoGo) {
     return (
       <View style={styles.container}>
-        <SafeAreaView style={styles.topHeaderContainer} edges={['top', 'left', 'right']}>
-          <Navbar />
-          <QuickLinks />
-        </SafeAreaView>
+        
         <View style={{ flex: 1, backgroundColor: colors.surface }} />
       </View>
     );
@@ -857,13 +852,6 @@ function MapScreen() {
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {!isNavigating && (
-        <SafeAreaView style={styles.topHeaderContainer} edges={['top', 'left', 'right']}>
-          <Navbar />
-          <QuickLinks />
-        </SafeAreaView>
-      )}
-
       <View style={styles.mapContainer}>
         <Map
           ref={mapRef}

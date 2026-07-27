@@ -14,8 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import RenderHTML from 'react-native-render-html';
 
-import Navbar from "@/components/Navbar";
-import QuickLinks from "@/components/QuickLinks";
 import WireframePlaceholder from "@/components/WireframePlaceholder";
 import { useAppContent } from "@/contexts/AppContentContext";
 
@@ -38,10 +36,10 @@ export default function EventDetailScreen() {
 
     if (apiStatus === "fetching") {
         return (
-            <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+            <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                <Navbar />
-                <QuickLinks />
+                
+                
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -51,10 +49,10 @@ export default function EventDetailScreen() {
 
     if (!event) {
         return (
-            <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+            <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                <Navbar />
-                <QuickLinks />
+                
+                
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Event not found.</AppText>
                     <TouchableOpacity
@@ -84,13 +82,11 @@ export default function EventDetailScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Navbar />
-            <View style={{ backgroundColor: primaryColor }}>
-                <QuickLinks />
-            </View>
+            
+            
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}
