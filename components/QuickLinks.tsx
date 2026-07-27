@@ -3,6 +3,7 @@ import { useAppContent } from "@/contexts/AppContentContext";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
 import WireframePlaceholder from "./WireframePlaceholder";
 
 export default function QuickLinks() {
@@ -20,7 +21,16 @@ export default function QuickLinks() {
                         activeOpacity={0.8}
                         onPress={() => router.push(item.nav_link.url as any)}
                     >
-                        <WireframePlaceholder style={styles.menuCardImage} />
+                        {item.nav_image ? (
+                            <Image 
+                                source={{ uri: typeof item.nav_image === 'string' ? item.nav_image : item.nav_image?.url }} 
+                                style={styles.menuCardImage} 
+                                contentFit="cover" 
+                                transition={200}
+                            />
+                        ) : (
+                            <WireframePlaceholder style={styles.menuCardImage} />
+                        )}
                         <View style={styles.menuCardTitleContainer}>
                             <AppText style={styles.menuCardTitle} numberOfLines={1}>{item.nav_item_label}</AppText>
                         </View>
