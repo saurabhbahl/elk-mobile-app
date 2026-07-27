@@ -1,17 +1,15 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     Linking,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import RenderHTML from 'react-native-render-html';
@@ -58,12 +56,12 @@ export default function EventDetailScreen() {
                 <Navbar />
                 <QuickLinks />
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Event not found.</Text>
+                    <AppText style={styles.errorText}>Event not found.</AppText>
                     <TouchableOpacity
                         style={[styles.backTextButton, { backgroundColor: primaryColor }]}
                         onPress={() => router.back()}
                     >
-                        <Text style={styles.backTextButtonText}>Go Back</Text>
+                        <AppText style={styles.backTextButtonText}>Go Back</AppText>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -98,9 +96,9 @@ export default function EventDetailScreen() {
                 {/* Heading Row */}
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
                         {event.event_name || "Event Details"}
-                    </Text>
+                    </AppText>
                 </View>
 
                 {/* Banner Image */}
@@ -121,10 +119,10 @@ export default function EventDetailScreen() {
                     {/* Date & Time */}
                     <View style={styles.infoRow}>
                         <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
-                        <Text style={styles.scheduleText}>
+                        <AppText style={styles.scheduleText}>
                             {event["start_date_&_time"] || "No Date Scheduled"}
                             {event["end_date_&_time"] ? ` - ${event["end_date_&_time"]}` : ""}
-                        </Text>
+                        </AppText>
                     </View>
 
                     {/* Location */}
@@ -133,10 +131,10 @@ export default function EventDetailScreen() {
                             <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
                             <View>
                                 {event.location_name && (
-                                    <Text style={styles.locationNameText}>{event.location_name}</Text>
+                                    <AppText style={styles.locationNameText}>{event.location_name}</AppText>
                                 )}
                                 {event.location_address && (
-                                    <Text style={styles.locationAddressText}>{event.location_address}</Text>
+                                    <AppText style={styles.locationAddressText}>{event.location_address}</AppText>
                                 )}
                             </View>
                         </View>
@@ -167,9 +165,9 @@ export default function EventDetailScreen() {
                             onPress={handleRegister}
                             activeOpacity={0.8}
                         >
-                            <Text style={[styles.registerButtonText, { color: secondaryColor || "#FFFFFF" }]}>
+                            <AppText style={[styles.registerButtonText, { color: secondaryColor || "#FFFFFF" }]}>
                                 Register / Buy Tickets
-                            </Text>
+                            </AppText>
                         </TouchableOpacity>
                     )}
                 </View>

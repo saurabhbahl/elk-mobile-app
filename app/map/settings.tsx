@@ -1,6 +1,7 @@
+import AppText from "@/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -85,20 +86,20 @@ export default function SettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView style={[styles.container, { paddingTop: insets.top - 20 }]} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Configure your app</Text>
+        <AppText style={styles.title}>Settings</AppText>
+        <AppText style={styles.subtitle}>Configure your app</AppText>
 
         {/* ── Theme Selection Section ────────────────────────────────────────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-          <Text style={styles.sectionDescription}>
+          <AppText style={styles.sectionTitle}>Appearance</AppText>
+          <AppText style={styles.sectionDescription}>
             Choose between light and dark mode.
-          </Text>
+          </AppText>
 
           <View style={styles.toggleRow}>
             <View style={styles.toggleLabel}>
               <MaterialIcons name={isDark ? 'nights-stay' : 'wb-sunny'} size={22} color={colors.onSurface} />
-              <Text style={styles.toggleText}>{isDark ? 'Dark Mode' : 'Light Mode'}</Text>
+              <AppText style={styles.toggleText}>{isDark ? 'Dark Mode' : 'Light Mode'}</AppText>
             </View>
             <Switch
               value={isDark}
@@ -111,39 +112,39 @@ export default function SettingsScreen() {
 
         {/* ── Offline Map Section ────────────────────────────────────────────── */}
         <View style={[styles.section, { marginTop: 20 }]}>
-          <Text style={styles.sectionTitle}>Offline Map Data</Text>
-          <Text style={styles.sectionDescription}>
+          <AppText style={styles.sectionTitle}>Offline Map Data</AppText>
+          <AppText style={styles.sectionDescription}>
             The offline map allows you to navigate the Elk Scenic Drive without cellular service.
             It requires approximately 307MB of storage.
-          </Text>
+          </AppText>
 
           {isInitializing ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
           ) : isDownloading ? (
             <View style={styles.progressContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.progressText}>
+              <AppText style={styles.progressText}>
                 Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
-              </Text>
+              </AppText>
             </View>
           ) : hasMap ? (
             <View style={styles.statusContainer}>
               <View style={styles.statusRow}>
                 <MaterialIcons name="check-circle" size={20} color={isDark ? colors.primary : '#2e7d32'} />
-                <Text style={styles.statusText}>Map is downloaded and ready.</Text>
+                <AppText style={styles.statusText}>Map is downloaded and ready.</AppText>
               </View>
               <TouchableOpacity style={styles.deleteButton} onPress={deleteMap}>
-                <Text style={styles.deleteButtonText}>Delete Offline Map</Text>
+                <AppText style={styles.deleteButtonText}>Delete Offline Map</AppText>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.statusContainer}>
               <View style={styles.statusRow}>
                 <MaterialIcons name="info" size={20} color={colors.onSurfaceVariant} />
-                <Text style={styles.statusText}>Map is not downloaded.</Text>
+                <AppText style={styles.statusText}>Map is not downloaded.</AppText>
               </View>
               <TouchableOpacity style={styles.downloadButton} onPress={downloadMap}>
-                <Text style={styles.downloadButtonText}>Download Map Now</Text>
+                <AppText style={styles.downloadButtonText}>Download Map Now</AppText>
               </TouchableOpacity>
             </View>
           )}
@@ -151,35 +152,35 @@ export default function SettingsScreen() {
 
         {/* ── Offline Routes Section ─────────────────────────────────────────── */}
         <View style={[styles.section, { marginTop: 20 }]}>
-          <Text style={styles.sectionTitle}>Offline Routes</Text>
-          <Text style={styles.sectionDescription}>
+          <AppText style={styles.sectionTitle}>Offline Routes</AppText>
+          <AppText style={styles.sectionDescription}>
             Pre-download driving routes between all viewing areas. Routes are stored locally in the device database and persist across app restarts — you only need to do this once.
-          </Text>
+          </AppText>
 
           {isPreloading ? (
             <View style={styles.progressContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
               <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.progressText}>
+                <AppText style={styles.progressText}>
                   Caching routes... {progress.percentage}%
-                </Text>
-                <Text style={styles.progressSubtext}>
+                </AppText>
+                <AppText style={styles.progressSubtext}>
                   {progress.current} / {progress.total} pairs
-                </Text>
+                </AppText>
               </View>
               <TouchableOpacity style={styles.cancelButton} onPress={cancelPreload}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <AppText style={styles.cancelButtonText}>Cancel</AppText>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.statusContainer}>
               <View style={styles.statusRow}>
                 <MaterialIcons name="route" size={20} color={colors.primary} />
-                <Text style={styles.statusText}>
+                <AppText style={styles.statusText}>
                   {cachedCount > 0
                     ? `${cachedCount} routes cached`
                     : 'No routes cached yet'}
-                </Text>
+                </AppText>
               </View>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity
@@ -187,7 +188,7 @@ export default function SettingsScreen() {
                   onPress={handlePreloadAll}
                 >
                   <MaterialIcons name="download" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
-                  <Text style={styles.downloadButtonText}>Preload All</Text>
+                  <AppText style={styles.downloadButtonText}>Preload All</AppText>
                 </TouchableOpacity>
                 {cachedCount > 0 && (
                   <TouchableOpacity
@@ -200,7 +201,7 @@ export default function SettingsScreen() {
                     ) : (
                       <>
                         <MaterialIcons name="delete-outline" size={18} color={colors.error} style={{ marginRight: 6 }} />
-                        <Text style={styles.clearButtonText}>Clear</Text>
+                        <AppText style={styles.clearButtonText}>Clear</AppText>
                       </>
                     )}
                   </TouchableOpacity>
@@ -220,8 +221,8 @@ export default function SettingsScreen() {
             <MaterialIcons name="error-outline" size={24} color={colors.error} />
           </View>
           <View style={styles.errorToastTextContent}>
-            <Text style={styles.errorToastTitle}>Something went wrong</Text>
-            <Text style={styles.errorToastDescription}>Map download failed.</Text>
+            <AppText style={styles.errorToastTitle}>Something went wrong</AppText>
+            <AppText style={styles.errorToastDescription}>Map download failed.</AppText>
           </View>
           <TouchableOpacity onPress={() => setMbtilesError(false)} style={styles.errorToastClose}>
             <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />

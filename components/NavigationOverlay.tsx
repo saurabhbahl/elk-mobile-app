@@ -1,13 +1,11 @@
+import AppText from "@/components/AppText";
 import React from 'react';
-import {
-  Animated,
+import { Animated,
   PanResponder,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
-  Platform,
-} from 'react-native';
+  Platform } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -120,12 +118,12 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
             <MaterialIcons name={iconName} size={34} color={isDark ? colors.onPrimary : 'white'} />
           </View>
           <View style={styles.instructionTextBox}>
-            <Text style={styles.instructionDistance}>
+            <AppText style={styles.instructionDistance}>
               {nextInstruction.distance}
-            </Text>
-            <Text style={styles.instructionText} numberOfLines={2}>
+            </AppText>
+            <AppText style={styles.instructionText} numberOfLines={2}>
               {nextInstruction.text}
-            </Text>
+            </AppText>
           </View>
         </View>
       </View>
@@ -167,40 +165,40 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
                 size={16}
                 color={colors.onSurfaceVariant}
               />
-              <Text style={styles.destinationText} numberOfLines={1}>
+              <AppText style={styles.destinationText} numberOfLines={1}>
                 {destinationTitle}
-              </Text>
+              </AppText>
             </View>
           ) : null}
 
           {/* Stats row */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>TIME</Text>
-              <Text style={styles.statValue}>
+              <AppText style={styles.statLabel}>TIME</AppText>
+              <AppText style={styles.statValue}>
                 {timePart || '0'}
-                <Text style={styles.statUnit}> {timeUnit || 'min'}</Text>
-              </Text>
+                <AppText style={styles.statUnit}> {timeUnit || 'min'}</AppText>
+              </AppText>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>DISTANCE</Text>
-              <Text style={styles.statValue}>
+              <AppText style={styles.statLabel}>DISTANCE</AppText>
+              <AppText style={styles.statValue}>
                 {distPart || '0.0'}
-                <Text style={styles.statUnit}> {distUnit || 'mi'}</Text>
-              </Text>
+                <AppText style={styles.statUnit}> {distUnit || 'mi'}</AppText>
+              </AppText>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>ARRIVAL</Text>
-              <Text style={styles.statValue}>{arrivalTime || '--:--'}</Text>
+              <AppText style={styles.statLabel}>ARRIVAL</AppText>
+              <AppText style={styles.statValue}>{arrivalTime || '--:--'}</AppText>
             </View>
           </View>
 
           {/* Exit button */}
           <TouchableOpacity onPress={onExit} style={styles.exitButton}>
             <MaterialIcons name="close" size={18} color={colors.onError} />
-            <Text style={styles.exitButtonText}>End Navigation</Text>
+            <AppText style={styles.exitButtonText}>End Navigation</AppText>
           </TouchableOpacity>
         </Animated.View>
       </View>

@@ -1,16 +1,14 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -69,9 +67,9 @@ export default function PlanTripScreen() {
             {title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -116,7 +114,7 @@ export default function PlanTripScreen() {
                                         {iconUrl ? (
                                             <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
                                         ) : null}
-                                        <Text style={styles.sectionHeading}>{sec.section_heading || "Trip Section"}</Text>
+                                        <AppText style={styles.sectionHeading}>{sec.section_heading || "Trip Section"}</AppText>
                                     </View>
                                     {sec.section_body ? (
                                         <RenderHTML
@@ -134,7 +132,7 @@ export default function PlanTripScreen() {
                             );
                         })
                     ) : (
-                        <Text style={styles.emptyText}>Trip planning info coming soon.</Text>
+                        <AppText style={styles.emptyText}>Trip planning info coming soon.</AppText>
                     )}
                 </ScrollView>
             )}

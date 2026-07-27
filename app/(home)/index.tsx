@@ -1,18 +1,16 @@
+import AppText from "@/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     Modal,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 import { useIsFocused } from '@react-navigation/native';
@@ -63,9 +61,9 @@ export default function HomeScreen() {
 
                     {/* Welcome Message */}
                     {homeData?.hero_welcome_heading ? (
-                        <Text style={[styles.welcomeTitle, { color: secondaryColor }]}>
+                        <AppText style={[styles.welcomeTitle, { color: secondaryColor }]}>
                             {homeData.hero_welcome_heading}
-                        </Text>
+                        </AppText>
                     ) : null}
 
                     {/* Welcome Banner */}
@@ -91,18 +89,18 @@ export default function HomeScreen() {
                 {/* Read More Button */}
                 {homeData?.hero_cta_button_label ? (
                     <TouchableOpacity style={[styles.readMoreButton, { backgroundColor: primaryColor }]} activeOpacity={0.8}>
-                        <Text style={[styles.readMoreButtonText, { color: secondaryColor }]}>{homeData.hero_cta_button_label}</Text>
+                        <AppText style={[styles.readMoreButtonText, { color: secondaryColor }]}>{homeData.hero_cta_button_label}</AppText>
                     </TouchableOpacity>
                 ) : null}
 
                 {/* Find Your Next Adventure Section */}
-                <Text style={[styles.sectionHeader, { color: primaryColor }]}>Find your next adventure</Text>
+                <AppText style={[styles.sectionHeader, { color: primaryColor }]}>Find your next adventure</AppText>
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.subSectionTitleRow}>
                         <Ionicons name="map-outline" size={18} color="#333333" />
-                        <Text style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.map_block_heading}</Text>
+                        <AppText style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.map_block_heading}</AppText>
                     </View>
                 ) : null}
 
@@ -116,7 +114,7 @@ export default function HomeScreen() {
                                     activeOpacity={0.9}
                                     onPress={() => router.push("/map" as any)}
                                 >
-                                    <Text style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</Text>
+                                    <AppText style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</AppText>
                                 </TouchableOpacity>
                             ) : null}
                         </ImageBackground>
@@ -129,7 +127,7 @@ export default function HomeScreen() {
                         {homeData?.programs_block_heading ? (
                             <View style={styles.subSectionTitleRow}>
                                 <Ionicons name="calendar-outline" size={18} color="#333333" />
-                                <Text style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.programs_block_heading}</Text>
+                                <AppText style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.programs_block_heading}</AppText>
                             </View>
                         ) : null}
 
@@ -152,8 +150,8 @@ export default function HomeScreen() {
                                         <WireframePlaceholder style={styles.programCardImage} />
                                     )}
                                     <View style={styles.programCardContent}>
-                                        <Text style={styles.programCardName} numberOfLines={1}>{program.program_name || "Program Name"}</Text>
-                                        <Text style={styles.programCardDate}>{program.schedule__dates || "No Date"}</Text>
+                                        <AppText style={styles.programCardName} numberOfLines={1}>{program.program_name || "Program Name"}</AppText>
+                                        <AppText style={styles.programCardDate}>{program.schedule__dates || "No Date"}</AppText>
                                         <View style={[styles.arrowCircle, { backgroundColor: primaryColor }]}>
                                             <Ionicons name="arrow-forward" size={12} color={secondaryColor || "#FFFFFF"} />
                                         </View>
@@ -171,11 +169,11 @@ export default function HomeScreen() {
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
                                     <Ionicons name="calendar" size={18} color="#000000" />
-                                    <Text style={[styles.featuredSectionTitle, { color: primaryColor }]}>{homeData.event_block_heading}</Text>
+                                    <AppText style={[styles.featuredSectionTitle, { color: primaryColor }]}>{homeData.event_block_heading}</AppText>
                                 </View>
                                 {homeData?.event_view_all_label ? (
                                     <TouchableOpacity onPress={() => router.push("/events" as any)}>
-                                        <Text style={[styles.viewAllEventsText, { color: primaryColor }]}>{homeData.event_view_all_label}</Text>
+                                        <AppText style={[styles.viewAllEventsText, { color: primaryColor }]}>{homeData.event_view_all_label}</AppText>
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
@@ -203,13 +201,13 @@ export default function HomeScreen() {
                                 </View>
                             </View>
                             <View style={styles.featuredCardRight}>
-                                <Text style={styles.featuredEventName}>{homeData.featured_event[0].event_name || "Featured Event"}</Text>
-                                <Text style={styles.featuredEventDate}>
+                                <AppText style={styles.featuredEventName}>{homeData.featured_event[0].event_name || "Featured Event"}</AppText>
+                                <AppText style={styles.featuredEventDate}>
                                     {homeData.featured_event[0]['start_date_&_time'] || "Coming Soon"}
-                                </Text>
-                                <Text style={styles.featuredEventDesc} numberOfLines={3}>
+                                </AppText>
+                                <AppText style={styles.featuredEventDesc} numberOfLines={3}>
                                     {homeData.featured_event[0].short_description ? homeData.featured_event[0].short_description.replace(/<\/?[^>]+(>|$)/g, "").trim() : "Details for this event will be announced soon."}
-                                </Text>
+                                </AppText>
                             </View>
                         </TouchableOpacity>
                     </>
@@ -223,7 +221,7 @@ export default function HomeScreen() {
                         <View style={styles.trailsHeaderRow}>
                             <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || "#FFFFFF"} />
                             <TouchableOpacity onPress={() => router.push("/trails" as any)}>
-                                <Text style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</Text>
+                                <AppText style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</AppText>
                             </TouchableOpacity>
                         </View>
                         <ScrollView
@@ -234,12 +232,12 @@ export default function HomeScreen() {
                             {homeData?.trails && Array.isArray(homeData.trails) && homeData.trails.length > 0 ? (
                                 homeData.trails.map((trail: any, index: number) => (
                                     <View key={trail.id || index} style={styles.trailPill}>
-                                        <Text style={styles.trailName}>{trail.trail_name || "Trail Name"}</Text>
-                                        <Text style={styles.trailDistance}>{trail.distance ? `${trail.distance}` : "N/A"}</Text>
+                                        <AppText style={styles.trailName}>{trail.trail_name || "Trail Name"}</AppText>
+                                        <AppText style={styles.trailDistance}>{trail.distance ? `${trail.distance}` : "N/A"}</AppText>
                                     </View>
                                 ))
                             ) : (
-                                <Text style={{ color: "#FFFFFF", fontSize: 13 }}>No trails available</Text>
+                                <AppText style={{ color: "#FFFFFF", fontSize: 13 }}>No trails available</AppText>
                             )}
                         </ScrollView>
                     </View>
@@ -273,7 +271,7 @@ export default function HomeScreen() {
                                         </TouchableOpacity>
 
                                         {/* Dynamic content */}
-                                        <Text style={styles.modalTitleDynamic}>{popupData.popup_title}</Text>
+                                        <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
                                         {popupData.popup_body_copy ? (
                                             <RenderHTML
                                                 contentWidth={width * 0.95 - 48}
@@ -303,7 +301,7 @@ export default function HomeScreen() {
                                     </TouchableOpacity>
 
                                     {/* Dynamic content */}
-                                    <Text style={styles.modalTitle}>{popupData.popup_title}</Text>
+                                    <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
                                     {popupData.popup_body_copy ? (
                                         <RenderHTML
                                             contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40

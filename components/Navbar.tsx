@@ -1,6 +1,7 @@
+import AppText from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 
@@ -30,7 +31,7 @@ export default function Navbar() {
                     <MaterialCommunityIcons name="paw" size={22} color="#333333" />
                 </View>
                 <View style={styles.tipsBadge}>
-                    <Text style={styles.tipsBadgeText}>TIPS →</Text>
+                    <AppText style={styles.tipsBadgeText}>TIPS →</AppText>
                 </View>
             </TouchableOpacity>
         </View>

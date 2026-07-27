@@ -122,12 +122,23 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             const timestamp = new Date().getTime();
             const response = await fetch(`https://ftfgifts.com/elk/wp-json/elk/v1/data?_t=${timestamp}`, {
                 headers: {
-                    'Cache-Control': 'no-cache',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache',
-                    'Cookie': 'wordpress_logged_in_cache_bypass=1'
+                    'Expires': '0',
+                    'Cookie': 'wordpress_logged_in_cache_bypass=1',
+                    'Accept': 'application/json',
+                    'User-Agent': 'ElkMobileApp/1.0'
                 }
             });
-            const json: AppContentData = await response.json();
+            const text = await response.text();
+
+            let json: AppContentData;
+            try {
+                json = JSON.parse(text);
+            } catch (e) {
+                console.error("API returned non-JSON (possibly a WAF block or Captcha):", text.substring(0, 200));
+                throw new Error("Invalid JSON response from API");
+            }
 
             if (json.app_branding) {
                 setBrandData(json.app_branding);

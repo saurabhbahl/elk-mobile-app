@@ -3,6 +3,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { Lexend_500Medium } from '@expo-google-fonts/lexend';
+
 import {
   EBGaramond_500Medium,
   EBGaramond_600SemiBold,
@@ -65,6 +67,7 @@ export default function RootLayout() {
     'Inter-Medium': Inter_500Medium,
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
+    'Lexend_500Medium': Lexend_500Medium,
   });
 
   const resetMap = useCallback(() => {

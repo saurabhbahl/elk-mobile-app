@@ -1,7 +1,8 @@
+import AppText from "@/components/AppText";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
 
 export default function QuickLinks() {
@@ -21,7 +22,7 @@ export default function QuickLinks() {
                     >
                         <WireframePlaceholder style={styles.menuCardImage} />
                         <View style={styles.menuCardTitleContainer}>
-                            <Text style={styles.menuCardTitle} numberOfLines={1}>{item.nav_item_label}</Text>
+                            <AppText style={styles.menuCardTitle} numberOfLines={1}>{item.nav_item_label}</AppText>
                         </View>
                     </TouchableOpacity>
                 );

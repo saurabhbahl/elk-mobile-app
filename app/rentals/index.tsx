@@ -1,17 +1,15 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     Linking,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -53,20 +51,20 @@ export default function RentalsScreen() {
                 ) : null}
                 <View style={styles.rentalContent}>
                     <View style={styles.titleRow}>
-                        <Text style={styles.rentalName}>{item.rental_name || "Rental Unit"}</Text>
+                        <AppText style={styles.rentalName}>{item.rental_name || "Rental Unit"}</AppText>
                         {item.rental_type ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
-                                <Text style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.rental_type}</Text>
+                                <AppText style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.rental_type}</AppText>
                             </View>
                         ) : null}
                     </View>
 
                     {item.capacity ? (
-                        <Text style={styles.capacityText}>Capacity: {item.capacity}</Text>
+                        <AppText style={styles.capacityText}>Capacity: {item.capacity}</AppText>
                     ) : null}
 
                     {item.short_description ? (
-                        <Text style={styles.shortDesc}>{item.short_description}</Text>
+                        <AppText style={styles.shortDesc}>{item.short_description}</AppText>
                     ) : null}
 
                     {item.full_description ? (
@@ -84,17 +82,17 @@ export default function RentalsScreen() {
                     ) : null}
 
                     {item.availability_notes ? (
-                        <Text style={styles.notesText}>
-                            <Text style={{ fontWeight: "700" }}>Availability: </Text>
+                        <AppText style={styles.notesText}>
+                            <AppText style={{ fontWeight: "700" }}>Availability: </AppText>
                             {item.availability_notes}
-                        </Text>
+                        </AppText>
                     ) : null}
 
                     {item.pricing_notes ? (
-                        <Text style={styles.notesText}>
-                            <Text style={{ fontWeight: "700" }}>Pricing: </Text>
+                        <AppText style={styles.notesText}>
+                            <AppText style={{ fontWeight: "700" }}>Pricing: </AppText>
                             {item.pricing_notes}
-                        </Text>
+                        </AppText>
                     ) : null}
 
                     <View style={styles.ctaRow}>
@@ -103,9 +101,9 @@ export default function RentalsScreen() {
                                 style={[styles.ctaButton, primaryColor ? { backgroundColor: primaryColor } : null]}
                                 onPress={() => handlePressLink(item.cta_1_link)}
                             >
-                                <Text style={[styles.ctaButtonText, secondaryColor ? { color: secondaryColor } : null]}>
+                                <AppText style={[styles.ctaButtonText, secondaryColor ? { color: secondaryColor } : null]}>
                                     {item.cta_1_label_}
-                                </Text>
+                                </AppText>
                             </TouchableOpacity>
                         ) : null}
 
@@ -114,9 +112,9 @@ export default function RentalsScreen() {
                                 style={[styles.ctaButtonOutline, primaryColor ? { borderColor: primaryColor } : null]}
                                 onPress={() => handlePressLink(item.cta_2_link)}
                             >
-                                <Text style={[styles.ctaButtonOutlineText, primaryColor ? { color: primaryColor } : null]}>
+                                <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: primaryColor } : null]}>
                                     {item.cta_2_label}
-                                </Text>
+                                </AppText>
                             </TouchableOpacity>
                         ) : null}
                     </View>
@@ -137,9 +135,9 @@ export default function RentalsScreen() {
             {rentalSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/rentals.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {rentalSettingsData.screen_title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -171,7 +169,7 @@ export default function RentalsScreen() {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No rentals available at the moment.</Text>
+                        <AppText style={styles.emptyText}>No rentals available at the moment.</AppText>
                     }
                 />
             )}

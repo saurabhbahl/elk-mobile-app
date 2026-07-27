@@ -1,16 +1,14 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -56,12 +54,12 @@ export default function ProgramDetailScreen() {
                 <Navbar />
                 <QuickLinks />
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Program not found.</Text>
+                    <AppText style={styles.errorText}>Program not found.</AppText>
                     <TouchableOpacity
                         style={[styles.backTextButton, { backgroundColor: primaryColor }]}
                         onPress={() => router.back()}
                     >
-                        <Text style={styles.backTextButtonText}>Go Back</Text>
+                        <AppText style={styles.backTextButtonText}>Go Back</AppText>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -83,9 +81,9 @@ export default function ProgramDetailScreen() {
                 {/* Heading Row */}
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
                         {program.program_name || "Program Details"}
-                    </Text>
+                    </AppText>
                 </View>
 
                 {/* Banner Image */}
@@ -104,9 +102,9 @@ export default function ProgramDetailScreen() {
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
-                    <Text style={styles.scheduleText}>
+                    <AppText style={styles.scheduleText}>
                         {program.schedule__dates || "No Date Scheduled"}
-                    </Text>
+                    </AppText>
 
                     {/* Description Paragraph */}
                     {rawDescription ? (

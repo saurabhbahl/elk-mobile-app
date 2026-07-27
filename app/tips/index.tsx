@@ -1,14 +1,12 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
-    Text,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -40,10 +38,10 @@ export default function TipsScreen() {
                 ) : null}
                 <View style={styles.tipContent}>
                     <View style={styles.titleRow}>
-                        <Text style={styles.tipTitle}>{item.tip_title || "Viewing Tip"}</Text>
+                        <AppText style={styles.tipTitle}>{item.tip_title || "Viewing Tip"}</AppText>
                         {item.category__tag ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
-                                <Text style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.category__tag}</Text>
+                                <AppText style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.category__tag}</AppText>
                             </View>
                         ) : null}
                     </View>
@@ -81,9 +79,9 @@ export default function TipsScreen() {
                     ) : (
                         <Image source={require("../../assets/images/tips.png")} style={styles.headerIcon} />
                     )}
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {tipsScreenSettingsData.screen_title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -115,7 +113,7 @@ export default function TipsScreen() {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No viewing tips available at the moment.</Text>
+                        <AppText style={styles.emptyText}>No viewing tips available at the moment.</AppText>
                     }
                 />
             )}

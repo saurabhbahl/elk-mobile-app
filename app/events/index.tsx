@@ -1,16 +1,14 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/components/Navbar";
@@ -48,12 +46,12 @@ export default function EventsScreen() {
                 <WireframePlaceholder style={styles.eventCardImage} />
             )}
             <View style={styles.eventCardContent}>
-                <Text style={styles.eventCardName} numberOfLines={2}>
+                <AppText style={styles.eventCardName} numberOfLines={2}>
                     {item.event_name || "Event Name"}
-                </Text>
-                <Text style={styles.eventCardDate} numberOfLines={1}>
+                </AppText>
+                <AppText style={styles.eventCardDate} numberOfLines={1}>
                     {item["start_date_&_time"] || "No Date"}
-                </Text>
+                </AppText>
             </View>
         </TouchableOpacity>
     );
@@ -70,9 +68,9 @@ export default function EventsScreen() {
             {eventSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {eventSettingsData.screen_title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -90,7 +88,7 @@ export default function EventsScreen() {
                     columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No events available</Text>
+                        <AppText style={styles.emptyText}>No events available</AppText>
                     }
                 />
             )}

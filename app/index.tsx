@@ -1,7 +1,8 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator, Dimensions, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
@@ -48,7 +49,7 @@ export default function LandingScreen() {
                             {apiStatus === 'loading' ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
                                     <ActivityIndicator size="small" color="#000000" style={{ marginRight: 8 }} />
-                                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#000000' }}>Loading...</Text>
+                                    <AppText style={{ fontSize: 16, fontWeight: 'bold', color: '#000000' }}>Loading...</AppText>
                                 </View>
                             ) : (
                                 <TouchableOpacity
@@ -56,9 +57,9 @@ export default function LandingScreen() {
                                     style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
                                     onPress={() => router.push("/(home)" as any)}
                                 >
-                                    <Text style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
+                                    <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
                                         {brandData?.app_tagline}
-                                    </Text>
+                                    </AppText>
                                 </TouchableOpacity>
                             )}
                         </>

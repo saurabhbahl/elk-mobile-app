@@ -1,18 +1,16 @@
+import AppText from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     Linking,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -81,9 +79,9 @@ export default function VisitorsCenterScreen() {
                     {visitorsData?.screen_title ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
-                            <Text style={[styles.sectionTitle, { color: bgColor }]}>
+                            <AppText style={[styles.sectionTitle, { color: bgColor }]}>
                                 {visitorsData?.screen_title}
-                            </Text>
+                            </AppText>
                         </View>
                     ) : null}
 
@@ -146,12 +144,12 @@ export default function VisitorsCenterScreen() {
                                 <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
                             </View>
                             <View style={styles.ctaContent}>
-                                <Text style={styles.ctaTitle} numberOfLines={1}>
+                                <AppText style={styles.ctaTitle} numberOfLines={1}>
                                     {visitorsData?.cta_1_label}
-                                </Text>
-                                <Text style={styles.ctaSubtitle} numberOfLines={1}>
+                                </AppText>
+                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
                                     {visitorsData?.address}
-                                </Text>
+                                </AppText>
                             </View>
                         </TouchableOpacity>
 
@@ -165,12 +163,12 @@ export default function VisitorsCenterScreen() {
                                 <Ionicons name="call-outline" size={30} color={bgColor} />
                             </View>
                             <View style={styles.ctaContent}>
-                                <Text style={styles.ctaTitle} numberOfLines={1}>
+                                <AppText style={styles.ctaTitle} numberOfLines={1}>
                                     {visitorsData?.cta_2_label}
-                                </Text>
-                                <Text style={styles.ctaSubtitle} numberOfLines={1}>
+                                </AppText>
+                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
                                     {visitorsData?.phone_number}
-                                </Text>
+                                </AppText>
                             </View>
                         </TouchableOpacity>
                     </View>

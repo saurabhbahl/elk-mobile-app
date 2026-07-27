@@ -1,41 +1,153 @@
+import AppText from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
+import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     ScrollView,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View
-} from "react-native";
+    View,
+    Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 
+import { STREAM_TYPES } from "@/constants/streamTypes";
 import Navbar from "@/components/Navbar";
 import QuickLinks from "@/components/QuickLinks";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useNetInfo } from "@react-native-community/netinfo";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith("#") ? color : `#${color}`;
 };
 
+function NativeVideoPlayer({ source }: { source: string }) {
+    const player = useVideoPlayer(source, player => {
+        player.loop = true;
+        player.play();
+    });
+
+    return (
+        <VideoView style={{ flex: 1, width: "100%", height: "100%" }} player={player} allowsFullscreen allowsPictureInPicture />
+    );
+}
+
 export default function LiveCameraScreen() {
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContent();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
 
+    const { isConnected } = useNetInfo();
     const [activeCamIndex, setActiveCamIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     const cameras = (camerasData || []).filter((cam: any) => cam.active !== false);
     const activeCamera = cameras[activeCamIndex];
 
+    const handleTabChange = (index: number) => {
+        setActiveCamIndex(index);
+        setIsPlaying(false);
+    };
+
     const handlePlayStream = async () => {
-        if (activeCamera?.stream_url) {
-            await WebBrowser.openBrowserAsync(activeCamera.stream_url);
+        setIsPlaying(true);
+    };
+
+    const handleWebViewNavigation = (event: any) => {
+        // If it's a YouTube embed and the user clicks a link (like the video title or YouTube logo),
+        // it tries to navigate away from the /embed/ player. We intercept this and open it natively.
+        if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
+            Linking.openURL(event.url).catch(err => console.error("Couldn't open YouTube link", err));
+            return false; // Stop WebView from navigating
         }
+        return true;
+    };
+
+    const renderPlayer = () => {
+        if (!activeCamera) return null;
+
+        const streamType = activeCamera.stream_type;
+        const streamUrl = activeCamera.stream_url;
+
+        if (!streamUrl) {
+            return (
+                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
+                    <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
+                    <AppText style={styles.noCameraText}>Invalid stream URL.</AppText>
+                </View>
+            );
+        }
+
+        if (streamType === STREAM_TYPES.YOUTUBE) {
+            let videoId = "";
+            const match = streamUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([^&?/]{11})/);
+            if (match && match[1]) {
+                videoId = match[1];
+            }
+
+            if (videoId) {
+                return (
+                    <WebView
+                        style={{ flex: 1, backgroundColor: "#000" }}
+                        source={{ 
+                            html: `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe></body></html>`,
+                            baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com" 
+                        }}
+                        allowsInlineMediaPlayback={true}
+                        mediaPlaybackRequiresUserAction={false}
+                        allowsFullscreenVideo={true}
+                        scrollEnabled={false}
+                        onShouldStartLoadWithRequest={handleWebViewNavigation}
+                    />
+                );
+            } else {
+                return (
+                    <WebView
+                        style={{ flex: 1, backgroundColor: "#000" }}
+                        source={{ uri: streamUrl }}
+                        allowsInlineMediaPlayback={true}
+                        allowsFullscreenVideo={true}
+                        onShouldStartLoadWithRequest={handleWebViewNavigation}
+                    />
+                );
+            }
+        }
+
+        if (streamType === STREAM_TYPES.EMBED) {
+            const htmlContent = streamUrl.includes("<html")
+                ? streamUrl
+                : `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;">${streamUrl}</body></html>`;
+            return (
+                <WebView
+                    style={{ flex: 1, backgroundColor: "#000" }}
+                    source={{ 
+                        html: htmlContent,
+                        baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com"
+                    }}
+                    allowsInlineMediaPlayback={true}
+                    mediaPlaybackRequiresUserAction={false}
+                    scrollEnabled={false}
+                    scalesPageToFit={true}
+                    allowsFullscreenVideo={true}
+                />
+            );
+        }
+
+        if (streamType === STREAM_TYPES.HLS || streamType === STREAM_TYPES.RTMP) {
+            return <NativeVideoPlayer source={streamUrl} />;
+        }
+
+        // Fallback for unknown type
+        return (
+            <WebView
+                style={{ flex: 1, backgroundColor: "#000" }}
+                source={{ uri: streamUrl }}
+                allowsFullscreenVideo={true}
+            />
+        );
     };
 
     return (
@@ -57,9 +169,9 @@ export default function LiveCameraScreen() {
                     {liveCamSettingsData?.screen_title ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
-                            <Text style={[styles.sectionTitle, { color: bgColor }]}>
+                            <AppText style={[styles.sectionTitle, { color: bgColor }]}>
                                 {liveCamSettingsData.screen_title}
-                            </Text>
+                            </AppText>
                         </View>
                     ) : null}
 
@@ -79,17 +191,17 @@ export default function LiveCameraScreen() {
                                             styles.tabButton,
                                             isActive && { backgroundColor: bgColor, borderColor: bgColor },
                                         ]}
-                                        onPress={() => setActiveCamIndex(index)}
+                                        onPress={() => handleTabChange(index)}
                                         activeOpacity={0.8}
                                     >
-                                        <Text
+                                        <AppText
                                             style={[
                                                 styles.tabButtonText,
                                                 isActive && { color: secColor },
                                             ]}
                                         >
                                             {cam.camera_name}
-                                        </Text>
+                                        </AppText>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -99,29 +211,33 @@ export default function LiveCameraScreen() {
                     {/* Active Camera Video Preview Box */}
                     <View style={styles.playerContainer}>
                         {activeCamera ? (
-                            <TouchableOpacity
-                                style={styles.playerTouchable}
-                                activeOpacity={0.9}
-                                onPress={handlePlayStream}
-                            >
-                                <ImageBackground
-                                    source={
-                                        activeCamera.thumbnail__poster?.url
-                                            ? { uri: activeCamera.thumbnail__poster.url }
-                                            : undefined
-                                    }
-                                    style={styles.playerImage}
-                                    imageStyle={{ borderRadius: 16 }}
+                            isPlaying ? (
+                                renderPlayer()
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.playerTouchable}
+                                    activeOpacity={0.9}
+                                    onPress={handlePlayStream}
                                 >
-                                    <View style={styles.playerOverlay}>
-                                        <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
-                                    </View>
-                                </ImageBackground>
-                            </TouchableOpacity>
+                                    <ImageBackground
+                                        source={
+                                            activeCamera.thumbnail__poster?.url
+                                                ? { uri: activeCamera.thumbnail__poster.url }
+                                                : undefined
+                                        }
+                                        style={styles.playerImage}
+                                        imageStyle={{ borderRadius: 16 }}
+                                    >
+                                        <View style={styles.playerOverlay}>
+                                            <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
+                                        </View>
+                                    </ImageBackground>
+                                </TouchableOpacity>
+                            )
                         ) : (
                             <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
                                 <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
-                                <Text style={styles.noCameraText}>No active live cameras available.</Text>
+                                <AppText style={styles.noCameraText}>No active live cameras available.</AppText>
                             </View>
                         )}
                     </View>
@@ -129,22 +245,22 @@ export default function LiveCameraScreen() {
                     {/* Stream Notes and Quality details */}
                     <View style={styles.detailsContainer}>
                         {activeCamera?.description ? (
-                            <Text style={styles.cameraDescription}>
+                            <AppText style={styles.cameraDescription}>
                                 {activeCamera.description.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                            </Text>
+                            </AppText>
                         ) : null}
 
                         {/* General/Global Live Camera Instructions */}
-                        {liveCamSettingsData?.offline_message ? (
-                            <Text style={styles.infoText}>
+                        {isConnected === false && liveCamSettingsData?.offline_message ? (
+                            <AppText style={styles.infoText}>
                                 {liveCamSettingsData.offline_message}
-                            </Text>
+                            </AppText>
                         ) : null}
 
                         {liveCamSettingsData?.quality_note ? (
-                            <Text style={styles.noteText}>
+                            <AppText style={styles.noteText}>
                                 {liveCamSettingsData.quality_note.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                            </Text>
+                            </AppText>
                         ) : null}
                     </View>
                 </ScrollView>
@@ -178,8 +294,9 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     sectionTitle: {
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
         fontSize: 18,
-        fontWeight: "bold",
         color: "#000000",
     },
     tabsScroll: {
@@ -200,8 +317,11 @@ const styles = StyleSheet.create({
         borderColor: "#C7C7CC",
     },
     tabButtonText: {
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
         fontSize: 13,
-        fontWeight: "600",
+        lineHeight: 20,
+        letterSpacing: 0,
         color: "#8E8E93",
     },
     tabButtonTextActive: {
@@ -237,7 +357,11 @@ const styles = StyleSheet.create({
     },
     noCameraText: {
         marginTop: 8,
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
         fontSize: 13,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: "#8E8E93",
         textAlign: "center",
     },
@@ -246,22 +370,31 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     cameraDescription: {
-        fontSize: 14,
-        fontWeight: "400",
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
+        fontSize: 13,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: "#333333",
         marginBottom: 12,
     },
     infoText: {
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
         fontSize: 13,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: "#333333",
-        lineHeight: 18,
         textAlign: "justify",
         marginBottom: 16,
     },
     noteText: {
-        fontSize: 12,
+        fontFamily: "Lexend_500Medium",
+        fontWeight: "500",
+        fontSize: 13,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: "#8E8E93",
-        lineHeight: 16,
         fontStyle: "italic",
     },
 });

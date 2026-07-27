@@ -1,5 +1,6 @@
+import AppText from "@/components/AppText";
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
@@ -14,7 +15,7 @@ export const HeaderOverlay = () => {
       <TouchableOpacity style={styles.headerButton}>
         <Ionicons name="menu" size={24} color={colors.onSurfaceVariant} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>WildNav</Text>
+      <AppText style={styles.headerTitle}>WildNav</AppText>
       <TouchableOpacity style={styles.headerButton}>
         <MaterialCommunityIcons name="check-decagram" size={24} color={colors.primary} />
       </TouchableOpacity>

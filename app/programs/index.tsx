@@ -1,16 +1,14 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
-    Text,
     TouchableOpacity,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/components/Navbar";
@@ -53,12 +51,12 @@ export default function ProgramsScreen() {
                 <WireframePlaceholder style={isGrid ? styles.programCardImage : styles.programListCardImage} />
             )}
             <View style={isGrid ? styles.programCardContent : styles.programListCardContent}>
-                <Text style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
+                <AppText style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
                     {item.program_name || "Program Name"}
-                </Text>
-                <Text style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
+                </AppText>
+                <AppText style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
                     {item.schedule__dates || "No Date"}
-                </Text>
+                </AppText>
             </View>
         </TouchableOpacity>
     );
@@ -75,9 +73,9 @@ export default function ProgramsScreen() {
             {programsSettingData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {programsSettingData.screen_title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -96,7 +94,7 @@ export default function ProgramsScreen() {
                     columnWrapperStyle={isGrid ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No programs available</Text>
+                        <AppText style={styles.emptyText}>No programs available</AppText>
                     }
                 />
             )}

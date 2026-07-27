@@ -1,8 +1,7 @@
+import AppText from "@/components/AppText";
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
-  ScrollView, Platform, Dimensions, Modal
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator,
+  ScrollView, Platform, Dimensions, Modal } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 const { height: windowHeight } = Dimensions.get('window');
@@ -65,12 +64,12 @@ function WaypointSelector({
   return (
     <>
       <TouchableOpacity style={[selectorStyles.button, { backgroundColor: colors.surfaceContainerLow, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]} onPress={() => setOpen(true)}>
-        <Text
+        <AppText
           style={[selectorStyles.text, { fontFamily: fonts.body, fontSize: 13, color: selected ? brandPrimary : colors.onSurfaceVariant }, !selected && selectorStyles.placeholder]}
           numberOfLines={1}
         >
           {selected ? selected.title : `Select ${label.toLowerCase()}...`}
-        </Text>
+        </AppText>
         <MaterialIcons name="arrow-drop-down" size={24} color={colors.onSurfaceVariant} />
       </TouchableOpacity>
 
@@ -78,7 +77,7 @@ function WaypointSelector({
         <TouchableOpacity style={selectorStyles.backdrop} activeOpacity={1} onPress={() => setOpen(false)} />
         <View style={[selectorStyles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[selectorStyles.handle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
-          <Text style={[selectorStyles.title, { fontFamily: fonts.headingBold, fontSize: 15, color: brandPrimary }]}>Select {label}</Text>
+          <AppText style={[selectorStyles.title, { fontFamily: fonts.headingBold, fontSize: 15, color: brandPrimary }]}>Select {label}</AppText>
           <ScrollView style={{ maxHeight: 420 }} keyboardShouldPersistTaps="handled">
             {currentLocationWP && (
               <TouchableOpacity
@@ -86,7 +85,7 @@ function WaypointSelector({
                 onPress={() => { onSelect(currentLocationWP); setOpen(false); }}
               >
                 <MaterialIcons name="my-location" size={20} color={brandPrimary} />
-                <Text style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }]}>Current Location</Text>
+                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }]}>Current Location</AppText>
               </TouchableOpacity>
             )}
             {waypoints.map(wp => (
@@ -96,7 +95,7 @@ function WaypointSelector({
                 onPress={() => { onSelect(wp); setOpen(false); }}
               >
                 <MaterialIcons name="place" size={20} color={brandPrimary} />
-                <Text style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }, selected?.id === wp.id && { fontFamily: fonts.bodyBold, color: brandPrimary }]} numberOfLines={1}>{wp.title}</Text>
+                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }, selected?.id === wp.id && { fontFamily: fonts.bodyBold, color: brandPrimary }]} numberOfLines={1}>{wp.title}</AppText>
                 {selected?.id === wp.id && (
                   <MaterialIcons name="check" size={18} color={brandPrimary} />
                 )}
@@ -175,7 +174,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
         <TouchableOpacity onPress={onClose} style={[plannerStyles.closeButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
           <MaterialIcons name="close" size={28} color={brandPrimary} />
         </TouchableOpacity>
-        <Text style={[plannerStyles.headerTitle, { fontFamily: fonts.headingBold, fontSize: 18, color: brandPrimary }]}>Route Planner</Text>
+        <AppText style={[plannerStyles.headerTitle, { fontFamily: fonts.headingBold, fontSize: 18, color: brandPrimary }]}>Route Planner</AppText>
         <View style={{ width: 48 }} />
       </View>
 
@@ -198,7 +197,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
             <View style={{ flex: 1, gap: 16 }}>
               {/* Start */}
               <View style={{ gap: 8 }}>
-                <Text style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Starting Point</Text>
+                <AppText style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Starting Point</AppText>
                 <WaypointSelector
                   label="Starting Point"
                   selected={startPoint}
@@ -210,7 +209,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
                   <TouchableOpacity onPress={() => onSelectOnMap('start')} style={[plannerStyles.shortcutButtonSecondary, { backgroundColor: colors.surfaceContainerHigh }]}>
                     <MaterialIcons name="add-location-alt" size={12} color={brandPrimary} />
-                    <Text style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</Text>
+                    <AppText style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</AppText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -219,10 +218,10 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
               {stopPoints.map((stop, idx) => (
                 <View key={`stop-${idx}`} style={{ gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Stop {idx + 1}</Text>
+                    <AppText style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Stop {idx + 1}</AppText>
                     <TouchableOpacity onPress={() => onRemoveStop(idx)} style={plannerStyles.removeStopBtn}>
                       <MaterialIcons name="close" size={14} color={colors.error} />
-                      <Text style={[plannerStyles.removeStopText, { fontFamily: fonts.caption, fontSize: 11, color: colors.error }]}>Remove</Text>
+                      <AppText style={[plannerStyles.removeStopText, { fontFamily: fonts.caption, fontSize: 11, color: colors.error }]}>Remove</AppText>
                     </TouchableOpacity>
                   </View>
                   <WaypointSelector
@@ -240,7 +239,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                   <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
                     <TouchableOpacity onPress={() => onSelectOnMap('stop', idx)} style={[plannerStyles.shortcutButtonSecondary, { backgroundColor: colors.surfaceContainerHigh }]}>
                       <MaterialIcons name="add-location-alt" size={12} color={brandPrimary} />
-                      <Text style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</Text>
+                      <AppText style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</AppText>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -259,12 +258,12 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                 }}
               >
                 <MaterialIcons name="add-circle-outline" size={16} color={brandPrimary} />
-                <Text style={[plannerStyles.addStopText, { fontFamily: fonts.bodyMedium, fontSize: 13, color: brandPrimary }]}>Add Stop</Text>
+                <AppText style={[plannerStyles.addStopText, { fontFamily: fonts.bodyMedium, fontSize: 13, color: brandPrimary }]}>Add Stop</AppText>
               </TouchableOpacity>
 
               {/* Destination */}
               <View style={{ gap: 8 }}>
-                <Text style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Destination</Text>
+                <AppText style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Destination</AppText>
                 <WaypointSelector
                   label="Destination"
                   selected={destinationPoint}
@@ -276,7 +275,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
                   <TouchableOpacity onPress={() => onSelectOnMap('end')} style={[plannerStyles.shortcutButtonSecondary, { backgroundColor: colors.surfaceContainerHigh }]}>
                     <MaterialIcons name="add-location-alt" size={12} color={brandPrimary} />
-                    <Text style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</Text>
+                    <AppText style={[plannerStyles.shortcutTextPrimary, { fontFamily: fonts.caption, color: brandPrimary }]}>Drop Pin</AppText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -320,16 +319,16 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                   size={20}
                   color={canStart ? colors.onPrimary : colors.onSurfaceVariant}
                 />
-                <Text style={[plannerStyles.startNavText, { fontFamily: fonts.bodyBold, fontSize: 13, color: canStart ? colors.onPrimary : colors.onSurfaceVariant }]}>
+                <AppText style={[plannerStyles.startNavText, { fontFamily: fonts.bodyBold, fontSize: 13, color: canStart ? colors.onPrimary : colors.onSurfaceVariant }]}>
                   Start Navigation
-                </Text>
+                </AppText>
               </>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Suggested waypoints */}
-        <Text style={[plannerStyles.suggestedTitle, { fontFamily: fonts.headingBold, fontSize: 15, color: brandPrimary }]}>Suggested Stops</Text>
+        <AppText style={[plannerStyles.suggestedTitle, { fontFamily: fonts.headingBold, fontSize: 15, color: brandPrimary }]}>Suggested Stops</AppText>
         {waypoints.map(item => (
           <TouchableOpacity
             key={item.id}
@@ -344,8 +343,8 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
               <MaterialIcons name="place" size={24} color={brandPrimary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[plannerStyles.suggestedName, { fontFamily: fonts.bodyBold, fontSize: 13, color: brandPrimary }]}>{item.title}</Text>
-              <Text style={[plannerStyles.suggestedMeta, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Scenic Spot</Text>
+              <AppText style={[plannerStyles.suggestedName, { fontFamily: fonts.bodyBold, fontSize: 13, color: brandPrimary }]}>{item.title}</AppText>
+              <AppText style={[plannerStyles.suggestedMeta, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Scenic Spot</AppText>
             </View>
             <MaterialIcons name="chevron-right" size={24} color={colors.outline} />
           </TouchableOpacity>

@@ -1,3 +1,4 @@
+import AppText from "@/components/AppText";
 /**
  * index.tsx — Map Screen
  *
@@ -5,6 +6,7 @@
  * focused components. This file orchestrates them.
  */
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNetInfo } from '@react-native-community/netinfo';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { activateKeepAwakeAsync, isAvailableAsync } from 'expo-keep-awake';
@@ -17,19 +19,16 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {
-  ActivityIndicator,
+import { ActivityIndicator,
   Animated,
   FlatList,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   unstable_batchedUpdates,
   useWindowDimensions,
-  View,
-} from 'react-native';
+  View } from "react-native";
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addOpacity, normalizeHex } from '../../utils/colorUtils';
@@ -88,6 +87,7 @@ function MapScreen() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { poisData, mapSettingsData, brandData } = useAppContent();
   const waypoints = poisData || [];
+  const netInfo = useNetInfo();
 
   useEffect(() => {
     isAvailableAsync()
@@ -779,22 +779,22 @@ function MapScreen() {
         <View style={styles.cardHeaderRow}>
           <View style={styles.titleContainer}>
             <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-            <Text style={styles.hotspotTitle} numberOfLines={1}>
+            <AppText style={styles.hotspotTitle} numberOfLines={1}>
               {item.title.toUpperCase()}
-            </Text>
+            </AppText>
           </View>
           <TouchableOpacity onPress={() => setSelectedWaypoint(null)} style={styles.cardCloseButton}>
             <MaterialIcons name="close" size={14} color="white" />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.hotspotDescription} numberOfLines={3}>
+        <AppText style={styles.hotspotDescription} numberOfLines={3}>
           {item.description || 'A premier destination for elk viewing.'}
-        </Text>
+        </AppText>
 
         <View style={styles.cardFooterRow}>
           <TouchableOpacity style={styles.viewMoreButton} onPress={handleViewDetails}>
-            <Text style={styles.viewMoreButtonText}>View More</Text>
+            <AppText style={styles.viewMoreButtonText}>View More</AppText>
           </TouchableOpacity>
         </View>
       </Pressable>
@@ -818,9 +818,9 @@ function MapScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={{ textAlign: 'center', padding: 20, fontFamily: fonts.bodyMedium }}>
+          <AppText style={{ textAlign: 'center', padding: 20, fontFamily: fonts.bodyMedium }}>
             MapLibre requires a native build.{'\n'}Please run: npx expo run:android
-          </Text>
+          </AppText>
         </View>
       </View>
     );
@@ -831,10 +831,10 @@ function MapScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Downloading Offline Map...</Text>
-        <Text style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8 }}>
+        <AppText style={styles.loadingText}>Downloading Offline Map...</AppText>
+        <AppText style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8 }}>
           {downloadProgress < 0 ? 'Starting...' : `${Math.max(0, pct)}%`}
-        </Text>
+        </AppText>
       </View>
     );
   }
@@ -850,6 +850,9 @@ function MapScreen() {
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = mapComponents;
   const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading;
   const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
+
+  // Detect if completely offline without map
+  const isOfflineWithoutMap = netInfo.isConnected === false && !hasMap;
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -939,6 +942,37 @@ function MapScreen() {
             isNavigating={isNavigating}
           />
 
+          {/* Coordinate Fallback Overlay if offline without map */}
+          {isOfflineWithoutMap && (
+            <View style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: isDark ? colors.surface : '#eef1e7',
+              justifyContent: 'center', alignItems: 'center',
+              zIndex: 999, padding: 20
+            }}>
+              <MaterialIcons name="satellite" size={64} color={brandPrimary} style={{ opacity: 0.8, marginBottom: 16 }} />
+              <AppText style={{ fontFamily: fonts.headingBold, fontSize: 20, color: brandPrimary, marginBottom: 12 }}>Offline</AppText>
+              <AppText style={{ fontFamily: fonts.body, fontSize: 16, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
+                You are currently offline and the local map tiles are not downloaded.
+              </AppText>
+
+              <View style={{ backgroundColor: isDark ? colors.surfaceContainer : '#ffffff', padding: 20, borderRadius: 16, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant + '40' }}>
+                <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Your Current Coordinates</AppText>
+                {location ? (
+                  <>
+                    <AppText style={{ fontFamily: fonts.headingBold, fontSize: 18, color: colors.onSurface, marginBottom: 4 }}>Lat: {location.latitude.toFixed(5)}</AppText>
+                    <AppText style={{ fontFamily: fonts.headingBold, fontSize: 18, color: colors.onSurface }}>Lng: {location.longitude.toFixed(5)}</AppText>
+                  </>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <ActivityIndicator size="small" color={brandPrimary} />
+                    <AppText style={{ fontFamily: fonts.body, fontSize: 15, color: colors.onSurface }}>Acquiring GPS Signal...</AppText>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
           {/* Territory labels */}
           <GeoJSONSource id="territory-label-source" data={territoryLabelFeature}>
             <Layer
@@ -996,7 +1030,7 @@ function MapScreen() {
                 >
                   <MaterialIcons name="map" size={18} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
                   {mapSettingsData?.screen_title ? (
-                    <Text style={styles.floatingTitleText}>{mapSettingsData.screen_title}</Text>
+                    <AppText style={styles.floatingTitleText}>{mapSettingsData.screen_title}</AppText>
                   ) : null}
                 </TouchableOpacity>
               ) : (
@@ -1050,8 +1084,8 @@ function MapScreen() {
                     >
                       <MaterialIcons name="place" size={18} color={colors.primary} />
                       <View style={styles.searchResultText}>
-                        <Text style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</Text>
-                        <Text style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</Text>
+                        <AppText style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</AppText>
+                        <AppText style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</AppText>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -1148,7 +1182,7 @@ function MapScreen() {
               <Animated.View style={[styles.navCompassArrow, { transform: [{ rotate: headingAnim.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] }) }] }]}>
                 <MaterialIcons name="navigation" size={20} color="white" />
               </Animated.View>
-              <Text style={styles.navCompassLabel}>{headingCardinal}</Text>
+              <AppText style={styles.navCompassLabel}>{headingCardinal}</AppText>
             </View>
           </>
         )}
@@ -1160,13 +1194,13 @@ function MapScreen() {
               <View style={styles.arrivalIconContainer}>
                 <MaterialIcons name="location-on" size={40} color={colors.onPrimary} />
               </View>
-              <Text style={styles.arrivalTitle}>You've Reached Your Destination</Text>
-              <Text style={styles.arrivalSubtitle}>
+              <AppText style={styles.arrivalTitle}>You've Reached Your Destination</AppText>
+              <AppText style={styles.arrivalSubtitle}>
                 {destinationPoint?.title ?? 'Your destination'}
-              </Text>
-              <Text style={styles.arrivalDescription}>
+              </AppText>
+              <AppText style={styles.arrivalDescription}>
                 Enjoy your time in elk country. Remember to follow wildlife safety guidelines and respect viewing area rules.
-              </Text>
+              </AppText>
               <TouchableOpacity
                 style={styles.arrivalButton}
                 onPress={() => {
@@ -1175,7 +1209,7 @@ function MapScreen() {
                 }}
               >
                 <MaterialIcons name="check-circle" size={20} color={colors.onPrimary} />
-                <Text style={styles.arrivalButtonText}>Done</Text>
+                <AppText style={styles.arrivalButtonText}>Done</AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -1187,17 +1221,17 @@ function MapScreen() {
             {/* Top label */}
             <View style={[styles.pinLabelBar, { top: insets.top + 12 }]}>
               <MaterialIcons name="location-searching" size={18} color={colors.primary} />
-              <Text style={styles.pinLabelText}>
+              <AppText style={styles.pinLabelText}>
                 Move map to place {pinPickerType === 'start' ? 'start' : pinPickerType === 'stop' ? 'stop' : 'destination'}
-              </Text>
+              </AppText>
             </View>
 
             {/* Debug Coordinate Display (to verify drop pin accuracy) */}
             <View style={[styles.pinLabelBar, { top: insets.top + 60, backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-              <Text style={{ color: 'white', fontSize: 12, fontFamily: fonts.body, textAlign: 'center' }}>
+              <AppText style={{ color: 'white', fontSize: 12, fontFamily: fonts.body, textAlign: 'center' }}>
                 Center Lat: {dropPinPreviewCoordinate?.latitude?.toFixed(6) ?? mapCenter?.lat?.toFixed(6) ?? '...'}{'\n'}
                 Center Lng: {dropPinPreviewCoordinate?.longitude?.toFixed(6) ?? mapCenter?.lng?.toFixed(6) ?? '...'}
-              </Text>
+              </AppText>
             </View>
 
             {/* Compass direction indicator */}
@@ -1206,7 +1240,7 @@ function MapScreen() {
                 <Animated.View style={[styles.compassArrow, { transform: [{ rotate: headingAnim.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] }) }] }]}>
                   <MaterialIcons name="navigation" size={22} color={colors.primary} />
                 </Animated.View>
-                <Text style={styles.compassLabel}>{headingCardinal}</Text>
+                <AppText style={styles.compassLabel}>{headingCardinal}</AppText>
               </View>
             )}
 
@@ -1217,7 +1251,7 @@ function MapScreen() {
                 onPress={() => { setIsSelectingPin(false); setShowPointPicker(true); }}
               >
                 <MaterialIcons name="close" size={20} color={colors.primary} />
-                <Text style={styles.pinCancelText}>Cancel</Text>
+                <AppText style={styles.pinCancelText}>Cancel</AppText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.pinConfirmBtn}
@@ -1253,7 +1287,7 @@ function MapScreen() {
                 }}
               >
                 <MaterialIcons name="check" size={20} color="white" />
-                <Text style={styles.pinConfirmText}>Confirm Location</Text>
+                <AppText style={styles.pinConfirmText}>Confirm Location</AppText>
               </TouchableOpacity>
             </View>
           </>
@@ -1274,16 +1308,16 @@ function MapScreen() {
               {/* <View style={[styles.modalIconContainer, { marginBottom: 16, marginTop: 0 }]}>
                 <MaterialIcons name="download-for-offline" size={32} color={colors.inversePrimary} />
               </View> */}
-              <Text style={[styles.modalTitle, { fontSize: 22, fontFamily: fonts.bodyBold, marginBottom: 12 }]}>Explore Without Limits</Text>
-              <Text style={[styles.modalDescription, { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 }]}>
+              <AppText style={[styles.modalTitle, { fontSize: 22, fontFamily: fonts.bodyBold, marginBottom: 12 }]}>Explore Without Limits</AppText>
+              <AppText style={[styles.modalDescription, { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 }]}>
                 Cellular signal is weak in Elk Country. Download this region now to ensure navigation and safety features work offline.
-              </Text>
+              </AppText>
               <View style={styles.modalActions}>
                 <TouchableOpacity
                   style={[styles.modalButtonPrimary, { height: 44, width: '85%', alignSelf: 'center' }]}
                   onPress={() => { saveConsent('yes'); downloadMap(); }}
                 >
-                  <Text style={[styles.modalButtonTextPrimary, { fontSize: 14, fontFamily: fonts.bodyBold }]}>Download Offline Map</Text>
+                  <AppText style={[styles.modalButtonTextPrimary, { fontSize: 14, fontFamily: fonts.bodyBold }]}>Download Offline Map</AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1297,8 +1331,8 @@ function MapScreen() {
               <MaterialIcons name="error-outline" size={24} color={colors.error} />
             </View>
             <View style={styles.errorToastTextContent}>
-              <Text style={styles.errorToastTitle}>Something went wrong</Text>
-              <Text style={styles.errorToastDescription}>Map download failed. Online map active.</Text>
+              <AppText style={styles.errorToastTitle}>Something went wrong</AppText>
+              <AppText style={styles.errorToastDescription}>Map download failed. Online map active.</AppText>
             </View>
             <TouchableOpacity onPress={() => saveConsent('dismissed', false)} style={styles.errorToastClose}>
               <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />

@@ -1,8 +1,9 @@
+import AppText from "@/components/AppText";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
-import { Dimensions, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -41,9 +42,9 @@ export default function WaypointDetailsScreen() {
                 <Navbar />
                 <View style={styles.errorContainer}>
                     <MaterialIcons name="error-outline" size={48} color={colors.error} />
-                    <Text style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</Text>
+                    <AppText style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</AppText>
                     <TouchableOpacity style={[styles.backButton, { backgroundColor: brandPrimary || colors.primary }]} onPress={() => router.back()}>
-                        <Text style={[styles.backButtonText, { color: colors.onPrimary, fontFamily: fonts.bodyBold }]}>Go Back</Text>
+                        <AppText style={[styles.backButtonText, { color: colors.onPrimary, fontFamily: fonts.bodyBold }]}>Go Back</AppText>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -64,9 +65,9 @@ export default function WaypointDetailsScreen() {
                         style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                         contentFit="contain"
                     />
-                    <Text style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '#000') }]}>
+                    <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '#000') }]}>
                         {waypoint.title}
-                    </Text>
+                    </AppText>
                 </View>
 
                 {/* Featured Image / Gallery */}
@@ -95,15 +96,15 @@ export default function WaypointDetailsScreen() {
                 <View style={styles.locationSection}>
                     {waypoint.address ? (
                         <View style={styles.addressContainer}>
-                            <Text style={[styles.addressText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : '#000' }]}>
+                            <AppText style={[styles.addressText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : '#000' }]}>
                                 {waypoint.address}
-                            </Text>
+                            </AppText>
                         </View>
                     ) : <View style={styles.addressContainer} />}
                     <TouchableOpacity style={[styles.getDirectionsButton, brandPrimary ? { backgroundColor: brandPrimary } : {}]} onPress={handleGetDirections} activeOpacity={0.8}>
-                        <Text style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }, brandSecondary ? { color: brandSecondary } : {}]}>
+                        <AppText style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }, brandSecondary ? { color: brandSecondary } : {}]}>
                             Get Directions
-                        </Text>
+                        </AppText>
                     </TouchableOpacity>
                 </View>
 
@@ -116,9 +117,9 @@ export default function WaypointDetailsScreen() {
                                 style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                 contentFit="contain"
                             />
-                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                            <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
                                 Handicap Accessible
-                            </Text>
+                            </AppText>
                         </View>
                     ) : null}
                     {waypoint.open_year_round ? (
@@ -128,9 +129,9 @@ export default function WaypointDetailsScreen() {
                                 style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                 contentFit="contain"
                             />
-                            <Text style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                            <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
                                 Open Year Round
-                            </Text>
+                            </AppText>
                         </View>
                     ) : null}
                 </View>
@@ -178,9 +179,9 @@ export default function WaypointDetailsScreen() {
                         onPress={() => Linking.openURL(typeof waypoint.external_link === 'string' ? waypoint.external_link : waypoint.external_link.url)}
                         activeOpacity={0.8}
                     >
-                        <Text style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
+                        <AppText style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
                             {typeof waypoint.external_link === 'string' ? 'More Info' : waypoint.external_link.title || 'More Info'}
-                        </Text>
+                        </AppText>
                         <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
                     </TouchableOpacity>
                 ) : null}

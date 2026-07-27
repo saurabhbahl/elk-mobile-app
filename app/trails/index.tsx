@@ -1,15 +1,13 @@
+import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-    ActivityIndicator,
+import { ActivityIndicator,
     Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
-    Text,
-    View,
-} from "react-native";
+    View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
@@ -34,9 +32,9 @@ export default function TrailsScreen() {
     const renderTrailItem = ({ item, index }: { item: any; index: number }) => (
         <View style={styles.trailItemContainer}>
             <View style={styles.trailHeaderRow}>
-                <Text style={styles.trailName}>{item.trail_name || "Trail Name"}</Text>
+                <AppText style={styles.trailName}>{item.trail_name || "Trail Name"}</AppText>
                 {item.distance ? (
-                    <Text style={styles.trailDistance}>{item.distance}</Text>
+                    <AppText style={styles.trailDistance}>{item.distance}</AppText>
                 ) : null}
             </View>
             {item.description ? (
@@ -51,7 +49,7 @@ export default function TrailsScreen() {
                     tagsStyles={{ p: { marginVertical: 4 } }}
                 />
             ) : (
-                <Text style={styles.trailDescription}>No description available.</Text>
+                <AppText style={styles.trailDescription}>No description available.</AppText>
             )}
         </View>
     );
@@ -68,9 +66,9 @@ export default function TrailsScreen() {
             {trailSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
-                    <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {trailSettingsData.screen_title}
-                    </Text>
+                    </AppText>
                 </View>
             ) : null}
 
@@ -86,7 +84,7 @@ export default function TrailsScreen() {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>No trails available</Text>
+                        <AppText style={styles.emptyText}>No trails available</AppText>
                     }
                 />
             )}

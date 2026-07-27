@@ -1,5 +1,6 @@
+import AppText from "@/components/AppText";
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Linking } from "react-native";
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -54,7 +55,7 @@ export const MapFallback = ({
             onPress={() => onPointSelect(point)}
           >
             <View style={styles.waypointCircle}>
-              <Text style={styles.waypointText}>{point.id}</Text>
+              <AppText style={styles.waypointText}>{point.id}</AppText>
             </View>
           </Marker>
         ))}
@@ -63,7 +64,7 @@ export const MapFallback = ({
       <HeaderOverlay />
 
       <View style={styles.fallbackWarning}>
-        <Text style={styles.fallbackWarningText}>Offline maps unavailable in this build. Using online fallback.</Text>
+        <AppText style={styles.fallbackWarningText}>Offline maps unavailable in this build. Using online fallback.</AppText>
         <TouchableOpacity onPress={() => Linking.openURL('https://expo.dev/client')} style={{ marginLeft: 6 }}>
           <MaterialIcons name="help-outline" size={18} color="#ffdd57" />
         </TouchableOpacity>

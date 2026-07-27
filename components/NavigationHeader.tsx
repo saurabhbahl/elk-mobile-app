@@ -1,3 +1,4 @@
+import AppText from "@/components/AppText";
 /**
  * NavigationHeader
  *
@@ -11,13 +12,10 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
+import { Animated,
   StyleSheet,
-  Text,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../constants/theme';
@@ -73,9 +71,9 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         {/* From row */}
         <View style={styles.routeRow}>
           <View style={styles.dotFrom} />
-          <Text style={styles.routeLabel} numberOfLines={1}>
+          <AppText style={styles.routeLabel} numberOfLines={1}>
             {fromTitle || 'Starting point'}
-          </Text>
+          </AppText>
         </View>
 
         {/* Connector */}
@@ -84,16 +82,16 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         {/* To row */}
         <View style={styles.routeRow}>
           <View style={styles.dotTo} />
-          <Text style={[styles.routeLabel, styles.routeLabelBold]} numberOfLines={1}>
+          <AppText style={[styles.routeLabel, styles.routeLabelBold]} numberOfLines={1}>
             {toTitle || 'Destination'}
-          </Text>
+          </AppText>
         </View>
       </View>
 
       {/* Live indicator */}
       <View style={styles.liveContainer}>
         <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
-        <Text style={styles.liveText}>LIVE</Text>
+        <AppText style={styles.liveText}>LIVE</AppText>
       </View>
     </View>
   );
