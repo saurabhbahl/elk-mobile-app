@@ -12,7 +12,7 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import WireframePlaceholder from "@/components/WireframePlaceholder";
+import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -78,28 +78,24 @@ export default function ProgramDetailScreen() {
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
-                        {program.program_name || "Program Details"}
+                        {program.program_name || ""}
                     </AppText>
                 </View>
 
                 {/* Banner Image */}
                 <View style={styles.bannerContainer}>
-                    {program.thumbnail_image?.url ? (
-                        <Image
-                            source={{ uri: program.thumbnail_image.url }}
-                            style={styles.bannerImage}
-                            contentFit="cover"
-                        />
-                    ) : (
-                        <WireframePlaceholder style={styles.bannerImage} />
-                    )}
+                    <CachedImage
+                        uri={program.thumbnail_image?.url}
+                        style={styles.bannerImage}
+                        contentFit="cover"
+                    />
                 </View>
 
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
                     <AppText style={styles.scheduleText}>
-                        {program.schedule__dates || "No Date Scheduled"}
+                        {program.schedule__dates || ""}
                     </AppText>
 
                     {/* Description Paragraph */}

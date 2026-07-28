@@ -1,3 +1,6 @@
+import { db } from '@/database';
+import { fetchAndStoreAll, isSyncComplete, triggerDeltaSync } from '@/database/sync';
+import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 export interface AppBranding {
@@ -88,7 +91,12 @@ interface AppContentContextType {
     navigationData: any[] | null;
     poisData: any[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
-    refreshData: () => void;
+    isSyncing: boolean;
+    syncProgress: number;
+    syncStatusText: string;
+    syncError: string | null;
+    refreshData: () => Promise<boolean>;
+    performInitialSync: () => Promise<boolean>;
 }
 
 const AppContentContext = createContext<AppContentContextType | undefined>(undefined);
@@ -114,91 +122,75 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [mapSettingsData, setMapSettingsData] = useState<any | null>(null);
     const [navigationData, setNavigationData] = useState<any[] | null>(null);
     const [poisData, setPoisData] = useState<any[] | null>(null);
+
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
-    const fetchData = async () => {
-        setApiStatus('fetching');
+    // Sync states
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncProgress, setSyncProgress] = useState(0);
+    const [syncStatusText, setSyncStatusText] = useState('');
+    const [syncError, setSyncError] = useState<string | null>(null);
+
+    // Load data from local SQLite database into memory
+    const loadFromSQLite = () => {
         try {
-            const timestamp = new Date().getTime();
-            const response = await fetch(`https://ftfgifts.com/elk/wp-json/elk/v1/data?_t=${timestamp}`, {
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                    'Cookie': 'wordpress_logged_in_cache_bypass=1',
-                    'Accept': 'application/json',
-                    'User-Agent': 'ElkMobileApp/1.0'
+            // Settings mapping
+            const settings = db.getAllSync("SELECT key, json_data FROM app_settings;") as { key: string, json_data: string }[];
+            const settingsMap: Record<string, any> = {};
+            settings.forEach(s => {
+                try {
+                    settingsMap[s.key] = JSON.parse(s.json_data);
+                } catch (e) {
+                    console.error(`Error parsing settings key ${s.key}:`, e);
                 }
             });
-            const text = await response.text();
 
-            let json: AppContentData;
-            try {
-                json = JSON.parse(text);
-            } catch (e) {
-                console.error("API returned non-JSON (possibly a WAF block or Captcha):", text.substring(0, 200));
-                throw new Error("Invalid JSON response from API");
-            }
+            if (settingsMap.app_branding) setBrandData(settingsMap.app_branding);
+            if (settingsMap.popup_content) setPopupData(settingsMap.popup_content);
+            if (settingsMap.home_screen) setHomeData(settingsMap.home_screen);
+            if (settingsMap.plan_your_trip) setPlanTripData(settingsMap.plan_your_trip);
+            if (settingsMap.visitors) setVisitorsData(settingsMap.visitors);
+            if (settingsMap.programs_setting) setProgramsSettingData(settingsMap.programs_setting);
+            if (settingsMap.event_settings) setEventSettingsData(settingsMap.event_settings);
+            if (settingsMap.live_cam_settings) setLiveCamSettingsData(settingsMap.live_cam_settings);
+            if (settingsMap.trail_settings) setTrailSettingsData(settingsMap.trail_settings);
+            if (settingsMap.rental_settings) setRentalSettingsData(settingsMap.rental_settings);
+            if (settingsMap.tips_screen_settings) setTipsScreenSettingsData(settingsMap.tips_screen_settings);
+            if (settingsMap.map_settings) setMapSettingsData(settingsMap.map_settings);
+            if (settingsMap.navigation) setNavigationData(settingsMap.navigation);
 
-            if (json.app_branding) {
-                setBrandData(json.app_branding);
-            }
-            if (json.popup_content) {
-                setPopupData(json.popup_content);
-            }
-            if (json.home_screen) {
-                setHomeData(json.home_screen);
-            }
-            if (json.programs) {
-                setProgramsData(json.programs);
-            }
-            if (json.events) {
-                setEventsData(json.events);
-            }
-            if (json.trails) {
-                setTrailsData(json.trails);
-            }
-            if (json.rentals) {
-                setRentalsData(json.rentals);
-            }
-            if (json.tips) {
-                setTipsData(json.tips);
-            }
-            if (json.plan_your_trip) {
-                setPlanTripData(json.plan_your_trip);
-            }
-            if (json.cameras) {
-                setCamerasData(json.cameras);
-            }
-            if (json.visitors) {
-                setVisitorsData(json.visitors);
-            }
-            if (json.programs_setting) {
-                setProgramsSettingData(json.programs_setting);
-            }
-            if (json.event_settings) {
-                setEventSettingsData(json.event_settings);
-            }
-            if (json.live_cam_settings) {
-                setLiveCamSettingsData(json.live_cam_settings);
-            }
-            if (json.trail_settings) {
-                setTrailSettingsData(json.trail_settings);
-            }
-            if (json.rental_settings) {
-                setRentalSettingsData(json.rental_settings);
-            }
-            if (json.tips_screen_settings) {
-                setTipsScreenSettingsData(json.tips_screen_settings);
-            }
-            if (json.map_settings) {
-                setMapSettingsData(json.map_settings);
-            }
-            if (json.navigation) {
-                setNavigationData(json.navigation);
-            }
-            if (json.pois) {
-                const mappedPois = json.pois.map((poi: any) => ({
+            // CPT Records mapping
+            const records = db.getAllSync("SELECT type, json_data FROM app_records;") as { type: string, json_data: string }[];
+            const recordsMap: Record<string, any[]> = {
+                programs: [],
+                events: [],
+                trails: [],
+                rentals: [],
+                tips: [],
+                pois: [],
+                cameras: []
+            };
+
+            records.forEach(r => {
+                try {
+                    const parsed = JSON.parse(r.json_data);
+                    if (recordsMap[r.type]) {
+                        recordsMap[r.type].push(parsed);
+                    }
+                } catch (e) {
+                    console.error(`Error parsing record of type ${r.type}:`, e);
+                }
+            });
+
+            setProgramsData(recordsMap.programs);
+            setEventsData(recordsMap.events);
+            setTrailsData(recordsMap.trails);
+            setRentalsData(recordsMap.rentals);
+            setTipsData(recordsMap.tips);
+            setCamerasData(recordsMap.cameras);
+
+            if (recordsMap.pois) {
+                const mappedPois = recordsMap.pois.map((poi: any) => ({
                     ...poi,
                     id: parseInt(poi.id, 10),
                     coordinate: {
@@ -210,18 +202,75 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 }));
                 setPoisData(mappedPois);
             }
-        } catch (error) {
-            console.log("Failed to fetch app data:", error);
-        } finally {
+
+            console.log("[SQLite] Loaded cached data into React Context.");
+        } catch (e) {
+            console.error("Failed to load data from SQLite:", e);
+        }
+    };
+
+    // Performs initial synchronization
+    const performInitialSync = async (): Promise<boolean> => {
+        setIsSyncing(true);
+        setSyncError(null);
+        setSyncProgress(0);
+        setSyncStatusText("Getting things ready...");
+
+        const success = await fetchAndStoreAll((progress, status) => {
+            setSyncProgress(progress);
+            setSyncStatusText('Getting things ready...');
+        });
+
+        setIsSyncing(false);
+
+        if (success) {
+            loadFromSQLite();
             setApiStatus('loading');
             setTimeout(() => {
                 setApiStatus('ready');
             }, 1000);
+            return true;
+        } else {
+            setSyncError("Synchronization failed. Please check your internet connection.");
+            return false;
         }
     };
 
+    // Performs silent background delta sync
+    const refreshData = async (): Promise<boolean> => {
+        const netInfo = await NetInfo.fetch();
+        if (!netInfo.isConnected) return false;
+
+        setIsSyncing(true);
+        try {
+            const hasUpdates = await triggerDeltaSync();
+            if (hasUpdates) {
+                loadFromSQLite();
+            }
+            setIsSyncing(false);
+            return true;
+        } catch (e) {
+            console.error("Delta sync failed:", e);
+            setIsSyncing(false);
+            return false;
+        }
+    };
+
+    // Boot Logic
     useEffect(() => {
-        fetchData();
+        const isComplete = isSyncComplete();
+        if (isComplete) {
+            loadFromSQLite();
+            setApiStatus('loading');
+            setTimeout(() => {
+                setApiStatus('ready');
+            }, 1000);
+
+            // Trigger background delta checks on boot
+            refreshData();
+        } else {
+            setApiStatus('fetching'); // Triggers SyncProgressScreen overlay
+        }
     }, []);
 
     const contextValue = React.useMemo(() => ({
@@ -246,7 +295,12 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         navigationData,
         poisData,
         apiStatus,
-        refreshData: fetchData
+        isSyncing,
+        syncProgress,
+        syncStatusText,
+        syncError,
+        refreshData,
+        performInitialSync
     }), [
         brandData,
         popupData,
@@ -268,7 +322,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         mapSettingsData,
         navigationData,
         poisData,
-        apiStatus
+        apiStatus,
+        isSyncing,
+        syncProgress,
+        syncStatusText,
+        syncError
     ]);
 
     return (

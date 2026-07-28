@@ -3,13 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
-import { ActivityIndicator,
+import {
+    ActivityIndicator,
+    Linking,
     ScrollView,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View,
-    Linking } from "react-native";
+    View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
@@ -90,9 +92,9 @@ export default function LiveCameraScreen() {
                 return (
                     <WebView
                         style={{ flex: 1, backgroundColor: "#000" }}
-                        source={{ 
+                        source={{
                             html: `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe></body></html>`,
-                            baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com" 
+                            baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com"
                         }}
                         allowsInlineMediaPlayback={true}
                         mediaPlaybackRequiresUserAction={false}
@@ -121,7 +123,7 @@ export default function LiveCameraScreen() {
             return (
                 <WebView
                     style={{ flex: 1, backgroundColor: "#000" }}
-                    source={{ 
+                    source={{
                         html: htmlContent,
                         baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com"
                     }}
@@ -152,9 +154,9 @@ export default function LiveCameraScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            
+
             <View style={{ backgroundColor: bgColor }}>
-                
+
             </View>
 
             {apiStatus === "fetching" ? (
@@ -209,7 +211,14 @@ export default function LiveCameraScreen() {
                     {/* Active Camera Video Preview Box */}
                     <View style={styles.playerContainer}>
                         {activeCamera ? (
-                            isPlaying ? (
+                            isConnected === false ? (
+                                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
+                                    <Ionicons name="wifi-outline" size={48} color="#C62828" />
+                                    <AppText style={styles.noCameraText}>
+                                        {liveCamSettingsData?.offline_message || ""}
+                                    </AppText>
+                                </View>
+                            ) : isPlaying ? (
                                 renderPlayer()
                             ) : (
                                 <TouchableOpacity

@@ -30,7 +30,7 @@ export default function TrailsScreen() {
     const renderTrailItem = ({ item, index }: { item: any; index: number }) => (
         <View style={styles.trailItemContainer}>
             <View style={styles.trailHeaderRow}>
-                <AppText style={styles.trailName}>{item.trail_name || "Trail Name"}</AppText>
+                <AppText style={styles.trailName}>{item.trail_name || ""}</AppText>
                 {item.distance ? (
                     <AppText style={styles.trailDistance}>{item.distance}</AppText>
                 ) : null}

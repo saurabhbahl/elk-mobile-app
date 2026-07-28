@@ -110,7 +110,7 @@ export default function PlanTripScreen() {
                                         {iconUrl ? (
                                             <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
                                         ) : null}
-                                        <AppText style={styles.sectionHeading}>{sec.section_heading || "Trip Section"}</AppText>
+                                        <AppText style={styles.sectionHeading}>{sec.section_heading || ""}</AppText>
                                     </View>
                                     {sec.section_body ? (
                                         <RenderHTML

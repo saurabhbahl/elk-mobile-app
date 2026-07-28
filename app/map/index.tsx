@@ -787,7 +787,7 @@ function MapScreen() {
         </View>
 
         <AppText style={styles.hotspotDescription} numberOfLines={3}>
-          {item.description || 'A premier destination for elk viewing.'}
+          {item.description || ""}
         </AppText>
 
         <View style={styles.cardFooterRow}>

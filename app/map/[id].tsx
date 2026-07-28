@@ -3,9 +3,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
-import { Dimensions, Linking, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { openExternalLink } from "@/utils/openLink";
+import CachedImage from "@/components/CachedImage";
 
 import { useTheme } from "../../context/ThemeContext";
 import { useAppContent } from "../../contexts/AppContentContext";
@@ -31,7 +33,7 @@ export default function WaypointDetailsScreen() {
         if (!waypoint) return;
         const { latitude, longitude } = waypoint.coordinate;
         const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        Linking.openURL(url).catch(err => console.error("Failed to open maps url", err));
+        openExternalLink(url, "An active internet connection is required to get directions.");
     };
 
     if (!waypoint) {
@@ -63,7 +65,7 @@ export default function WaypointDetailsScreen() {
                         style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                         contentFit="contain"
                     />
-                    <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '#000') }]}>
+                    <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '') }]}>
                         {waypoint.title}
                     </AppText>
                 </View>
@@ -72,9 +74,9 @@ export default function WaypointDetailsScreen() {
                 {waypoint.image_gallery && Array.isArray(waypoint.image_gallery) && waypoint.image_gallery.length > 0 ? (
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageSliderContainer}>
                         {waypoint.image_gallery.map((img: any, idx: number) => (
-                            <Image
+                            <CachedImage
                                 key={idx}
-                                source={{ uri: typeof img === 'string' ? img : img.url || img.sizes?.large }}
+                                uri={typeof img === 'string' ? img : img.url || img.sizes?.large}
                                 style={{ width: windowWidth - 40, height: 220 }}
                                 contentFit="cover"
                             />
@@ -82,8 +84,8 @@ export default function WaypointDetailsScreen() {
                     </ScrollView>
                 ) : waypoint.featured_image ? (
                     <View style={styles.imageSliderContainer}>
-                        <Image
-                            source={{ uri: typeof waypoint.featured_image === 'string' ? waypoint.featured_image : waypoint.featured_image.url || waypoint.featured_image.sizes?.large }}
+                        <CachedImage
+                            uri={typeof waypoint.featured_image === 'string' ? waypoint.featured_image : waypoint.featured_image.url || waypoint.featured_image.sizes?.large}
                             style={{ width: "100%", height: "100%" }}
                             contentFit="cover"
                         />
@@ -174,11 +176,11 @@ export default function WaypointDetailsScreen() {
                 {waypoint.external_link ? (
                     <TouchableOpacity
                         style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
-                        onPress={() => Linking.openURL(typeof waypoint.external_link === 'string' ? waypoint.external_link : waypoint.external_link.url)}
+                        onPress={() => openExternalLink(typeof waypoint.external_link === 'string' ? waypoint.external_link : waypoint.external_link.url)}
                         activeOpacity={0.8}
                     >
                         <AppText style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
-                            {typeof waypoint.external_link === 'string' ? 'More Info' : waypoint.external_link.title || 'More Info'}
+                            {typeof waypoint.external_link === 'string' ? 'More Info' : waypoint.external_link.title || ""}
                         </AppText>
                         <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
                     </TouchableOpacity>

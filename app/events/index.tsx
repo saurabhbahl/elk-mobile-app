@@ -11,7 +11,7 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import WireframePlaceholder from "@/components/WireframePlaceholder";
+import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -34,21 +34,17 @@ export default function EventsScreen() {
             activeOpacity={0.8}
             onPress={() => router.push(`/events/${item.id || index}` as any)}
         >
-            {item.thumbnail_image?.url ? (
-                <Image
-                    source={{ uri: item.thumbnail_image.url }}
-                    style={styles.eventCardImage}
-                    contentFit="cover"
-                />
-            ) : (
-                <WireframePlaceholder style={styles.eventCardImage} />
-            )}
+            <CachedImage
+                uri={item.thumbnail_image?.url}
+                style={styles.eventCardImage}
+                contentFit="cover"
+            />
             <View style={styles.eventCardContent}>
                 <AppText style={styles.eventCardName} numberOfLines={2}>
-                    {item.event_name || "Event Name"}
+                    {item.event_name || ""}
                 </AppText>
                 <AppText style={styles.eventCardDate} numberOfLines={1}>
-                    {item["start_date_&_time"] || "No Date"}
+                    {item["start_date_&_time"] || ""}
                 </AppText>
             </View>
         </TouchableOpacity>

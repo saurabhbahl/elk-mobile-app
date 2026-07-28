@@ -13,7 +13,9 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
+import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { openExternalLink } from "@/utils/openLink";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +33,7 @@ export default function RentalsScreen() {
 
     const handlePressLink = (url: string) => {
         if (url) {
-            Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
+            openExternalLink(url);
         }
     };
 
@@ -44,12 +46,14 @@ export default function RentalsScreen() {
 
         return (
             <View style={styles.rentalCard}>
-                {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={styles.rentalImage} contentFit="cover" />
-                ) : null}
+                <CachedImage
+                    uri={imageUrl}
+                    style={styles.rentalImage}
+                    contentFit="cover"
+                />
                 <View style={styles.rentalContent}>
                     <View style={styles.titleRow}>
-                        <AppText style={styles.rentalName}>{item.rental_name || "Rental Unit"}</AppText>
+                        <AppText style={styles.rentalName}>{item.rental_name || ""}</AppText>
                         {item.rental_type ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
                                 <AppText style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.rental_type}</AppText>

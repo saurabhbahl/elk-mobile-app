@@ -10,6 +10,7 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
+import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -31,12 +32,14 @@ export default function TipsScreen() {
 
         return (
             <View style={styles.tipCard}>
-                {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={styles.tipImage} contentFit="cover" />
-                ) : null}
+                <CachedImage
+                    uri={imageUrl}
+                    style={styles.tipImage}
+                    contentFit="cover"
+                />
                 <View style={styles.tipContent}>
                     <View style={styles.titleRow}>
-                        <AppText style={styles.tipTitle}>{item.tip_title || "Viewing Tip"}</AppText>
+                        <AppText style={styles.tipTitle}>{item.tip_title || ""}</AppText>
                         {item.category__tag ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
                                 <AppText style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.category__tag}</AppText>
@@ -70,11 +73,11 @@ export default function TipsScreen() {
 
             {tipsScreenSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
-                    {tipsScreenSettingsData?.header_icon?.url ? (
-                        <Image source={{ uri: tipsScreenSettingsData.header_icon.url }} style={styles.headerIcon} />
-                    ) : (
-                        <Image source={require("../../assets/images/tips.png")} style={styles.headerIcon} />
-                    )}
+                    <CachedImage
+                        uri={tipsScreenSettingsData.header_icon.url}
+                        style={styles.headerIcon}
+                        contentFit="contain"
+                    />
                     <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
                         {tipsScreenSettingsData.screen_title}
                     </AppText>

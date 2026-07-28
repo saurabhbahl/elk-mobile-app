@@ -21,19 +21,35 @@ export default function Navbar() {
                 contentFit="contain"
             />
 
-            {/* TIPS Badge */}
-            <TouchableOpacity 
-                style={styles.tipsContainer} 
-                activeOpacity={0.7}
-                onPress={() => router.push("/tips" as any)}
-            >
-                <View style={styles.tipsCircle}>
-                    <MaterialCommunityIcons name="paw" size={22} color="#333333" />
-                </View>
-                <View style={styles.tipsBadge}>
-                    <AppText style={styles.tipsBadgeText}>TIPS →</AppText>
-                </View>
-            </TouchableOpacity>
+            <View style={styles.rightActions}>
+                {/* SETTINGS Button */}
+                <TouchableOpacity 
+                    style={styles.tipsContainer} 
+                    activeOpacity={0.7}
+                    onPress={() => router.push("/map/settings" as any)}
+                >
+                    <View style={styles.tipsCircle}>
+                        <MaterialCommunityIcons name="cog" size={20} color="#333333" />
+                    </View>
+                    <View style={styles.tipsBadge}>
+                        <AppText style={styles.tipsBadgeText}>SETTINGS</AppText>
+                    </View>
+                </TouchableOpacity>
+
+                {/* TIPS Badge */}
+                <TouchableOpacity 
+                    style={styles.tipsContainer} 
+                    activeOpacity={0.7}
+                    onPress={() => router.push("/tips" as any)}
+                >
+                    <View style={styles.tipsCircle}>
+                        <MaterialCommunityIcons name="paw" size={20} color="#333333" />
+                    </View>
+                    <View style={styles.tipsBadge}>
+                        <AppText style={styles.tipsBadgeText}>TIPS →</AppText>
+                    </View>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -57,7 +73,13 @@ const styles = StyleSheet.create({
 
     headerExplorer: {
         height: 30,
-        width: 100,
+        width: 80,
+    },
+
+    rightActions: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
     },
 
     tipsContainer: {
@@ -66,9 +88,9 @@ const styles = StyleSheet.create({
     },
 
     tipsCircle: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
+        width: 34,
+        height: 34,
+        borderRadius: 17,
         backgroundColor: "#E0E0E0",
         justifyContent: "center",
         alignItems: "center",
@@ -78,7 +100,7 @@ const styles = StyleSheet.create({
 
     tipsBadge: {
         backgroundColor: "#000000",
-        paddingHorizontal: 6,
+        paddingHorizontal: 5,
         paddingVertical: 2,
         borderRadius: 8,
         marginTop: -6,
@@ -87,7 +109,7 @@ const styles = StyleSheet.create({
 
     tipsBadgeText: {
         color: "#FFFFFF",
-        fontSize: 8,
+        fontSize: 7,
         fontWeight: "bold",
     },
 });

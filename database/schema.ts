@@ -9,7 +9,42 @@ export function createTables() {
       title TEXT,
       releaseYear TEXT
     );
-  `);
+    `);
+
+    db.execSync(`
+    CREATE TABLE IF NOT EXISTS sync_metadata (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+    `);
+
+    db.execSync(`
+    CREATE TABLE IF NOT EXISTS app_records (
+      id TEXT,
+      type TEXT,
+      json_data TEXT,
+      last_modified TEXT,
+      PRIMARY KEY (id, type)
+    );
+    `);
+
+    // Migration: add last_modified to existing installs (silently ignored if column exists)
+    try {
+      db.execSync(`ALTER TABLE app_records ADD COLUMN last_modified TEXT;`);
+    } catch (_) {
+      // Column already exists — safe to ignore
+    }
+
+    db.execSync(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      json_data TEXT
+    );
+    `);
+
+    db.execSync(`
+    CREATE INDEX IF NOT EXISTS idx_app_records_type ON app_records(type);
+    `);
 
     console.log("Tables created");
 }

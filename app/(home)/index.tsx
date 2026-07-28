@@ -16,6 +16,7 @@ import RenderHTML from 'react-native-render-html';
 import { useIsFocused } from '@react-navigation/native';
 
 import WireframePlaceholder from "@/components/WireframePlaceholder";
+import CachedImage from "@/components/CachedImage";
 
 // Get screen dimensions for dynamic calculations
 const { width } = Dimensions.get("window");
@@ -142,16 +143,16 @@ export default function HomeScreen() {
                                     activeOpacity={0.8}
                                     onPress={() => router.push(`/programs` as any)}
                                 >
-                                    {program.thumbnail_image?.url ? (
-                                        <Image source={{ uri: program.thumbnail_image.url }} style={styles.programCardImage} />
-                                    ) : (
-                                        <WireframePlaceholder style={styles.programCardImage} />
-                                    )}
+                                    <CachedImage
+                                        uri={program.thumbnail_image?.url}
+                                        style={styles.programCardImage}
+                                        contentFit="cover"
+                                    />
                                     <View style={styles.programCardContent}>
-                                        <AppText style={styles.programCardName} numberOfLines={1}>{program.program_name || "Program Name"}</AppText>
-                                        <AppText style={styles.programCardDate}>{program.schedule__dates || "No Date"}</AppText>
+                                        <AppText style={styles.programCardName} numberOfLines={1}>{program.program_name || ""}</AppText>
+                                        <AppText style={styles.programCardDate}>{program.schedule__dates || ""}</AppText>
                                         <View style={[styles.arrowCircle, { backgroundColor: primaryColor }]}>
-                                            <Ionicons name="arrow-forward" size={12} color={secondaryColor || "#FFFFFF"} />
+                                            <Ionicons name="arrow-forward" size={12} color={secondaryColor || ""} />
                                         </View>
                                     </View>
                                 </TouchableOpacity>
@@ -189,22 +190,22 @@ export default function HomeScreen() {
                             }}
                         >
                             <View style={styles.featuredCardLeft}>
-                                {homeData.featured_event[0].thumbnail_image?.url ? (
-                                    <Image source={{ uri: homeData.featured_event[0].thumbnail_image.url }} style={styles.featuredCardImage} />
-                                ) : (
-                                    <WireframePlaceholder style={styles.featuredCardImage} />
-                                )}
+                                <CachedImage
+                                    uri={homeData.featured_event[0].thumbnail_image?.url}
+                                    style={styles.featuredCardImage}
+                                    contentFit="cover"
+                                />
                                 <View style={[styles.featuredArrowCircle, { backgroundColor: primaryColor }]}>
-                                    <Ionicons name="arrow-forward" size={12} color={secondaryColor || "#FFFFFF"} />
+                                    <Ionicons name="arrow-forward" size={12} color={secondaryColor || ""} />
                                 </View>
                             </View>
                             <View style={styles.featuredCardRight}>
-                                <AppText style={styles.featuredEventName}>{homeData.featured_event[0].event_name || "Featured Event"}</AppText>
+                                <AppText style={styles.featuredEventName}>{homeData.featured_event[0].event_name || ""}</AppText>
                                 <AppText style={styles.featuredEventDate}>
-                                    {homeData.featured_event[0]['start_date_&_time'] || "Coming Soon"}
+                                    {homeData.featured_event[0]['start_date_&_time'] || ""}
                                 </AppText>
                                 <AppText style={styles.featuredEventDesc} numberOfLines={3}>
-                                    {homeData.featured_event[0].short_description ? homeData.featured_event[0].short_description.replace(/<\/?[^>]+(>|$)/g, "").trim() : "Details for this event will be announced soon."}
+                                    {homeData.featured_event[0].short_description ? homeData.featured_event[0].short_description.replace(/<\/?[^>]+(>|$)/g, "").trim() : ""}
                                 </AppText>
                             </View>
                         </TouchableOpacity>
@@ -217,7 +218,7 @@ export default function HomeScreen() {
                         {/* Extension view for overscroll */}
                         <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: 1000, backgroundColor: primaryColor }} />
                         <View style={styles.trailsHeaderRow}>
-                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || "#FFFFFF"} />
+                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || ""} />
                             <TouchableOpacity onPress={() => router.push("/trails" as any)}>
                                 <AppText style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</AppText>
                             </TouchableOpacity>
@@ -230,7 +231,7 @@ export default function HomeScreen() {
                             {homeData?.trails && Array.isArray(homeData.trails) && homeData.trails.length > 0 ? (
                                 homeData.trails.map((trail: any, index: number) => (
                                     <View key={trail.id || index} style={styles.trailPill}>
-                                        <AppText style={styles.trailName}>{trail.trail_name || "Trail Name"}</AppText>
+                                        <AppText style={styles.trailName}>{trail.trail_name || ""}</AppText>
                                         <AppText style={styles.trailDistance}>{trail.distance ? `${trail.distance}` : "N/A"}</AppText>
                                     </View>
                                 ))

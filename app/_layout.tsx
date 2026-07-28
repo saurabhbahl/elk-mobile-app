@@ -3,11 +3,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native
 import { Stack, usePathname, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/components/Navbar";
+import OfflineBanner from "@/components/OfflineBanner";
 import QuickLinks from "@/components/QuickLinks";
+import SyncProgressScreen from "@/components/SyncProgressScreen";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 import {
@@ -132,15 +134,45 @@ export default function RootLayout() {
 }
 
 function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, isNavigating: boolean }) {
-  const { brandData } = useAppContent();
+  const { brandData, apiStatus, refreshData } = useAppContent();
   const pathname = usePathname();
   const segments = useSegments();
-  const primaryColor = brandData?.brand_color_primary || "#007AFF";
+  const primaryColor = brandData?.brand_color_primary || "";
+
+  // Delta check on app resume or active timers
+  useEffect(() => {
+    if (apiStatus !== 'ready') return;
+
+    // 30 minute active polling sync
+    const timer = setInterval(() => {
+      console.log("[Sync] Triggering scheduled 30m delta check.");
+      refreshData();
+    }, 30 * 60 * 1000);
+
+    // Foreground listener
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        console.log("[Sync] App foregrounded. Triggering delta update check.");
+        refreshData();
+      }
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, [apiStatus]);
+
+  if (apiStatus === 'fetching') {
+    return <SyncProgressScreen />;
+  }
 
   // Hide headers on splash (index) and modal routes
-  const isSplash = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
+  const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
   const isModal = pathname === '/modal';
-  const shouldShowHeader = !isSplash && !isModal && !isNavigating;
+  const isSettings = pathname === '/map/settings';
+  const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;
 
   return (
     <View style={{ flex: 1, backgroundColor: colorScheme === "dark" ? "#121212" : "#F8F9FA" }}>
@@ -150,6 +182,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
           <View style={{ backgroundColor: primaryColor }}>
             <QuickLinks />
           </View>
+          <OfflineBanner />
         </SafeAreaView>
       )}
       <Stack>
@@ -196,6 +229,21 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
         <Stack.Screen
           name="map/[id]"
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="map/settings"
+          options={{
+            headerShown: true,
+            title: "Settings",
+            headerBackTitle: "back",
+            headerStyle: {
+              backgroundColor: primaryColor || undefined,
+            },
+            headerTintColor: "#FFFFFF",
+            headerTitleStyle: {
+              fontFamily: "Lexend_500Medium",
+            }
+          }}
         />
         <Stack.Screen
           name="visitors/index"

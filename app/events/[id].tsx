@@ -14,8 +14,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import RenderHTML from 'react-native-render-html';
 
-import WireframePlaceholder from "@/components/WireframePlaceholder";
+import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { openExternalLink } from "@/utils/openLink";
 
 const { width } = Dimensions.get("window");
 
@@ -34,12 +35,19 @@ export default function EventDetailScreen() {
         (e: any, index: number) => String(e.id || index) === String(id)
     );
 
+    const rawDescription = event?.full_description || "";
+
+    const handleRegister = () => {
+        const url = event?.registration__ticket_link;
+        if (url) {
+            openExternalLink(url, "An active internet connection is required to register or buy tickets.");
+        }
+    };
+
     if (apiStatus === "fetching") {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                
-                
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -51,8 +59,6 @@ export default function EventDetailScreen() {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-                
-                
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Event not found.</AppText>
                     <TouchableOpacity
@@ -66,21 +72,6 @@ export default function EventDetailScreen() {
         );
     }
 
-    const rawDescription = event.full_description || "";
-
-    const handleRegister = () => {
-        const url = event.registration__ticket_link;
-        if (url) {
-            Linking.canOpenURL(url).then((supported) => {
-                if (supported) {
-                    Linking.openURL(url);
-                } else {
-                    console.log("Don't know how to open URI: " + url);
-                }
-            });
-        }
-    };
-
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -93,21 +84,17 @@ export default function EventDetailScreen() {
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
-                        {event.event_name || "Event Details"}
+                        {event.event_name || ""}
                     </AppText>
                 </View>
 
                 {/* Banner Image */}
                 <View style={styles.bannerContainer}>
-                    {event.thumbnail_image?.url ? (
-                        <Image
-                            source={{ uri: event.thumbnail_image.url }}
-                            style={styles.bannerImage}
-                            contentFit="cover"
-                        />
-                    ) : (
-                        <WireframePlaceholder style={styles.bannerImage} />
-                    )}
+                    <CachedImage
+                        uri={event.thumbnail_image?.url}
+                        style={styles.bannerImage}
+                        contentFit="cover"
+                    />
                 </View>
 
                 {/* Details Section */}
@@ -116,7 +103,7 @@ export default function EventDetailScreen() {
                     <View style={styles.infoRow}>
                         <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
                         <AppText style={styles.scheduleText}>
-                            {event["start_date_&_time"] || "No Date Scheduled"}
+                            {event["start_date_&_time"] || ""}
                             {event["end_date_&_time"] ? ` - ${event["end_date_&_time"]}` : ""}
                         </AppText>
                     </View>
@@ -161,7 +148,7 @@ export default function EventDetailScreen() {
                             onPress={handleRegister}
                             activeOpacity={0.8}
                         >
-                            <AppText style={[styles.registerButtonText, { color: secondaryColor || "#FFFFFF" }]}>
+                            <AppText style={[styles.registerButtonText, { color: secondaryColor || "" }]}>
                                 Register / Buy Tickets
                             </AppText>
                         </TouchableOpacity>

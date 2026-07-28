@@ -16,6 +16,8 @@ import RenderHTML from 'react-native-render-html';
 
 import { useAppContent } from "@/contexts/AppContentContext";
 
+import { openExternalLink } from "@/utils/openLink";
+
 const { width } = Dimensions.get("window");
 const CAROUSEL_WIDTH = width - 32;
 
@@ -55,7 +57,7 @@ export default function VisitorsCenterScreen() {
 
     const handleOpenLink = (url: string | undefined) => {
         if (!url) return;
-        Linking.openURL(url).catch((err) => console.error("Couldn't open link", err));
+        openExternalLink(url);
     };
 
     return (

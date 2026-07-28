@@ -1,5 +1,5 @@
 import AppText from "@/components/AppText";
-import { Image } from "expo-image";
+import CachedImage from "@/components/CachedImage";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
@@ -11,8 +11,8 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import WireframePlaceholder from "@/components/WireframePlaceholder";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
@@ -39,21 +39,17 @@ export default function ProgramsScreen() {
             activeOpacity={0.8}
             onPress={() => router.push(`/programs/${item.id || index}` as any)}
         >
-            {item.thumbnail_image?.url ? (
-                <Image
-                    source={{ uri: item.thumbnail_image.url }}
-                    style={isGrid ? styles.programCardImage : styles.programListCardImage}
-                    contentFit="cover"
-                />
-            ) : (
-                <WireframePlaceholder style={isGrid ? styles.programCardImage : styles.programListCardImage} />
-            )}
+            <CachedImage
+                uri={item.thumbnail_image?.url}
+                style={isGrid ? styles.programCardImage : styles.programListCardImage}
+                contentFit="cover"
+            />
             <View style={isGrid ? styles.programCardContent : styles.programListCardContent}>
                 <AppText style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
-                    {item.program_name || "Program Name"}
+                    {item.program_name || ""}
                 </AppText>
                 <AppText style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
-                    {item.schedule__dates || "No Date"}
+                    {item.schedule__dates || ""}
                 </AppText>
             </View>
         </TouchableOpacity>

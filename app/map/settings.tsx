@@ -9,6 +9,7 @@ import { useAppContent } from '../../contexts/AppContentContext';
 import { useOfflineMap } from '../../hooks/useOfflineMap';
 import { useRoutePreloader } from '../../hooks/useRoutePreloader';
 import { normalizeHex } from '../../utils/colorUtils';
+import { clearImageCache, getCacheSizeLabel } from '../../utils/imageCache';
 import { clearAllRoutes, getAllCachedRoutes } from '../../utils/routeDatabase';
 
 export default function SettingsScreen() {
@@ -19,6 +20,8 @@ export default function SettingsScreen() {
   const { preloadAll, progress, isPreloading, cancelPreload } = useRoutePreloader();
   const [cachedCount, setCachedCount] = useState<number>(0);
   const [isClearing, setIsClearing] = useState(false);
+  const [imageCacheSize, setImageCacheSize] = useState<string>('...');
+  const [isClearingImages, setIsClearingImages] = useState(false);
 
   const { brandData } = useAppContent();
 
@@ -26,10 +29,20 @@ export default function SettingsScreen() {
   const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
-  // Load cached route count on mount
+  // Load cached route count and image cache size on mount
   useEffect(() => {
     loadCachedCount();
+    loadImageCacheSize();
   }, []);
+
+  const loadImageCacheSize = async () => {
+    try {
+      const label = await getCacheSizeLabel();
+      setImageCacheSize(label);
+    } catch {
+      setImageCacheSize('Unknown');
+    }
+  };
 
   const loadCachedCount = async () => {
     try {
@@ -48,32 +61,38 @@ export default function SettingsScreen() {
       return;
     }
     if (result.success) {
-      Alert.alert('Routes Cached', `${result.cached} routes saved for offline use.`);
+      Alert.alert('Routes Downloaded', `${result.cached} routes saved for offline use.`);
       await loadCachedCount();
     } else {
-      Alert.alert('Preload Cancelled', `${result.cached} routes were cached before cancellation.`);
+      Alert.alert('Download Cancelled', `${result.cached} routes were downloaded before cancellation.`);
       await loadCachedCount();
     }
   };
 
   const handleClearCache = async () => {
     Alert.alert(
-      'Clear Cached Routes',
-      `Are you sure you want to delete all ${cachedCount} cached routes? This action cannot be undone.`,
+      'Remove Downloaded Routes?',
+      `This will remove all ${cachedCount} downloaded routes from your device. They can be downloaded again whenever you need them.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Clear All',
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             setIsClearing(true);
             try {
               await clearAllRoutes();
               setCachedCount(0);
-              Alert.alert('Cache Cleared', 'All offline routes have been deleted.');
+              Alert.alert(
+                'Downloaded Routes Removed',
+                'Your downloaded routes have been removed from this device.'
+              );
             } catch (err) {
-              Alert.alert('Error', 'Failed to clear cached routes.');
-              console.error('[Settings] Clear cache failed:', err);
+              Alert.alert(
+                'Something Went Wrong',
+                'We couldn’t remove the downloaded routes. Please try again.'
+              );
+              console.error('[Settings] Clear routes failed:', err);
             } finally {
               setIsClearing(false);
             }
@@ -85,9 +104,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
-      <ScrollView style={[styles.container, { paddingTop: insets.top - 20 }]} showsVerticalScrollIndicator={false}>
-        <AppText style={styles.title}>Settings</AppText>
-        <AppText style={styles.subtitle}>Configure your app</AppText>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
         {/* ── Theme Selection Section ────────────────────────────────────────── */}
         <View style={styles.section}>
@@ -112,10 +129,9 @@ export default function SettingsScreen() {
 
         {/* ── Offline Map Section ────────────────────────────────────────────── */}
         <View style={[styles.section, { marginTop: 20 }]}>
-          <AppText style={styles.sectionTitle}>Offline Map Data</AppText>
+          <AppText style={styles.sectionTitle}>Offline Map</AppText>
           <AppText style={styles.sectionDescription}>
-            The offline map allows you to navigate the Elk Scenic Drive without cellular service.
-            It requires approximately 307MB of storage.
+            Download the map so you can use it even when you don't have a mobile signal or internet connection. The download uses about 307 MB of storage on your device.
           </AppText>
 
           {isInitializing ? (
@@ -154,7 +170,7 @@ export default function SettingsScreen() {
         <View style={[styles.section, { marginTop: 20 }]}>
           <AppText style={styles.sectionTitle}>Offline Routes</AppText>
           <AppText style={styles.sectionDescription}>
-            Pre-download driving routes between all viewing areas. Routes are stored locally in the device database and persist across app restarts — you only need to do this once.
+            Download routes so you can get directions even without an internet connection. You only need to download them once.
           </AppText>
 
           {isPreloading ? (
@@ -162,7 +178,7 @@ export default function SettingsScreen() {
               <ActivityIndicator size="small" color={colors.primary} />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <AppText style={styles.progressText}>
-                  Caching routes... {progress.percentage}%
+                  Downloading routes... {progress.percentage}%
                 </AppText>
                 <AppText style={styles.progressSubtext}>
                   {progress.current} / {progress.total} pairs
@@ -188,7 +204,7 @@ export default function SettingsScreen() {
                   onPress={handlePreloadAll}
                 >
                   <MaterialIcons name="download" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
-                  <AppText style={styles.downloadButtonText}>Preload All</AppText>
+                  <AppText style={styles.downloadButtonText}>Download All</AppText>
                 </TouchableOpacity>
                 {cachedCount > 0 && (
                   <TouchableOpacity
@@ -209,6 +225,64 @@ export default function SettingsScreen() {
               </View>
             </View>
           )}
+        </View>
+
+        {/* ── Content Image Cache Section ────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <AppText style={styles.sectionTitle}>Downloaded Images</AppText>
+          <AppText style={styles.sectionDescription}>
+            Images used throughout the app are saved on your device so they load faster.
+            You can remove them at any time to free up storage. They will download again
+            automatically when needed.
+          </AppText>
+
+          <View style={styles.statusContainer}>
+            <View style={styles.statusRow}>
+              <MaterialIcons name="photo-library" size={20} color={colors.primary} />
+              <AppText style={styles.statusText}>{imageCacheSize} used</AppText>
+            </View>
+            <TouchableOpacity
+              style={[styles.deleteButton, isClearingImages && { opacity: 0.5 }]}
+              disabled={isClearingImages}
+              onPress={() => {
+                Alert.alert(
+                  'Clear Image Cache',
+                  'TThis will remove all downloaded images from your device. They will be downloaded again automatically when you use the app.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Clear',
+                      style: 'destructive',
+                      onPress: async () => {
+                        setIsClearingImages(true);
+                        try {
+                          await clearImageCache();
+                          await loadImageCacheSize();
+                          Alert.alert(
+                            'Downloaded Images Removed',
+                            'Downloaded images have been removed from your device. They will download again automatically when you use the app.'
+                          );
+                        } catch {
+                          Alert.alert(
+                            'Something Went Wrong',
+                            'We couldn’t remove the downloaded images. Please try again.'
+                          );
+                        } finally {
+                          setIsClearingImages(false);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              {isClearingImages ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <AppText style={styles.deleteButtonText}>Remove Downloaded Images</AppText>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={{ height: 120 + safeBottom }} />

@@ -72,7 +72,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         <View style={styles.routeRow}>
           <View style={styles.dotFrom} />
           <AppText style={styles.routeLabel} numberOfLines={1}>
-            {fromTitle || 'Starting point'}
+            {fromTitle || ""}
           </AppText>
         </View>
 
@@ -83,7 +83,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
         <View style={styles.routeRow}>
           <View style={styles.dotTo} />
           <AppText style={[styles.routeLabel, styles.routeLabelBold]} numberOfLines={1}>
-            {toTitle || 'Destination'}
+            {toTitle || ""}
           </AppText>
         </View>
       </View>
