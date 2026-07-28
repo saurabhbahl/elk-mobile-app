@@ -186,6 +186,21 @@ export async function getCacheSizeBytes(): Promise<number> {
 }
 
 /**
+ * Given a local file:/// path, returns the original http:// URL it was
+ * downloaded from (or null if not found in the manifest).
+ */
+export async function getOriginalUrl(localPath: string): Promise<string | null> {
+  try {
+    const manifest = await readManifest();
+    const entry = Object.values(manifest).find(e => e.localPath === localPath);
+    return entry?.originalUrl || null;
+  } catch {
+    return null;
+  }
+}
+
+
+/**
  * Deletes all cached image files and resets the manifest.
  */
 export async function clearImageCache(): Promise<void> {

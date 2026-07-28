@@ -22,31 +22,38 @@ import CachedImage from "@/components/CachedImage";
 const { width } = Dimensions.get("window");
 
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith('#') ? color : `#${color}`;
 };
 
+// Global session variable to track if the user has dismissed the popup during this app launch
+let hasDismissedPopupSession = false;
+
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
-    const hasShownPopupRef = React.useRef(false);
+    const { colors, fonts, isDark } = useTheme();
     const isFocused = useIsFocused();
     
     const { popupData, homeData, brandData, eventsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
     useEffect(() => {
-        if (isFocused && popupData && popupData.popup_enabled && !hasShownPopupRef.current) {
+        if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
             setShowPopup(true);
-            hasShownPopupRef.current = true;
+            
         }
     }, [isFocused, popupData]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
 
@@ -60,7 +67,7 @@ export default function HomeScreen() {
 
                     {/* Welcome Message */}
                     {homeData?.hero_welcome_heading ? (
-                        <AppText style={[styles.welcomeTitle, { color: secondaryColor }]}>
+                        <AppText style={[styles.welcomeTitle, { color: isDark ? "#FFFFFF" : secondaryColor }]}>
                             {homeData.hero_welcome_heading}
                         </AppText>
                     ) : null}
@@ -76,7 +83,7 @@ export default function HomeScreen() {
                         source={{ html: homeData.hero_intro_paragraph }}
                         baseStyle={{
                             fontSize: 13,
-                            color: "#333333",
+                            color: colors.onSurface,
                             textAlign: "center",
                             lineHeight: 18,
                             marginBottom: 12,
@@ -88,18 +95,18 @@ export default function HomeScreen() {
                 {/* Read More Button */}
                 {homeData?.hero_cta_button_label ? (
                     <TouchableOpacity style={[styles.readMoreButton, { backgroundColor: primaryColor }]} activeOpacity={0.8}>
-                        <AppText style={[styles.readMoreButtonText, { color: secondaryColor }]}>{homeData.hero_cta_button_label}</AppText>
+                        <AppText style={[styles.readMoreButtonText, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.hero_cta_button_label}</AppText>
                     </TouchableOpacity>
                 ) : null}
 
                 {/* Find Your Next Adventure Section */}
-                <AppText style={[styles.sectionHeader, { color: primaryColor }]}>Find your next adventure</AppText>
+                <AppText style={[styles.sectionHeader, { color: isDark ? "#FFFFFF" : primaryColor }]}>Find your next adventure</AppText>
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.subSectionTitleRow}>
                         <Ionicons name="map-outline" size={18} color="#333333" />
-                        <AppText style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.map_block_heading}</AppText>
+                        <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.map_block_heading}</AppText>
                     </View>
                 ) : null}
 
@@ -113,7 +120,7 @@ export default function HomeScreen() {
                                     activeOpacity={0.9}
                                     onPress={() => router.push("/map" as any)}
                                 >
-                                    <AppText style={[styles.viewMapButtonText, { color: secondaryColor }]}>{homeData.map_view_button_label}</AppText>
+                                    <AppText style={[styles.viewMapButtonText, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.map_view_button_label}</AppText>
                                 </TouchableOpacity>
                             ) : null}
                         </ImageBackground>
@@ -126,7 +133,7 @@ export default function HomeScreen() {
                         {homeData?.programs_block_heading ? (
                             <View style={styles.subSectionTitleRow}>
                                 <Ionicons name="calendar-outline" size={18} color="#333333" />
-                                <AppText style={[styles.subSectionTitle, { color: primaryColor }]}>{homeData.programs_block_heading}</AppText>
+                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.programs_block_heading}</AppText>
                             </View>
                         ) : null}
 
@@ -168,11 +175,11 @@ export default function HomeScreen() {
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
                                     <Ionicons name="calendar" size={18} color="#000000" />
-                                    <AppText style={[styles.featuredSectionTitle, { color: primaryColor }]}>{homeData.event_block_heading}</AppText>
+                                    <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_block_heading}</AppText>
                                 </View>
                                 {homeData?.event_view_all_label ? (
                                     <TouchableOpacity onPress={() => router.push("/events" as any)}>
-                                        <AppText style={[styles.viewAllEventsText, { color: primaryColor }]}>{homeData.event_view_all_label}</AppText>
+                                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_view_all_label}</AppText>
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
@@ -220,7 +227,7 @@ export default function HomeScreen() {
                         <View style={styles.trailsHeaderRow}>
                             <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || ""} />
                             <TouchableOpacity onPress={() => router.push("/trails" as any)}>
-                                <AppText style={[styles.trailsTitle, { color: secondaryColor }]}>{homeData.trails_block_heading}</AppText>
+                                <AppText style={[styles.trailsTitle, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.trails_block_heading}</AppText>
                             </TouchableOpacity>
                         </View>
                         <ScrollView
@@ -263,7 +270,7 @@ export default function HomeScreen() {
                                         {/* Close Button */}
                                         <TouchableOpacity
                                             style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
-                                            onPress={() => setShowPopup(false)}
+                                            onPress={() => { hasDismissedPopupSession = true; setShowPopup(false); }}
                                             activeOpacity={0.8}
                                         >
                                             <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
@@ -293,7 +300,7 @@ export default function HomeScreen() {
                                     {/* Close Button */}
                                     <TouchableOpacity
                                         style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
-                                        onPress={() => setShowPopup(false)}
+                                        onPress={() => { hasDismissedPopupSession = true; setShowPopup(false); }}
                                         activeOpacity={0.8}
                                     >
                                         <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
@@ -307,7 +314,7 @@ export default function HomeScreen() {
                                             source={{ html: popupData.popup_body_copy }}
                                             baseStyle={{
                                                 fontSize: 14,
-                                                color: "#666666",
+                                                color: colors.onSurfaceVariant,
                                                 textAlign: "center",
                                                 lineHeight: 18,
                                             }}
@@ -330,10 +337,10 @@ export default function HomeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     header: {
@@ -344,7 +351,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: "#E0E0E0",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     headerLogo: {
@@ -370,11 +377,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outlineVariant,
     },
 
     tipsBadge: {
-        backgroundColor: "#000000",
+        backgroundColor: colors.onSurface,
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 8,
@@ -383,7 +390,7 @@ const styles = StyleSheet.create({
     },
 
     tipsBadgeText: {
-        color: "#FFFFFF",
+        color: colors.surface,
         fontSize: 8,
         fontWeight: "bold",
     },
@@ -403,9 +410,9 @@ const styles = StyleSheet.create({
         height: 90,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     menuCardImage: {
@@ -416,7 +423,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: "#E0E0E0",
         paddingHorizontal: 4,
@@ -425,14 +432,14 @@ const styles = StyleSheet.create({
     menuCardTitle: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     welcomeTitle: {
         fontSize: 18,
         fontWeight: "bold",
         textAlign: "center",
-        color: "#000000",
+        color: colors.onSurface,
         marginVertical: 14,
         lineHeight: 22,
         paddingHorizontal: 16,
@@ -443,13 +450,13 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outlineVariant,
         width: "auto",
     },
 
     welcomeDescription: {
         fontSize: 13,
-        color: "#333333",
+        color: colors.onSurface,
         textAlign: "center",
         lineHeight: 18,
         marginHorizontal: 20,
@@ -469,13 +476,13 @@ const styles = StyleSheet.create({
     readMoreButtonText: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     sectionHeader: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#000000",
+        color: colors.onSurface,
         marginHorizontal: 16,
         marginTop: 16,
         marginBottom: 12,
@@ -492,14 +499,14 @@ const styles = StyleSheet.create({
     subSectionTitle: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#000000",
+        color: colors.onSurface,
     },
 
     mapCardContainer: {
         marginHorizontal: 16,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
         marginBottom: 12,
     },
@@ -513,13 +520,13 @@ const styles = StyleSheet.create({
         position: "absolute",
         bottom: 12,
         right: 12,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         paddingHorizontal: 14,
         paddingVertical: 6,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
-        shadowColor: "#000",
+        borderColor: colors.outlineVariant,
+        shadowColor: colors.onSurface,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -527,7 +534,7 @@ const styles = StyleSheet.create({
     },
 
     viewMapButtonText: {
-        color: "#333333",
+        color: colors.onSurface,
         fontSize: 12,
         fontWeight: "bold",
     },
@@ -545,7 +552,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#E0E0E0",
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     programCardImage: {
@@ -561,7 +568,7 @@ const styles = StyleSheet.create({
     programCardName: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     programCardDate: {
@@ -600,18 +607,18 @@ const styles = StyleSheet.create({
     featuredSectionTitle: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#000000",
+        color: colors.onSurface,
     },
 
     viewAllEventsText: {
         fontSize: 12,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         textDecorationLine: "underline",
     },
 
     featuredCard: {
         flexDirection: "row",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "#E0E0E0",
@@ -653,7 +660,7 @@ const styles = StyleSheet.create({
     featuredEventName: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     featuredEventDate: {
@@ -664,12 +671,12 @@ const styles = StyleSheet.create({
 
     featuredEventDesc: {
         fontSize: 11,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         lineHeight: 14,
     },
 
     trailsContainer: {
-        backgroundColor: "#8E8E93",
+        backgroundColor: colors.outline,
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         paddingVertical: 14,
@@ -686,7 +693,7 @@ const styles = StyleSheet.create({
     trailsTitle: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#FFFFFF",
+        color: colors.surface,
     },
 
     trailsHorizontalList: {
@@ -696,7 +703,7 @@ const styles = StyleSheet.create({
 
     trailPill: {
         flexDirection: "row",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderRadius: 16,
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -706,12 +713,12 @@ const styles = StyleSheet.create({
     trailName: {
         fontSize: 12,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     trailDistance: {
         fontSize: 11,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginLeft: 6,
         fontWeight: "500",
     },
@@ -729,7 +736,7 @@ const styles = StyleSheet.create({
         height: width * 0.82,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
     },
 
@@ -745,7 +752,7 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: "#000000",
+        backgroundColor: colors.onSurface,
         justifyContent: "center",
         alignItems: "center",
         zIndex: 10,
@@ -754,12 +761,12 @@ const styles = StyleSheet.create({
     modalTitle: {
         fontSize: 22,
         fontWeight: "bold",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     modalBody: {
         fontSize: 14,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         textAlign: "center",
         marginTop: 12,
         paddingHorizontal: 20,
@@ -781,7 +788,7 @@ const styles = StyleSheet.create({
     modalTitleDynamic: {
         fontSize: 22,
         fontWeight: "bold",
-        color: "#FFFFFF",
+        color: colors.surface,
         textAlign: "center",
         textShadowColor: "rgba(0, 0, 0, 0.5)",
         textShadowOffset: { width: 0, height: 1 },
@@ -790,7 +797,7 @@ const styles = StyleSheet.create({
 
     modalBodyDynamic: {
         fontSize: 14,
-        color: "#E5E5E5",
+        color: colors.surfaceContainerHigh,
         textAlign: "center",
         marginTop: 12,
         lineHeight: 18,
@@ -803,6 +810,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#E5E5E5",
+        backgroundColor: colors.surfaceContainerHigh,
     },
 });

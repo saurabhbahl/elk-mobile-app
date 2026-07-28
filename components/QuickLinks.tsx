@@ -5,8 +5,13 @@ import { router, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 export default function QuickLinks() {
+    const { colors, fonts, isDark } = useTheme();
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();
     const primaryColor = brandData?.brand_color_primary || "";
@@ -97,7 +102,7 @@ export default function QuickLinks() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         backgroundColor: "transparent",
     },
@@ -111,9 +116,9 @@ const styles = StyleSheet.create({
         height: 90,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outline,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     menuCardImage: {
         flex: 2,
@@ -122,14 +127,14 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderTopWidth: 1,
-        borderTopColor: "#E0E0E0",
+        borderTopColor: colors.outlineVariant,
         paddingHorizontal: 4,
     },
     menuCardTitle: {
         fontSize: 11,
         fontWeight: "600",
-        color: "#333333",
+        color: colors.onSurface,
     },
 });

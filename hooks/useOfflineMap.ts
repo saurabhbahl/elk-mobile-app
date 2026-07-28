@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { safeStorage as AsyncStorage } from '../utils/asyncStorage';
 
 const BASE_URL = process.env.EXPO_PUBLIC_MBTILES_URL
@@ -52,6 +52,7 @@ export const useOfflineMap = () => {
   const [consentStatus, setConsentStatus] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [downloadedMapFiles, setDownloadedMapFiles] = useState<string[]>([]);
+  const downloadResumableRef = useRef<FileSystem.DownloadResumable | null>(null);
 
   const checkMapStatus = useCallback(async () => {
     try {
@@ -200,6 +201,7 @@ export const useOfflineMap = () => {
           }
         );
 
+        downloadResumableRef.current = downloadResumable;
         const result = await downloadResumable.downloadAsync();
         if (result && result.status === 200) {
           // Validate downloaded file is a real SQLite/MBTiles database
@@ -225,13 +227,30 @@ export const useOfflineMap = () => {
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
-    } catch (error) {
-      console.warn('Error downloading maps:', error);
-      setMbtilesError(true);
+    } catch (error: any) {
+      if (error?.message && error.message.toLowerCase().includes('cancel')) {
+        console.log('Download was cancelled.');
+      } else {
+        console.warn('Error downloading maps:', error);
+        setMbtilesError(true);
+      }
       setDownloadProgress(0);
     } finally {
+      downloadResumableRef.current = null;
       setIsDownloading(false);
     }
+  };
+
+  const cancelDownload = async () => {
+    try {
+      if (downloadResumableRef.current) {
+        await downloadResumableRef.current.cancelAsync();
+      }
+    } catch (e) {
+      console.log('Error cancelling download', e);
+    }
+    // Delete any partially downloaded map tiles to prevent corruption
+    await deleteMap();
   };
 
   const deleteMap = async () => {
@@ -276,6 +295,15 @@ export const useOfflineMap = () => {
       // and the user must explicitly agree before downloading starts.
       setIsInitializing(false);
     })();
+
+    // Cleanup: If the user navigates away while downloading, cancel it and clean up corrupted files
+    return () => {
+      if (downloadResumableRef.current) {
+        downloadResumableRef.current.cancelAsync().catch(() => {});
+        // Fire and forget delete of partial files
+        deleteMap().catch(() => {});
+      }
+    };
   }, [checkMapStatus, loadConsent]);
 
   return {
@@ -287,6 +315,7 @@ export const useOfflineMap = () => {
     consentStatus,
     saveConsent,
     downloadMap,
+    cancelDownload,
     deleteMap,
     setMbtilesError,
     checkMapStatus,

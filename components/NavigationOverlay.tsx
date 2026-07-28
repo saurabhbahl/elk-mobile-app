@@ -52,8 +52,8 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
   const { colors, fonts, isDark } = useTheme();
-  const expandedPanelHeight = destinationTitle ? 236 : 192;
-  const collapsedPanelHeight = 104;
+  const expandedPanelHeight = (destinationTitle ? 236 : 192) + safeBottom + 20;
+  const collapsedPanelHeight = 104 + safeBottom + 20;
   const panelHeight = React.useRef(new Animated.Value(expandedPanelHeight)).current;
   const panelHeightRef = React.useRef(expandedPanelHeight);
   const [isPanelCollapsed, setIsPanelCollapsed] = React.useState(false);
@@ -136,9 +136,6 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         ]}
         pointerEvents="box-none"
       >
-        <TouchableOpacity style={styles.fabSecondary}>
-          <MaterialIcons name="volume-up" size={22} color={colors.primary} />
-        </TouchableOpacity>
         <TouchableOpacity onPress={onRecenter} style={styles.fabPrimary}>
           <MaterialIcons name="navigation" size={22} color={colors.onPrimary} />
         </TouchableOpacity>
@@ -148,11 +145,11 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
       <View
         style={[
           styles.statsPanelContainer,
-          { bottom: safeBottom + 20 },
+          { bottom: 0 },
         ]}
         pointerEvents="box-none"
       >
-        <Animated.View style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom + 14 }]}>
+        <Animated.View style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom + 34 }]}>
           <View style={styles.panelHandleHitArea} {...panelPanResponder.panHandlers}>
             <View style={styles.panelHandle} />
           </View>
@@ -187,11 +184,6 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
                 {distPart || '0.0'}
                 <AppText style={styles.statUnit}> {distUnit || 'mi'}</AppText>
               </AppText>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <AppText style={styles.statLabel}>ARRIVAL</AppText>
-              <AppText style={styles.statValue}>{arrivalTime || '--:--'}</AppText>
             </View>
           </View>
 
@@ -273,20 +265,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       shadowOpacity: isDark ? 0.35 : 0.2,
       shadowRadius: 8,
       elevation: 6,
-    },
-    fabSecondary: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.surfaceContainer + 'f2', // 95% opacity
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-      shadowColor: '#000',
-      shadowOpacity: isDark ? 0.25 : 0.1,
-      shadowRadius: 8,
-      elevation: 4,
     },
 
     // ── Stats panel ───────────────────────────────────────────────────────────

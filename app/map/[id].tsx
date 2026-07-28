@@ -1,4 +1,6 @@
 import AppText from "@/components/AppText";
+import CachedImage from "@/components/CachedImage";
+import { openExternalLink } from "@/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -6,8 +8,6 @@ import React, { useMemo } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { openExternalLink } from "@/utils/openLink";
-import CachedImage from "@/components/CachedImage";
 
 import { useTheme } from "../../context/ThemeContext";
 import { useAppContent } from "../../contexts/AppContentContext";
@@ -21,7 +21,7 @@ export default function WaypointDetailsScreen() {
     const { poisData, brandData } = useAppContent();
     const brandPrimary = normalizeHex(brandData?.brand_color_primary);
     const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
-    
+
     const waypoints = poisData || [];
 
     const waypoint = useMemo(() => {
@@ -31,15 +31,16 @@ export default function WaypointDetailsScreen() {
 
     const handleGetDirections = () => {
         if (!waypoint) return;
-        const { latitude, longitude } = waypoint.coordinate;
-        const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-        openExternalLink(url, "An active internet connection is required to get directions.");
+        router.push({
+            pathname: '/map',
+            params: { routeToWaypointId: waypoint.id, navRequestId: Date.now().toString() }
+        });
     };
 
     if (!waypoint) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
-                
+
                 <View style={styles.errorContainer}>
                     <MaterialIcons name="error-outline" size={48} color={colors.error} />
                     <AppText style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</AppText>
@@ -54,8 +55,8 @@ export default function WaypointDetailsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
-            
-            
+
+
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Title */}

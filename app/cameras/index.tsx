@@ -16,8 +16,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
 import { STREAM_TYPES } from "@/constants/streamTypes";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { useNetInfo } from "@react-native-community/netinfo";
+import CachedImage from "@/components/CachedImage";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -30,12 +33,20 @@ function NativeVideoPlayer({ source }: { source: string }) {
         player.play();
     });
 
+    React.useEffect(() => {
+        if (player) {
+            player.play();
+        }
+    }, [player]);
+
     return (
         <VideoView style={{ flex: 1, width: "100%", height: "100%" }} player={player} allowsFullscreen allowsPictureInPicture />
     );
 }
 
 export default function LiveCameraScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContent();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
@@ -152,7 +163,7 @@ export default function LiveCameraScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
 
             <View style={{ backgroundColor: bgColor }}>
@@ -169,7 +180,7 @@ export default function LiveCameraScreen() {
                     {liveCamSettingsData?.screen_title ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
-                            <AppText style={[styles.sectionTitle, { color: bgColor }]}>
+                            <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
                                 {liveCamSettingsData.screen_title}
                             </AppText>
                         </View>
@@ -197,7 +208,7 @@ export default function LiveCameraScreen() {
                                         <AppText
                                             style={[
                                                 styles.tabButtonText,
-                                                isActive && { color: secColor },
+                                                isActive && { color: isDark ? "#FFFFFF" : secColor },
                                             ]}
                                         >
                                             {cam.camera_name}
@@ -226,19 +237,16 @@ export default function LiveCameraScreen() {
                                     activeOpacity={0.9}
                                     onPress={handlePlayStream}
                                 >
-                                    <ImageBackground
-                                        source={
-                                            activeCamera.thumbnail__poster?.url
-                                                ? { uri: activeCamera.thumbnail__poster.url }
-                                                : undefined
-                                        }
-                                        style={styles.playerImage}
-                                        imageStyle={{ borderRadius: 16 }}
-                                    >
-                                        <View style={styles.playerOverlay}>
+                                    <View style={styles.playerImage}>
+                                        <CachedImage
+                                            uri={activeCamera.thumbnail__poster?.url}
+                                            style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                                            contentFit="cover"
+                                        />
+                                        <View style={[StyleSheet.absoluteFill, styles.playerOverlay]}>
                                             <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
                                         </View>
-                                    </ImageBackground>
+                                    </View>
                                 </TouchableOpacity>
                             )
                         ) : (
@@ -276,10 +284,10 @@ export default function LiveCameraScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     loadingContainer: {
         flex: 1,
@@ -304,7 +312,7 @@ const styles = StyleSheet.create({
         fontFamily: "Lexend_500Medium",
         fontWeight: "500",
         fontSize: 18,
-        color: "#000000",
+        color: colors.onSurface,
     },
     tabsScroll: {
         paddingHorizontal: 16,
@@ -315,9 +323,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: "#F2F2F7",
+        backgroundColor: colors.surfaceVariant,
         borderWidth: 1,
-        borderColor: "#E5E5EA",
+        borderColor: colors.outlineVariant,
     },
     tabButtonActive: {
         backgroundColor: "#D1D1D6",
@@ -332,15 +340,15 @@ const styles = StyleSheet.create({
         color: "#8E8E93",
     },
     tabButtonTextActive: {
-        color: "#000000",
+        color: colors.onSurface,
     },
     playerContainer: {
         marginHorizontal: 16,
         height: 200,
         borderRadius: 16,
-        backgroundColor: "#F2F2F7",
+        backgroundColor: colors.surfaceVariant,
         borderWidth: 1,
-        borderColor: "#E5E5EA",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
     },
     playerTouchable: {
@@ -382,7 +390,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
-        color: "#333333",
+        color: colors.onSurface,
         marginBottom: 12,
     },
     infoText: {
@@ -391,7 +399,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
-        color: "#333333",
+        color: colors.onSurface,
         textAlign: "justify",
         marginBottom: 16,
     },

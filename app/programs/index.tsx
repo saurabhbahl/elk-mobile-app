@@ -12,6 +12,8 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
@@ -23,9 +25,12 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function ProgramsScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { homeData, brandData, programsData, apiStatus, programsSettingData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const programs = programsData || [];
     
@@ -57,7 +62,7 @@ export default function ProgramsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -65,7 +70,7 @@ export default function ProgramsScreen() {
             {programsSettingData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                         {programsSettingData.screen_title}
                     </AppText>
                 </View>
@@ -94,10 +99,10 @@ export default function ProgramsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     loadingContainer: {
@@ -145,10 +150,10 @@ const styles = StyleSheet.create({
         width: cardWidth,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
-        shadowColor: "#000",
+        backgroundColor: colors.surface,
+        shadowColor: colors.onSurface,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -170,13 +175,13 @@ const styles = StyleSheet.create({
     programCardName: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
         lineHeight: 16,
     },
 
     programCardDate: {
         fontSize: 11,
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         marginTop: 4,
     },
 
@@ -185,11 +190,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         marginBottom: 12,
-        shadowColor: "#000",
+        shadowColor: colors.onSurface,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -211,18 +216,18 @@ const styles = StyleSheet.create({
     programListCardName: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
         marginBottom: 6,
     },
 
     programListCardDate: {
         fontSize: 12,
-        color: "#888888",
+        color: colors.onSurfaceVariant,
     },
 
     emptyText: {
         textAlign: "center",
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         fontSize: 14,
         marginTop: 40,
     },

@@ -4,8 +4,13 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 export default function Navbar() {
+    const { colors, fonts, isDark } = useTheme();
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={() => router.push("/(home)" as any)} activeOpacity={0.8}>
@@ -29,7 +34,7 @@ export default function Navbar() {
                     onPress={() => router.push("/map/settings" as any)}
                 >
                     <View style={styles.tipsCircle}>
-                        <MaterialCommunityIcons name="cog" size={20} color="#333333" />
+                        <MaterialCommunityIcons name="cog" size={20} color={colors.onSurface} />
                     </View>
                     <View style={styles.tipsBadge}>
                         <AppText style={styles.tipsBadgeText}>SETTINGS</AppText>
@@ -43,7 +48,7 @@ export default function Navbar() {
                     onPress={() => router.push("/tips" as any)}
                 >
                     <View style={styles.tipsCircle}>
-                        <MaterialCommunityIcons name="paw" size={20} color="#333333" />
+                        <MaterialCommunityIcons name="paw" size={20} color={colors.onSurface} />
                     </View>
                     <View style={styles.tipsBadge}>
                         <AppText style={styles.tipsBadgeText}>TIPS →</AppText>
@@ -54,7 +59,7 @@ export default function Navbar() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     header: {
         height: 64,
         flexDirection: "row",
@@ -62,8 +67,8 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         paddingHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: "#E0E0E0",
-        backgroundColor: "#FFFFFF",
+        borderBottomColor: colors.outlineVariant,
+        backgroundColor: colors.surface,
     },
 
     headerLogo: {
@@ -91,15 +96,15 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 17,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: colors.surfaceContainerHigh,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#CCCCCC",
+        borderColor: colors.outline,
     },
 
     tipsBadge: {
-        backgroundColor: "#000000",
+        backgroundColor: isDark ? colors.surfaceContainerHigh : "#000000",
         paddingHorizontal: 5,
         paddingVertical: 2,
         borderRadius: 8,
@@ -108,7 +113,7 @@ const styles = StyleSheet.create({
     },
 
     tipsBadgeText: {
-        color: "#FFFFFF",
+        color: isDark ? colors.onSurface : "#FFFFFF",
         fontSize: 7,
         fontWeight: "bold",
     },

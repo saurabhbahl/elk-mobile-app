@@ -1,16 +1,22 @@
 import AppText from "@/components/AppText";
-import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator,
-  ScrollView, Platform, Dimensions, Modal } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
-const { height: windowHeight } = Dimensions.get('window');
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions, Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContent } from '../contexts/AppContentContext';
-import { normalizeHex } from '../utils/colorUtils';
-import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
 import { Waypoint } from '../data/waypoints';
+import { normalizeHex } from '../utils/colorUtils';
+const { height: windowHeight } = Dimensions.get('window');
 
 export interface RoutePlannerProps {
   isVisible: boolean;
@@ -148,20 +154,24 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
 
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
   const translateY = useSharedValue(isVisible ? 0 : windowHeight);
+  const opacity = useSharedValue(isVisible ? 1 : 0);
 
   React.useEffect(() => {
     if (isVisible) {
       translateY.value = withTiming(0, { duration: 350 });
+      opacity.value = withTiming(1, { duration: 350 });
     } else {
       translateY.value = withTiming(windowHeight, { duration: 300 });
+      opacity.value = withTiming(0, { duration: 300 });
     }
-  }, [isVisible, translateY, windowHeight]);
+  }, [isVisible, translateY, opacity, windowHeight]);
 
   const canStart = !!startPoint && !!destinationPoint && !isCalculatingRoute;
   const connectorHeight = 48 + stopPoints.length * 64;
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
   }));
 
   return (

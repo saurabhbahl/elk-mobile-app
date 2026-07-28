@@ -13,6 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
@@ -23,8 +25,11 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function EventsScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { homeData, brandData, eventsData, apiStatus, eventSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const events = eventsData || [];
 
@@ -52,7 +57,7 @@ export default function EventsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -60,7 +65,7 @@ export default function EventsScreen() {
             {eventSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                         {eventSettingsData.screen_title}
                     </AppText>
                 </View>
@@ -88,10 +93,10 @@ export default function EventsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     loadingContainer: {
@@ -134,10 +139,10 @@ const styles = StyleSheet.create({
         width: cardWidth,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
-        shadowColor: "#000",
+        backgroundColor: colors.surface,
+        shadowColor: colors.onSurface,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -159,19 +164,19 @@ const styles = StyleSheet.create({
     eventCardName: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#333333",
+        color: colors.onSurface,
         lineHeight: 16,
     },
 
     eventCardDate: {
         fontSize: 11,
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         marginTop: 4,
     },
 
     emptyText: {
         textAlign: "center",
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         fontSize: 14,
         marginTop: 40,
     },

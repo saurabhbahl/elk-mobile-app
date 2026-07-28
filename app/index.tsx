@@ -10,15 +10,20 @@ const diagonal = Math.sqrt(width * width + height * height);
 const angle = Math.atan2(height, width) * (180 / Math.PI);
 
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 export default function LandingScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { brandData, apiStatus } = useAppContent();
     const bgColor = brandData?.brand_color_primary;
     const secColor = brandData?.brand_color__secondary;
 
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#E5E5E5" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surfaceContainerHigh} />
 
             {/* Background Wireframe Crossed Lines */}
             <View style={styles.diagonalLineContainer} pointerEvents="none">
@@ -49,7 +54,7 @@ export default function LandingScreen() {
                             {apiStatus === 'loading' ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
                                     <ActivityIndicator size="small" color="#000000" style={{ marginRight: 8 }} />
-                                    <AppText style={{ fontSize: 16, fontWeight: 'bold', color: '#000000' }}>Loading...</AppText>
+                                    <AppText style={{ fontSize: 16, fontWeight: 'bold', color: colors.onSurface }}>Loading...</AppText>
                                 </View>
                             ) : (
                                 <TouchableOpacity
@@ -70,10 +75,10 @@ export default function LandingScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#E5E5E5", // Light grey wireframe background
+        backgroundColor: colors.surfaceContainerHigh, // Light grey wireframe background
     },
 
     diagonalLineContainer: {
@@ -119,7 +124,7 @@ const styles = StyleSheet.create({
     },
 
     button: {
-        backgroundColor: "#333333", // Charcoal grey button
+        backgroundColor: colors.onSurface, // Charcoal grey button
         paddingHorizontal: 35,
         height: 52,
         borderRadius: 12,
@@ -133,7 +138,7 @@ const styles = StyleSheet.create({
     },
 
     buttonText: {
-        color: "#FFFFFF",
+        color: colors.surface,
         fontSize: 18,
         fontWeight: "600",
     },

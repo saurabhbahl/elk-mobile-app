@@ -14,6 +14,8 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 import { openExternalLink } from "@/utils/openLink";
@@ -27,6 +29,8 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function VisitorsCenterScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, visitorsData, apiStatus } = useAppContent();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
@@ -62,7 +66,7 @@ export default function VisitorsCenterScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             <View style={{ backgroundColor: bgColor }}>
@@ -79,7 +83,7 @@ export default function VisitorsCenterScreen() {
                     {visitorsData?.screen_title ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
-                            <AppText style={[styles.sectionTitle, { color: bgColor }]}>
+                            <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
                                 {visitorsData?.screen_title}
                             </AppText>
                         </View>
@@ -181,7 +185,7 @@ export default function VisitorsCenterScreen() {
                                 source={{ html: visitorsData.body_copy }}
                                 baseStyle={{
                                     fontSize: 13,
-                                    color: "#333333",
+                                    color: colors.onSurface,
                                     lineHeight: 18,
                                     textAlign: "justify",
                                 }}
@@ -195,10 +199,10 @@ export default function VisitorsCenterScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     loadingContainer: {
         flex: 1,
@@ -222,7 +226,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: "bold",
-        color: "#000000",
+        color: colors.onSurface,
     },
     carouselContainer: {
         width: CAROUSEL_WIDTH,
@@ -231,9 +235,9 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         overflow: "hidden",
         position: "relative",
-        backgroundColor: "#F0F0F0",
+        backgroundColor: colors.surfaceVariant,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: colors.outlineVariant,
     },
     carouselImage: {
         width: CAROUSEL_WIDTH,
@@ -252,7 +256,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255, 255, 255, 0.95)",
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#000",
+        shadowColor: colors.onSurface,
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 2,
@@ -269,17 +273,17 @@ const styles = StyleSheet.create({
         height: 110,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#E5E5EA",
+        borderColor: colors.outlineVariant,
         overflow: "hidden",
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     ctaImagePlaceholder: {
         flex: 3,
-        backgroundColor: "#EFEFF4",
+        backgroundColor: colors.surfaceContainerHigh,
         justifyContent: "center",
         alignItems: "center",
         borderBottomWidth: 1,
-        borderBottomColor: "#E5E5EA",
+        borderBottomColor: colors.outlineVariant,
     },
     ctaContent: {
         flex: 2,
@@ -289,7 +293,7 @@ const styles = StyleSheet.create({
     ctaTitle: {
         fontSize: 12,
         fontWeight: "bold",
-        color: "#000000",
+        color: colors.onSurface,
     },
     ctaSubtitle: {
         fontSize: 10,
@@ -298,7 +302,7 @@ const styles = StyleSheet.create({
     },
     bodyCopy: {
         fontSize: 13,
-        color: "#333333",
+        color: colors.onSurface,
         lineHeight: 18,
         marginHorizontal: 16,
         marginTop: 24,

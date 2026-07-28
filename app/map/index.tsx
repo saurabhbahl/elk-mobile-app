@@ -19,18 +19,22 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ActivityIndicator,
+import {
+  ActivityIndicator,
   Animated,
+  Easing,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   unstable_batchedUpdates,
   useWindowDimensions,
-  View } from "react-native";
+  View
+} from "react-native";
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addOpacity, normalizeHex } from '../../utils/colorUtils';
 
 // Constants & theme
@@ -93,7 +97,7 @@ function MapScreen() {
       .catch(() => { });
   }, []);
 
-  const { colors, fonts, isDark, setTheme } = useTheme();
+  const { colors, fonts, isDark } = useTheme();
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
   const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
@@ -129,7 +133,7 @@ function MapScreen() {
   // ── Offline map ─────────────────────────────────────────────────────────────
   const {
     hasMap, mbtilesError, downloadProgress, isDownloading,
-    consentStatus, saveConsent, downloadMap, isInitializing, downloadedMapFiles,
+    consentStatus, saveConsent, downloadMap, cancelDownload, isInitializing, downloadedMapFiles,
   } = useOfflineMap();
 
   const [mapTimestamp, setMapTimestamp] = useState(Date.now());
@@ -210,8 +214,8 @@ function MapScreen() {
   // Sync navigation mode to layout context so tab bar hides/shows
   const { setIsNavigating: setLayoutNavigating } = useNavigationMode();
   useEffect(() => {
-    setLayoutNavigating(isNavigating);
-  }, [isNavigating, setLayoutNavigating]);
+    setLayoutNavigating(isNavigating || isCalculatingRoute);
+  }, [isNavigating, isCalculatingRoute, setLayoutNavigating]);
 
   // ── Camera & misc refs ──────────────────────────────────────────────────────
   const cameraRef = useRef<any>(null);
@@ -287,11 +291,11 @@ function MapScreen() {
         const next = prev + delta;
         headingRef.current = next;
 
-        Animated.spring(headingAnim, {
+        Animated.timing(headingAnim, {
           toValue: next,
           useNativeDriver: true,
-          speed: 40,
-          bounciness: 0,
+          duration: 350,
+          easing: Easing.out(Easing.quad),
         }).start();
 
         // Update cardinal label at most every ~5 degrees to avoid text flicker
@@ -567,6 +571,66 @@ function MapScreen() {
     }
   }, [fitRouteToCamera, getRouteBetween]);
 
+  // ── Dynamic Route: handle routeToWaypointId param ───────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      const routeToWaypointId = params.routeToWaypointId;
+      if (!routeToWaypointId) return;
+
+      const id = parseInt(String(routeToWaypointId), 10);
+      const destination = waypoints.find(w => w.id === id);
+      if (!destination) return;
+      const navRequestKey = `route:${id}:${params.navRequestId ?? 'initial'}`;
+
+      if (hasHandledNavParam.current === navRequestKey || isNavigating) return;
+
+      if (!location) {
+        setIsCalculatingRoute(true);
+        const timeoutId = setTimeout(() => {
+          setIsCalculatingRoute(false);
+          hasHandledNavParam.current = navRequestKey;
+          alert('Could not determine your location to calculate the route.');
+        }, 15000);
+
+        (async () => {
+          try {
+            let loc = await Location.getLastKnownPositionAsync();
+            if (!loc) {
+              loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            }
+            if (loc) {
+              clearTimeout(timeoutId);
+              hasHandledNavParam.current = navRequestKey;
+              setLocation(loc.coords);
+              const fromWaypoint: Waypoint = {
+                id: -1,
+                title: 'Current Location',
+                description: 'Your current location',
+                coordinate: loc.coords,
+              };
+              startActualNavigation(fromWaypoint, destination, [], false);
+            }
+          } catch (e) {
+            console.warn("Failed to actively fetch location for routing:", e);
+          }
+        })();
+
+        return () => clearTimeout(timeoutId);
+      }
+
+      hasHandledNavParam.current = navRequestKey;
+
+      const fromWaypoint: Waypoint = {
+        id: -1,
+        title: 'Current Location',
+        description: 'Your current location',
+        coordinate: location,
+      };
+
+      startActualNavigation(fromWaypoint, destination, [], false);
+    }, [params.routeToWaypointId, params.navRequestId, location, isNavigating, startActualNavigation, waypoints])
+  );
+
   // ── Live navigation stats update ────────────────────────────────────────────
   const stopPointsRef = useRef<Waypoint[]>([]);
   useEffect(() => { stopPointsRef.current = stopPoints; }, [stopPoints]);
@@ -588,10 +652,11 @@ function MapScreen() {
         const nearestCoord = { longitude: coords[nearestIdx][0], latitude: coords[nearestIdx][1] };
         const distanceToPath = calcDistance(location, nearestCoord);
 
-        // Recalculate route if off-path, but only if they are navigating from Current Location
+        // Recalculate route if off-path (both offline router and online OSRM will handle it)
         const OFF_PATH_THRESHOLD = 50; // meters
         const cooldownElapsed = now - lastRecalculateTime.current > 5000;
-        const isCurrentLocationStart = feature.properties?.startWaypoint?.id === 999;
+        const isCurrentLocationStart = feature.properties?.startWaypoint?.id === 999
+          || feature.properties?.startWaypoint?.id === -1;
 
         if (distanceToPath > OFF_PATH_THRESHOLD) {
           if (isCurrentLocationStart && cooldownElapsed) {
@@ -717,10 +782,14 @@ function MapScreen() {
     activeRouteRef.current = null;
     fullRouteRef.current = null;
     lastSliceIdx.current = -1;
-    const waypointId = params.navigateToWaypointId;
-    hasHandledNavParam.current = waypointId
-      ? `${parseInt(String(waypointId), 10)}:${params.navRequestId ?? 'initial'}`
-      : false;
+
+    // Clear route parameters from the router to prevent auto-retriggering on focus
+    router.setParams({
+      routeToWaypointId: undefined,
+      navRequestId: undefined
+    } as any);
+
+    hasHandledNavParam.current = false;
     hasArrivedRef.current = false;
     isNavInFlightRef.current = false;
     setShowArrivalPopup(false);
@@ -737,7 +806,7 @@ function MapScreen() {
         nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: 'straight' as any },
       });
     });
-  }, [params.navigateToWaypointId, params.navRequestId]);
+  }, []);
 
   // ── Memoized waypoint marker ────────────────────────────────────────────────
   const WaypointMarker = useMemo(() => React.memo(({
@@ -803,7 +872,7 @@ function MapScreen() {
   if (!mapComponents && !isExpoGo) {
     return (
       <View style={styles.container}>
-        
+
         <View style={{ flex: 1, backgroundColor: colors.surface }} />
       </View>
     );
@@ -827,9 +896,15 @@ function MapScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
         <AppText style={styles.loadingText}>Downloading Offline Map...</AppText>
-        <AppText style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8 }}>
+        <AppText style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8, marginBottom: 24 }}>
           {downloadProgress < 0 ? 'Starting...' : `${Math.max(0, pct)}%`}
         </AppText>
+        <TouchableOpacity
+          style={{ height: 44, paddingHorizontal: 24, backgroundColor: colors.surfaceContainerLowest, borderWidth: 1.5, borderColor: colors.error, justifyContent: 'center', alignItems: 'center', borderRadius: 8 }}
+          onPress={() => cancelDownload()}
+        >
+          <AppText style={{ fontSize: 14, fontFamily: fonts.bodyBold, color: colors.error }}>Cancel Download</AppText>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -843,7 +918,7 @@ function MapScreen() {
   }
 
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = mapComponents;
-  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading;
+  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin;
   const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
 
   // Detect if completely offline without map
@@ -930,36 +1005,7 @@ function MapScreen() {
             isNavigating={isNavigating}
           />
 
-          {/* Coordinate Fallback Overlay if offline without map */}
-          {isOfflineWithoutMap && (
-            <View style={{
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: isDark ? colors.surface : '#eef1e7',
-              justifyContent: 'center', alignItems: 'center',
-              zIndex: 999, padding: 20
-            }}>
-              <MaterialIcons name="satellite" size={64} color={brandPrimary} style={{ opacity: 0.8, marginBottom: 16 }} />
-              <AppText style={{ fontFamily: fonts.headingBold, fontSize: 20, color: brandPrimary, marginBottom: 12 }}>Offline</AppText>
-              <AppText style={{ fontFamily: fonts.body, fontSize: 16, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 24, lineHeight: 24 }}>
-                You are currently offline and the local map tiles are not downloaded.
-              </AppText>
 
-              <View style={{ backgroundColor: isDark ? colors.surfaceContainer : '#ffffff', padding: 20, borderRadius: 16, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant + '40' }}>
-                <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Your Current Coordinates</AppText>
-                {location ? (
-                  <>
-                    <AppText style={{ fontFamily: fonts.headingBold, fontSize: 18, color: colors.onSurface, marginBottom: 4 }}>Lat: {location.latitude.toFixed(5)}</AppText>
-                    <AppText style={{ fontFamily: fonts.headingBold, fontSize: 18, color: colors.onSurface }}>Lng: {location.longitude.toFixed(5)}</AppText>
-                  </>
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <ActivityIndicator size="small" color={brandPrimary} />
-                    <AppText style={{ fontFamily: fonts.body, fontSize: 15, color: colors.onSurface }}>Acquiring GPS Signal...</AppText>
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
 
           {/* Territory labels */}
           <GeoJSONSource id="territory-label-source" data={territoryLabelFeature}>
@@ -995,6 +1041,108 @@ function MapScreen() {
           ))}
         </Map>
 
+        {/* ── Offline without map: full-screen scrollable overlay ── */}
+        {isOfflineWithoutMap && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? colors.background : '#eef1e7', zIndex: 200 }]}>
+            <ScrollView
+              contentContainerStyle={{
+                paddingTop: insets.top + 16,
+                paddingBottom: insets.bottom + 32,
+                paddingHorizontal: 20,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 }}>
+                <MaterialIcons name="wifi-off" size={26} color={brandPrimary} />
+                <AppText style={{ fontFamily: fonts.headingBold, fontSize: 22, color: isDark ? '#ffffff' : brandPrimary }}>
+                  Offline Mode
+                </AppText>
+              </View>
+
+              {/* GPS Coordinates Card */}
+              <View style={{
+                backgroundColor: isDark ? colors.surfaceContainer : '#ffffff',
+                borderRadius: 16, padding: 20, marginBottom: 20,
+                borderWidth: 1, borderColor: colors.outlineVariant + '40',
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
+              }}>
+                <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 }}>
+                  Your Current Coordinates
+                </AppText>
+                {location ? (
+                  <>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant }}>LAT</AppText>
+                      <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 12, color: isDark ? '#ffffff' : brandPrimary }}>
+                        {location.latitude.toFixed(6)}
+                      </AppText>
+                    </View>
+                    <View style={{ height: 1, backgroundColor: colors.outlineVariant + '40', marginBottom: 6 }} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant }}>LNG</AppText>
+                      <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 12, color: isDark ? '#ffffff' : brandPrimary }}>
+                        {location.longitude.toFixed(6)}
+                      </AppText>
+                    </View>
+                  </>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+                    <ActivityIndicator size="small" color={brandPrimary} />
+                    <AppText style={{ fontFamily: fonts.body, fontSize: 14, color: colors.onSurfaceVariant }}>Acquiring GPS signal...</AppText>
+                  </View>
+                )}
+              </View>
+
+              {/* Notice */}
+              <View style={{
+                backgroundColor: isDark ? colors.surfaceContainer : '#fffbee',
+                borderRadius: 12, padding: 14, marginBottom: 20,
+                flexDirection: 'row', gap: 10, alignItems: 'flex-start',
+                borderWidth: 1, borderColor: colors.outlineVariant + '30',
+              }}>
+                <MaterialIcons name="info-outline" size={20} color={colors.onSurfaceVariant} style={{ marginTop: 1 }} />
+                <AppText style={{ fontFamily: fonts.body, fontSize: 13, color: colors.onSurfaceVariant, flex: 1, lineHeight: 20 }}>
+                  You are offline and the offline map has not been downloaded. Connect to the internet or download the map in Settings to use the full interactive map.
+                </AppText>
+              </View>
+
+              {/* Waypoints list */}
+              {waypoints.length > 0 && (
+                <>
+                  <AppText style={{ fontFamily: fonts.headingBold, fontSize: 16, color: isDark ? '#ffffff' : brandPrimary, marginBottom: 12 }}>
+                    Points of Interest
+                  </AppText>
+                  {waypoints.map(wp => (
+                    <TouchableOpacity
+                      key={wp.id}
+                      onPress={() => router.push(`/map/${wp.id}` as any)}
+                      style={{
+                        backgroundColor: isDark ? colors.surfaceContainer : '#ffffff',
+                        borderRadius: 12, padding: 16, marginBottom: 10,
+                        flexDirection: 'row', alignItems: 'center', gap: 12,
+                        borderWidth: 1, borderColor: colors.outlineVariant + '40',
+                        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+                      }}
+                    >
+                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: (brandPrimary || colors.primary) + '22', justifyContent: 'center', alignItems: 'center' }}>
+                        <MaterialIcons name="place" size={20} color={brandPrimary || colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <AppText style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface }} numberOfLines={1}>{wp.title}</AppText>
+                        {wp.description ? (
+                          <AppText style={{ fontFamily: fonts.body, fontSize: 12, color: colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{wp.description}</AppText>
+                        ) : null}
+                      </View>
+                      <MaterialIcons name="chevron-right" size={20} color={colors.onSurfaceVariant} />
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+            </ScrollView>
+          </View>
+        )}
+
         {/* ── Drop-pin mode: crosshair ── */}
         {isSelectingPin && (
           <View style={styles.crosshairContainer} pointerEvents="none">
@@ -1016,8 +1164,14 @@ function MapScreen() {
                   onPress={() => setIsSearching(true)}
                   style={styles.floatingTitleCapsule}
                 >
-                  <MaterialIcons name="map" size={18} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-                  {mapSettingsData?.screen_title ? (
+                  {isCalculatingRoute ? (
+                    <ActivityIndicator size="small" color={brandPrimary || colors.primary} style={{ marginRight: 6 }} />
+                  ) : (
+                    <MaterialIcons name="map" size={18} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
+                  )}
+                  {isCalculatingRoute ? (
+                    <AppText style={styles.floatingTitleText}>Calculating route...</AppText>
+                  ) : mapSettingsData?.screen_title ? (
                     <AppText style={styles.floatingTitleText}>{mapSettingsData.screen_title}</AppText>
                   ) : null}
                 </TouchableOpacity>
@@ -1087,12 +1241,6 @@ function MapScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.sideButton} onPress={handleRecenter}>
                 <MaterialIcons name="my-location" size={24} color={colors.onSurface} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.sideButton} onPress={() => setTheme(isDark ? 'light' : 'dark')}>
-                <MaterialIcons name={isDark ? 'wb-sunny' : 'nights-stay'} size={24} color={colors.onSurface} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.sideButton} onPress={() => router.push('/map/settings')}>
-                <MaterialIcons name="settings" size={24} color={colors.onSurface} />
               </TouchableOpacity>
             </View>
           </>
@@ -1287,7 +1435,7 @@ function MapScreen() {
               {/* Close Button */}
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => saveConsent('dismissed', false)}
+                onPress={() => saveConsent('dismissed', true)}
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="close" size={18} color="#FFFFFF" />
@@ -1322,7 +1470,7 @@ function MapScreen() {
               <AppText style={styles.errorToastTitle}>Something went wrong</AppText>
               <AppText style={styles.errorToastDescription}>Map download failed. Online map active.</AppText>
             </View>
-            <TouchableOpacity onPress={() => saveConsent('dismissed', false)} style={styles.errorToastClose}>
+            <TouchableOpacity onPress={() => saveConsent('dismissed', true)} style={styles.errorToastClose}>
               <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
             </TouchableOpacity>
           </View>
@@ -1363,7 +1511,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     floatingTitleCapsule: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: isDark ? colors.surface : '#FFFFFF',
       borderRadius: 99,
       paddingHorizontal: 20,
       paddingVertical: 10,
@@ -1376,7 +1524,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     floatingTitleText: {
       fontFamily: fonts.bodyBold,
       fontSize: 16,
-      color: '#000000',
+      color: isDark ? colors.onSurface : '#000000',
     },
 
     // Search bar

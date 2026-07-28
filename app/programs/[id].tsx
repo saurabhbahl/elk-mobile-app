@@ -14,6 +14,8 @@ import RenderHTML from 'react-native-render-html';
 
 import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -23,10 +25,13 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function ProgramDetailScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { id } = useLocalSearchParams();
     const { brandData, programsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const program = programsData?.find(
         (p: any, index: number) => String(p.id || index) === String(id)
@@ -35,7 +40,7 @@ export default function ProgramDetailScreen() {
     if (apiStatus === "fetching") {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
                 
                 
                 <View style={styles.loadingContainer}>
@@ -48,7 +53,7 @@ export default function ProgramDetailScreen() {
     if (!program) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
                 
                 
                 <View style={styles.errorContainer}>
@@ -68,7 +73,7 @@ export default function ProgramDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -77,7 +82,7 @@ export default function ProgramDetailScreen() {
                 {/* Heading Row */}
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
                         {program.program_name || ""}
                     </AppText>
                 </View>
@@ -105,7 +110,7 @@ export default function ProgramDetailScreen() {
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{
                                 fontSize: 14,
-                                color: "#444444",
+                                color: colors.onSurface,
                                 lineHeight: 22,
                             }}
                             tagsStyles={{
@@ -119,10 +124,10 @@ export default function ProgramDetailScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     loadingContainer: {
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
 
     errorText: {
         fontSize: 16,
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         marginBottom: 16,
     },
 
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
     },
 
     backTextButtonText: {
-        color: "#FFFFFF",
+        color: colors.surface,
         fontWeight: "bold",
         fontSize: 14,
     },
@@ -194,7 +199,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: 200,
         borderRadius: 12,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: colors.outlineVariant,
     },
 
     detailsContent: {
@@ -204,13 +209,13 @@ const styles = StyleSheet.create({
     scheduleText: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#333333",
+        color: colors.onSurface,
         marginBottom: 14,
     },
 
     descriptionText: {
         fontSize: 14,
-        color: "#444444",
+        color: colors.onSurface,
         lineHeight: 22,
     },
 });

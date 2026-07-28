@@ -11,6 +11,8 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -21,9 +23,12 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function TrailsScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { homeData, brandData, trailsData, apiStatus, trailSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const trails = trailsData || [];
 
@@ -54,7 +59,7 @@ export default function TrailsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -62,7 +67,7 @@ export default function TrailsScreen() {
             {trailSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                         {trailSettingsData.screen_title}
                     </AppText>
                 </View>
@@ -88,10 +93,10 @@ export default function TrailsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     loadingContainer: {
@@ -138,13 +143,13 @@ const styles = StyleSheet.create({
     trailName: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#000000",
+        color: colors.onSurface,
         marginRight: 8,
     },
 
     trailDistance: {
         fontSize: 12,
-        color: "#333333",
+        color: colors.onSurface,
         fontWeight: "500",
     },
 
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
 
     emptyText: {
         textAlign: "center",
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginTop: 20,
         fontSize: 14,
     },

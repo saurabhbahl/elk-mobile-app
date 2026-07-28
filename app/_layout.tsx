@@ -27,7 +27,7 @@ import {
 
 import "react-native-reanimated";
 
-import { ThemeProvider as CustomThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider as CustomThemeProvider, useTheme } from "@/context/ThemeContext";
 import { AppContentProvider } from "@/contexts/AppContentContext";
 import { createTables, inspectDatabaseSchema } from "@/database/schema";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -134,6 +134,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, isNavigating: boolean }) {
+  const { colors, isDark } = useTheme();
   const { brandData, apiStatus, refreshData } = useAppContent();
   const pathname = usePathname();
   const segments = useSegments();
@@ -175,11 +176,11 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
   const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colorScheme === "dark" ? "#121212" : "#F8F9FA" }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
       {shouldShowHeader && (
-        <SafeAreaView style={{ backgroundColor: "#FFFFFF" }} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={{ backgroundColor: colors.surface }} edges={['top', 'left', 'right']}>
           <Navbar />
-          <View style={{ backgroundColor: primaryColor }}>
+          <View style={{ backgroundColor: isDark ? colors.surface : primaryColor }}>
             <QuickLinks />
           </View>
           <OfflineBanner />

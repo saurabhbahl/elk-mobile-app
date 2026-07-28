@@ -18,7 +18,10 @@ import { Animated,
   View } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS } from '../constants/theme';
+import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
+import { useTheme } from '@/context/ThemeContext';
+import { useAppContent } from '@/contexts/AppContentContext';
+import { normalizeHex } from '../utils/colorUtils';
 
 interface NavigationHeaderProps {
   fromTitle: string;
@@ -32,6 +35,11 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   onExit,
 }) => {
   const insets = useSafeAreaInsets();
+  const { colors, fonts, isDark } = useTheme();
+  const { brandData } = useAppContent();
+  const brandPrimary = normalizeHex(brandData?.brand_color_primary) || colors.primary;
+
+  const styles = React.useMemo(() => createStyles(colors, fonts, isDark, brandPrimary), [colors, fonts, isDark, brandPrimary]);
 
   // Pulse animation for the green "live" dot
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -63,7 +71,7 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
     >
       {/* Back / Exit button */}
       <TouchableOpacity onPress={onExit} style={styles.backButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <MaterialIcons name="arrow-back" size={22} color={COLORS.primary} />
+        <MaterialIcons name="arrow-back" size={22} color={brandPrimary} />
       </TouchableOpacity>
 
       {/* Route summary */}
@@ -97,15 +105,15 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(248, 250, 249, 0.97)',
+    backgroundColor: isDark ? 'rgba(30, 30, 30, 0.97)' : 'rgba(248, 250, 249, 0.97)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.06)',
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -113,7 +121,7 @@ const styles = StyleSheet.create({
     zIndex: 200,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0.2 : 0.08,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -121,7 +129,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -140,31 +148,31 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: COLORS.primary,
-    backgroundColor: 'white',
+    borderColor: brandPrimary,
+    backgroundColor: isDark ? colors.surface : 'white',
   },
   dotTo: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.primary,
+    backgroundColor: brandPrimary,
   },
   connectorLine: {
     width: 2,
     height: 8,
-    backgroundColor: COLORS.outline,
+    backgroundColor: colors.outline,
     marginLeft: 4,
     marginVertical: 2,
   },
   routeLabel: {
-    fontFamily: FONTS.body,
+    fontFamily: fonts.body,
     fontSize: 13,
-    color: COLORS.onSurfaceVariant,
+    color: colors.onSurfaceVariant,
     flex: 1,
   },
   routeLabelBold: {
-    fontFamily: FONTS.bodyBold,
-    color: COLORS.primary,
+    fontFamily: fonts.bodyBold,
+    color: colors.onSurface,
     fontSize: 14,
   },
   liveContainer: {
@@ -172,7 +180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginLeft: 8,
-    backgroundColor: 'rgba(6, 27, 14, 0.06)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(6, 27, 14, 0.06)',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
@@ -184,7 +192,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2e7d32',
   },
   liveText: {
-    fontFamily: FONTS.caption,
+    fontFamily: fonts.caption,
     fontSize: 10,
     color: '#2e7d32',
     letterSpacing: 1.2,

@@ -15,7 +15,7 @@ import { clearAllRoutes, getAllCachedRoutes } from '../../utils/routeDatabase';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
-  const { hasMap, isDownloading, downloadProgress, downloadMap, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
+  const { hasMap, isDownloading, downloadProgress, downloadMap, cancelDownload, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
   const { theme, setTheme, colors, fonts, isDark } = useTheme();
   const { preloadAll, progress, isPreloading, cancelPreload } = useRoutePreloader();
   const [cachedCount, setCachedCount] = useState<number>(0);
@@ -137,11 +137,16 @@ export default function SettingsScreen() {
           {isInitializing ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
           ) : isDownloading ? (
-            <View style={styles.progressContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <AppText style={styles.progressText}>
-                Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
-              </AppText>
+            <View style={[styles.progressContainer, { justifyContent: 'space-between' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <AppText style={styles.progressText}>
+                  Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
+                </AppText>
+              </View>
+              <TouchableOpacity style={styles.cancelButton} onPress={cancelDownload}>
+                <AppText style={styles.cancelButtonText}>Cancel</AppText>
+              </TouchableOpacity>
             </View>
           ) : hasMap ? (
             <View style={styles.statusContainer}>
@@ -317,7 +322,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     title: {
       fontFamily: fonts.headingBold,
       fontSize: 20,
-      color: brandPrimary,
+      color: isDark ? "#FFFFFF" : brandPrimary,
     },
     subtitle: {
       fontFamily: fonts.body,
@@ -332,7 +337,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.outlineVariant + '33',
-      shadowColor: '#000',
+      shadowColor: colors.onSurface,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 8,
@@ -341,7 +346,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     sectionTitle: {
       fontFamily: fonts.headingBold,
       fontSize: 15,
-      color: brandPrimary,
+      color: isDark ? "#FFFFFF" : brandPrimary,
       marginBottom: 8,
     },
     sectionDescription: {
@@ -379,7 +384,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     statusText: {
       fontFamily: fonts.bodyMedium,
       fontSize: 13,
-      color: brandPrimary,
+      color: isDark ? "#FFFFFF" : brandPrimary,
     },
     progressContainer: {
       flexDirection: 'row',
@@ -390,7 +395,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     progressText: {
       fontFamily: fonts.bodyMedium,
       fontSize: 13,
-      color: brandPrimary,
+      color: isDark ? "#FFFFFF" : brandPrimary,
     },
     downloadButton: {
       backgroundColor: brandPrimary,
@@ -472,7 +477,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      shadowColor: '#000',
+      shadowColor: colors.onSurface,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.15,
       shadowRadius: 24,

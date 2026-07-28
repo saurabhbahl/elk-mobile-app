@@ -243,8 +243,8 @@ export async function fetchAndStoreAll(
         if (item.array && Array.isArray(item.array)) {
           item.array.forEach((rec: any) => {
             const id = rec.id ? String(rec.id) : String(Math.random());
-            // Store last_modified from record if present, otherwise use current timestamp
-            const lastModified = rec.last_modified || rec.modified || String(Date.now());
+            // Store last_modified from record if present, otherwise use content hash
+            const lastModified = rec.last_modified || rec.modified || hashString(JSON.stringify(rec));
             db.runSync(
               'INSERT OR REPLACE INTO app_records (id, type, json_data, last_modified) VALUES (?, ?, ?, ?);',
               [id, item.type, JSON.stringify(rec), lastModified]
@@ -325,7 +325,7 @@ export async function triggerDeltaSync(): Promise<boolean> {
       for (const rec of item.array) {
         const id = rec.id ? String(rec.id) : null;
         if (!id) continue;
-        const serverModified = rec.last_modified || rec.modified || '';
+        const serverModified = rec.last_modified || rec.modified || hashString(JSON.stringify(rec));
         const localModified = localMap.get(`${item.type}:${id}`) || '';
         if (serverModified !== localModified) {
           changedRecords.push({ type: item.type, rec, lastModified: serverModified });

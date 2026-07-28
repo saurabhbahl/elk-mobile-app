@@ -16,6 +16,8 @@ import RenderHTML from 'react-native-render-html';
 
 import CachedImage from "@/components/CachedImage";
 import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { openExternalLink } from "@/utils/openLink";
 
 const { width } = Dimensions.get("window");
@@ -26,10 +28,13 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function EventDetailScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { id } = useLocalSearchParams();
     const { brandData, eventsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const event = eventsData?.find(
         (e: any, index: number) => String(e.id || index) === String(id)
@@ -47,7 +52,7 @@ export default function EventDetailScreen() {
     if (apiStatus === "fetching") {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -58,7 +63,7 @@ export default function EventDetailScreen() {
     if (!event) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Event not found.</AppText>
                     <TouchableOpacity
@@ -74,7 +79,7 @@ export default function EventDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -83,7 +88,7 @@ export default function EventDetailScreen() {
                 {/* Heading Row */}
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]} numberOfLines={1}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
                         {event.event_name || ""}
                     </AppText>
                 </View>
@@ -130,7 +135,7 @@ export default function EventDetailScreen() {
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{
                                 fontSize: 14,
-                                color: "#444444",
+                                color: colors.onSurface,
                                 lineHeight: 22,
                                 marginTop: 10,
                                 marginBottom: 20,
@@ -148,7 +153,7 @@ export default function EventDetailScreen() {
                             onPress={handleRegister}
                             activeOpacity={0.8}
                         >
-                            <AppText style={[styles.registerButtonText, { color: secondaryColor || "" }]}>
+                            <AppText style={[styles.registerButtonText, { color: isDark ? "#FFFFFF" : secondaryColor || "" }]}>
                                 Register / Buy Tickets
                             </AppText>
                         </TouchableOpacity>
@@ -159,10 +164,10 @@ export default function EventDetailScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
 
     loadingContainer: {
@@ -180,7 +185,7 @@ const styles = StyleSheet.create({
 
     errorText: {
         fontSize: 16,
-        color: "#888888",
+        color: colors.onSurfaceVariant,
         marginBottom: 16,
     },
 
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
     },
 
     backTextButtonText: {
-        color: "#FFFFFF",
+        color: colors.surface,
         fontWeight: "bold",
         fontSize: 14,
     },
@@ -229,7 +234,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: 200,
         borderRadius: 12,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: colors.outlineVariant,
     },
 
     detailsContent: {
@@ -249,25 +254,25 @@ const styles = StyleSheet.create({
     scheduleText: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#333333",
+        color: colors.onSurface,
         flex: 1,
     },
 
     locationNameText: {
         fontSize: 14,
         fontWeight: "bold",
-        color: "#333333",
+        color: colors.onSurface,
     },
 
     locationAddressText: {
         fontSize: 13,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginTop: 2,
     },
 
     descriptionText: {
         fontSize: 14,
-        color: "#444444",
+        color: colors.onSurface,
         lineHeight: 22,
         marginTop: 10,
         marginBottom: 20,

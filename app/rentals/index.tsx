@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
 import CachedImage from "@/components/CachedImage";
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { openExternalLink } from "@/utils/openLink";
 
@@ -25,9 +27,12 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function RentalsScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { brandData, rentalsData, apiStatus, rentalSettingsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const rentals = rentalsData || [];
 
@@ -56,7 +61,7 @@ export default function RentalsScreen() {
                         <AppText style={styles.rentalName}>{item.rental_name || ""}</AppText>
                         {item.rental_type ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
-                                <AppText style={[styles.badgeText, primaryColor ? { color: primaryColor } : null]}>{item.rental_type}</AppText>
+                                <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>{item.rental_type}</AppText>
                             </View>
                         ) : null}
                     </View>
@@ -75,7 +80,7 @@ export default function RentalsScreen() {
                             source={{ html: item.full_description }}
                             baseStyle={{
                                 fontSize: 13,
-                                color: "#666666",
+                                color: colors.onSurfaceVariant,
                                 lineHeight: 18,
                                 marginBottom: 12,
                             }}
@@ -103,7 +108,7 @@ export default function RentalsScreen() {
                                 style={[styles.ctaButton, primaryColor ? { backgroundColor: primaryColor } : null]}
                                 onPress={() => handlePressLink(item.cta_1_link)}
                             >
-                                <AppText style={[styles.ctaButtonText, secondaryColor ? { color: secondaryColor } : null]}>
+                                <AppText style={[styles.ctaButtonText, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : null]}>
                                     {item.cta_1_label_}
                                 </AppText>
                             </TouchableOpacity>
@@ -114,7 +119,7 @@ export default function RentalsScreen() {
                                 style={[styles.ctaButtonOutline, primaryColor ? { borderColor: primaryColor } : null]}
                                 onPress={() => handlePressLink(item.cta_2_link)}
                             >
-                                <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: primaryColor } : null]}>
+                                <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
                                     {item.cta_2_label}
                                 </AppText>
                             </TouchableOpacity>
@@ -127,7 +132,7 @@ export default function RentalsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -135,7 +140,7 @@ export default function RentalsScreen() {
             {rentalSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/rentals.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                         {rentalSettingsData.screen_title}
                     </AppText>
                 </View>
@@ -177,10 +182,10 @@ export default function RentalsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     loadingContainer: {
         flex: 1,
@@ -209,17 +214,17 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
     },
     rentalCard: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: colors.outlineVariant,
         marginBottom: 20,
         overflow: "hidden",
     },
     rentalImage: {
         width: "100%",
         height: 150,
-        backgroundColor: "#F0F0F0",
+        backgroundColor: colors.surfaceVariant,
     },
     rentalContent: {
         padding: 16,
@@ -233,7 +238,7 @@ const styles = StyleSheet.create({
     rentalName: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#000000",
+        color: colors.onSurface,
         flex: 1,
         marginRight: 8,
     },
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
     },
     capacityText: {
         fontSize: 12,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginBottom: 8,
         fontWeight: "500",
     },
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     },
     fullDesc: {
         fontSize: 13,
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         lineHeight: 18,
         marginBottom: 12,
     },
@@ -301,7 +306,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         textAlign: "center",
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginTop: 20,
         fontSize: 14,
     },

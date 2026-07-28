@@ -12,6 +12,8 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
+import { useTheme } from "@/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
 import { useAppContent } from "@/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
@@ -22,9 +24,12 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function PlanTripScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { brandData, planTripData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const title = planTripData?.screen_title;
     const intro = planTripData?.intro_paragraph;
@@ -55,7 +60,7 @@ export default function PlanTripScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
             
             
@@ -63,7 +68,7 @@ export default function PlanTripScreen() {
             {title ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: primaryColor }]}>
+                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                         {title}
                     </AppText>
                 </View>
@@ -92,7 +97,7 @@ export default function PlanTripScreen() {
                                 source={{ html: intro }}
                                 baseStyle={{
                                     fontSize: 14,
-                                    color: "#333333",
+                                    color: colors.onSurface,
                                     lineHeight: 20,
                                     fontWeight: "500",
                                 }}
@@ -118,7 +123,7 @@ export default function PlanTripScreen() {
                                             source={{ html: sec.section_body }}
                                             baseStyle={{
                                                 fontSize: 13,
-                                                color: "#444444",
+                                                color: colors.onSurface,
                                                 lineHeight: 18,
                                             }}
                                             tagsStyles={{ p: { marginVertical: 4 } }}
@@ -136,10 +141,10 @@ export default function PlanTripScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
     },
     loadingContainer: {
         flex: 1,
@@ -174,7 +179,7 @@ const styles = StyleSheet.create({
         width: "100%",
         height: 160,
         borderRadius: 8,
-        backgroundColor: "#E0E0E0",
+        backgroundColor: colors.outlineVariant,
     },
     introContainer: {
         paddingHorizontal: 16,
@@ -182,13 +187,13 @@ const styles = StyleSheet.create({
     },
     introText: {
         fontSize: 14,
-        color: "#333333",
+        color: colors.onSurface,
         lineHeight: 20,
         fontWeight: "500",
     },
     sectionCard: {
         marginHorizontal: 16,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: colors.surface,
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#E8E8E8",
@@ -216,17 +221,17 @@ const styles = StyleSheet.create({
     sectionHeading: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#000000",
+        color: colors.onSurface,
         flex: 1,
     },
     sectionBody: {
         fontSize: 13,
-        color: "#444444",
+        color: colors.onSurface,
         lineHeight: 18,
     },
     emptyText: {
         textAlign: "center",
-        color: "#666666",
+        color: colors.onSurfaceVariant,
         marginTop: 20,
         fontSize: 14,
     },
