@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
 import AppText from './AppText';
-import { useNetInfo } from '@react-native-community/netinfo';
+import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
 import { useTheme } from '@/context/ThemeContext';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     const { brandData } = useAppContent();
     const primaryColor = brandData?.brand_color_primary || "#007AFF";
 
-    const isOffline = netInfo.isConnected === false || forceShowForTesting;
+    const isOffline = forceShowForTesting || netInfo.isConnected === false || (netInfo.isConnected === true && netInfo.isInternetReachable === false);
     const [visible, setVisible] = useState(false);
 
 
@@ -24,8 +24,6 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
             setVisible(false);
         }
     }, [isOffline]);
-
-    if (!visible) return null;
 
     const Content = (
         <View style={[styles.popupContainer, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}>
@@ -46,15 +44,20 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.secondaryButton, { borderColor: primaryColor }]}
-                    onPress={() => {
-                        // Retry logic could go here, for now just close the popup to see if internet is back
+                    onPress={async () => {
+                        // Optimistically hide the popup
                         setVisible(false);
-                        // Briefly show again if still offline
-                        setTimeout(() => {
-                            if (netInfo.isConnected === false || forceShowForTesting) {
+                        
+                        // Fetch the latest fresh state directly
+                        const state = await NetInfo.fetch();
+                        const currentlyOffline = forceShowForTesting || state.isConnected === false || (state.isConnected === true && state.isInternetReachable === false);
+                        
+                        // If still offline, show it again after a brief moment
+                        if (currentlyOffline) {
+                            setTimeout(() => {
                                 setVisible(true);
-                            }
-                        }, 500);
+                            }, 300);
+                        }
                     }}
                 >
                     <AppText style={[styles.secondaryButtonText, { color: primaryColor }]}>Retry</AppText>
