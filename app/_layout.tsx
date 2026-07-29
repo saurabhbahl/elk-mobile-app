@@ -8,7 +8,7 @@ import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/components/Navbar";
-import OfflineBanner from "@/components/OfflineBanner";
+import OfflinePopup from "@/components/OfflinePopup";
 import QuickLinks from "@/components/QuickLinks";
 import SyncProgressScreen from "@/components/SyncProgressScreen";
 import { useAppContent } from "@/contexts/AppContentContext";
@@ -194,9 +194,9 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
           <View style={{ backgroundColor: isDark ? colors.surface : primaryColor }}>
             <QuickLinks />
           </View>
-          <OfflineBanner />
         </SafeAreaView>
       )}
+      <OfflinePopup />
       <Stack>
         <Stack.Screen
           name="index"
