@@ -105,7 +105,7 @@ export default function LiveCameraScreen() {
                         style={{ flex: 1, backgroundColor: "#000" }}
                         source={{
                             html: `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe></body></html>`,
-                            baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com"
+                            baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                         }}
                         allowsInlineMediaPlayback={true}
                         mediaPlaybackRequiresUserAction={false}
@@ -136,7 +136,7 @@ export default function LiveCameraScreen() {
                     style={{ flex: 1, backgroundColor: "#000" }}
                     source={{
                         html: htmlContent,
-                        baseUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://ftfgifts.com"
+                        baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                     }}
                     allowsInlineMediaPlayback={true}
                     mediaPlaybackRequiresUserAction={false}

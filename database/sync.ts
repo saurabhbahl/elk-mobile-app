@@ -162,7 +162,8 @@ export async function fetchAndStoreAll(
   try {
     if (onProgress) onProgress(0.05, 'Fetching content data...');
     const timestamp = new Date().getTime();
-    const response = await fetch(`https://ftfgifts.com/elk/wp-json/elk/v1/data?_t=${timestamp}`, {
+    const baseUrl = process.env.EXPO_PUBLIC_SITE_URL;
+    const response = await fetch(`${baseUrl}/elk/wp-json/elk/v1/data?_t=${timestamp}&sync=full`, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -178,10 +179,12 @@ export async function fetchAndStoreAll(
 
     const text = await response.text();
     let json: any;
+    let serverSyncTime: string | null = null;
     try {
       json = JSON.parse(text);
       // Support new API format where everything is nested under a "data" object
       if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
+        serverSyncTime = json.sync_time || null;
         json = json.data;
       }
     } catch (e) {
@@ -257,7 +260,8 @@ export async function fetchAndStoreAll(
         }
       }
 
-      db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', String(Date.now())]);
+      const finalSyncTime = serverSyncTime || String(Date.now());
+      db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', finalSyncTime]);
       db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['is_sync_complete', 'true']);
     });
 
@@ -293,7 +297,24 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
   try {
     const timestamp = new Date().getTime();
-    const response = await fetch(`https://ftfgifts.com/elk/wp-json/elk/v1/data?_t=${timestamp}`, {
+    const lastSyncStr = getLastSyncMetadata('last_sync_time');
+    let lastSyncQuery = '';
+
+    if (lastSyncStr) {
+      // Check if it's already an ISO string (like 2026-07-29T12:10:49) or a numeric string (milliseconds)
+      const isNumeric = /^\d+$/.test(lastSyncStr);
+      let iso = lastSyncStr;
+      if (isNumeric) {
+        iso = new Date(parseInt(lastSyncStr, 10)).toISOString().split('.')[0];
+      }
+      lastSyncQuery = `&sync=incremental&last_sync=${encodeURIComponent(iso)}`;
+    }
+
+    const baseUrl = process.env.EXPO_PUBLIC_SITE_URL;
+    const apiUrl = `${baseUrl}/elk/wp-json/elk/v1/data?_t=${timestamp}${lastSyncQuery}`;
+    console.log(apiUrl);
+
+    const response = await fetch(apiUrl, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -307,9 +328,11 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
     const text = await response.text();
     let json = JSON.parse(text);
+    let serverSyncTime: string | null = null;
 
     // Support new API format where everything is nested under a "data" object
     if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
+      serverSyncTime = json.sync_time || null;
       json = json.data;
     }
 
@@ -359,7 +382,9 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
     const changedSettings: { key: string, data: any }[] = [];
     for (const key of settingsKeys) {
-      if (json[key] !== undefined) {
+      // The PHP API returns [] for settings when they haven't changed.
+      // We must ignore empty arrays for settings to prevent wiping out the local database.
+      if (json[key] !== undefined && !(Array.isArray(json[key]) && json[key].length === 0)) {
         const serverJsonString = JSON.stringify(json[key]);
         const localJsonString = localSettingsMap.get(key) || '';
         if (serverJsonString !== localJsonString) {
@@ -370,7 +395,9 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
     if (changedRecords.length === 0 && changedSettings.length === 0) {
       console.log('[Sync] All records and settings up to date. Skipping write.');
-      db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', String(Date.now())]);
+      if (serverSyncTime) {
+        db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', serverSyncTime]);
+      }
       return false;
     }
 
@@ -396,6 +423,15 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
     // Atomic SQLite write — only upsert what changed
     db.withTransactionSync(() => {
+      // Handle deleted records if provided by the incremental API
+      if (json.deleted && Array.isArray(json.deleted)) {
+        for (const del of json.deleted) {
+          if (del.id) {
+            db.runSync('DELETE FROM app_records WHERE id = ?;', [String(del.id)]);
+          }
+        }
+      }
+
       // Update changed CPT records
       for (const { type: recType, rec, lastModified } of changedRecords) {
         const id = String(rec.id);
@@ -410,7 +446,8 @@ export async function triggerDeltaSync(): Promise<boolean> {
         db.runSync('INSERT OR REPLACE INTO app_settings (key, json_data) VALUES (?, ?);', [key, JSON.stringify(data)]);
       }
 
-      db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', String(Date.now())]);
+      const finalSyncTime = serverSyncTime || String(Date.now());
+      db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', finalSyncTime]);
     });
 
     console.log('[Sync] Per-record delta sync complete.');
