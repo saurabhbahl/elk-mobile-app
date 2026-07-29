@@ -14,6 +14,6 @@ declare module 'react-native-maps' {
 
   export default class MapView extends Component<MapViewProps> {}
 
-  export class Marker extends Component<any> {}
-  export class Polyline extends Component<any> {}
+  export class Marker extends Component<Record<string, unknown>> {}
+  export class Polyline extends Component<Record<string, unknown>> {}
 }

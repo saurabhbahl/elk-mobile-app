@@ -3,7 +3,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { db } from './index';
 
 // Helper to set nested object properties in-place
-function setNestedValue(obj: any, path: string[], value: any) {
+function setNestedValue(obj: Record<string, unknown>, path: string[], value: unknown) {
   let current = obj;
   for (let i = 0; i < path.length - 1; i++) {
     if (!current[path[i]]) return;
@@ -52,10 +52,10 @@ export async function clearLocalCache() {
 }
 
 // Extract featured images to pre-cache
-function extractPreCacheUrls(data: any): { path: string[]; url: string }[] {
+function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: string[]; url: string }[] {
   const list: { path: string[]; url: string }[] = [];
 
-  const addImage = (obj: any, path: string[]) => {
+  const addImage = (obj: Record<string, unknown>, path: string[]) => {
     if (!obj) return;
     if (typeof obj === 'string' && obj.startsWith('http')) {
       list.push({ path, url: obj });
@@ -75,37 +75,37 @@ function extractPreCacheUrls(data: any): { path: string[]; url: string }[] {
   }
   // 3. Home Screen
   if (data.home_screen?.featured_event && Array.isArray(data.home_screen.featured_event)) {
-    data.home_screen.featured_event.forEach((ev: any, idx: number) => {
+    if (Array.isArray(data.home_screen?.featured_event)) data.home_screen.featured_event.forEach((ev: Record<string, unknown>, idx: number) => {
       addImage(ev.thumbnail_image, ['home_screen', 'featured_event', String(idx), 'thumbnail_image']);
     });
   }
   if (data.home_screen?.programs && Array.isArray(data.home_screen.programs)) {
-    data.home_screen.programs.forEach((prog: any, idx: number) => {
+    if (Array.isArray(data.home_screen?.programs)) data.home_screen.programs.forEach((prog: Record<string, unknown>, idx: number) => {
       addImage(prog.thumbnail_image, ['home_screen', 'programs', String(idx), 'thumbnail_image']);
     });
   }
 
   // 4. Programs
   if (data.programs && Array.isArray(data.programs)) {
-    data.programs.forEach((prog: any, idx: number) => {
+    data.programs.forEach((prog: Record<string, unknown>, idx: number) => {
       addImage(prog.thumbnail_image, ['programs', String(idx), 'thumbnail_image']);
     });
   }
   // 5. Events
   if (data.events && Array.isArray(data.events)) {
-    data.events.forEach((ev: any, idx: number) => {
+    data.events.forEach((ev: Record<string, unknown>, idx: number) => {
       addImage(ev.thumbnail_image, ['events', String(idx), 'thumbnail_image']);
     });
   }
   // 6. Trails
   if (data.trails && Array.isArray(data.trails)) {
-    data.trails.forEach((trail: any, idx: number) => {
+    data.trails.forEach((trail: Record<string, unknown>, idx: number) => {
       addImage(trail.featured_image, ['trails', String(idx), 'featured_image']);
     });
   }
   // 7. Rentals
   if (data.rentals && Array.isArray(data.rentals)) {
-    data.rentals.forEach((rental: any, idx: number) => {
+    data.rentals.forEach((rental: Record<string, unknown>, idx: number) => {
       if (rental.additional_images && Array.isArray(rental.additional_images) && rental.additional_images.length > 0) {
         addImage(rental.additional_images[0], ['rentals', String(idx), 'additional_images', '0']);
       }
@@ -113,7 +113,7 @@ function extractPreCacheUrls(data: any): { path: string[]; url: string }[] {
   }
   // 8. Tips
   if (data.tips && Array.isArray(data.tips)) {
-    data.tips.forEach((tip: any, idx: number) => {
+    data.tips.forEach((tip: Record<string, unknown>, idx: number) => {
       addImage(tip.tip_icon__image, ['tips', String(idx), 'tip_icon__image']);
     });
   }
@@ -121,14 +121,14 @@ function extractPreCacheUrls(data: any): { path: string[]; url: string }[] {
   if (data.plan_your_trip) {
     addImage(data.plan_your_trip.hero_image, ['plan_your_trip', 'hero_image']);
     if (data.plan_your_trip.sections && Array.isArray(data.plan_your_trip.sections)) {
-      data.plan_your_trip.sections.forEach((sec: any, idx: number) => {
+      data.plan_your_trip.sections.forEach((sec: Record<string, unknown>, idx: number) => {
         addImage(sec.section_icon, ['plan_your_trip', 'sections', String(idx), 'section_icon']);
       });
     }
   }
   // 10. POIs (waypoints)
   if (data.pois && Array.isArray(data.pois)) {
-    data.pois.forEach((poi: any, idx: number) => {
+    data.pois.forEach((poi: Record<string, unknown>, idx: number) => {
       addImage(poi.featured_image, ['pois', String(idx), 'featured_image']);
       addImage(poi.pin_icon_override, ['pois', String(idx), 'pin_icon_override']);
     });
@@ -139,7 +139,7 @@ function extractPreCacheUrls(data: any): { path: string[]; url: string }[] {
   }
   // 12. Cameras
   if (data.cameras && Array.isArray(data.cameras)) {
-    data.cameras.forEach((cam: any, idx: number) => {
+    data.cameras.forEach((cam: Record<string, unknown>, idx: number) => {
       addImage(cam.thumbnail__poster, ['cameras', String(idx), 'thumbnail__poster']);
     });
   }
@@ -177,7 +177,7 @@ export async function fetchAndStoreAll(
     }
 
     const text = await response.text();
-    let json: any;
+    let json = {} as Record<string, unknown>;
     try {
       json = JSON.parse(text);
       // Support new API format where everything is nested under a "data" object
@@ -245,7 +245,7 @@ export async function fetchAndStoreAll(
       ];
       for (const item of recordTypes) {
         if (item.array && Array.isArray(item.array)) {
-          item.array.forEach((rec: any) => {
+          item.array.forEach((rec: Record<string, unknown>) => {
             const id = rec.id ? String(rec.id) : String(Math.random());
             // Store last_modified from record if present, otherwise use content hash
             const lastModified = rec.last_modified || rec.modified || hashString(JSON.stringify(rec));
@@ -328,7 +328,7 @@ export async function triggerDeltaSync(): Promise<boolean> {
     ];
 
     // Collect only changed records (server last_modified differs from local)
-    const changedRecords: { type: string; rec: any; lastModified: string }[] = [];
+    const changedRecords: { type: string; rec: Record<string, unknown>; lastModified: string }[] = [];
     for (const item of recordTypes) {
       if (!item.array || !Array.isArray(item.array)) continue;
       for (const rec of item.array) {
@@ -357,7 +357,7 @@ export async function triggerDeltaSync(): Promise<boolean> {
       localSettingsMap.set(row.key, row.json_data || '');
     }
 
-    const changedSettings: { key: string, data: any }[] = [];
+    const changedSettings: { key: string, data: unknown }[] = [];
     for (const key of settingsKeys) {
       if (json[key] !== undefined) {
         const serverJsonString = JSON.stringify(json[key]);
@@ -379,7 +379,7 @@ export async function triggerDeltaSync(): Promise<boolean> {
     // For changed records only — re-cache images via unified imageCache
     // cacheImageIfNeeded always re-downloads for changed records (updates lastAccessed + manifest)
     for (const { rec, type: recType } of changedRecords) {
-      const tempJson: any = {};
+      const tempJson = {} as Record<string, unknown>;
       tempJson[recType] = [rec];
       const images = extractPreCacheUrls(tempJson);
 

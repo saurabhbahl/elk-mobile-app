@@ -1,3 +1,4 @@
+import { ImageSourcePropType } from "react-native";
 import { Coordinate } from '../data/waypoints';
 
 /**
@@ -100,7 +101,7 @@ export function calculateBearing(start: Coordinate, end: Coordinate): number {
   return (bearing + 360) % 360;
 }
 
-export function getTurnInstruction(bearing1: number, bearing2: number): { text: string; icon: any } {
+export function getTurnInstruction(bearing1: number, bearing2: number): { text: string; icon: string | number } {
   let diff = bearing2 - bearing1;
   if (diff > 180) diff -= 360;
   if (diff < -180) diff += 360;

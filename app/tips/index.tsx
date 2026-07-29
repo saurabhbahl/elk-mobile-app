@@ -33,7 +33,7 @@ export default function TipsScreen() {
 
     const tips = tipsData || [];
 
-    const renderTipItem = ({ item }: { item: any }) => {
+    const renderTipItem = ({ item }: { item: Record<string, unknown> }) => {
         const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : item.tip_icon__image?.url;
 
         return (

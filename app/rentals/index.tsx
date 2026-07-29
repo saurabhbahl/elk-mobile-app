@@ -42,7 +42,7 @@ export default function RentalsScreen() {
         }
     };
 
-    const renderRentalItem = ({ item }: { item: any }) => {
+    const renderRentalItem = ({ item }: { item: Record<string, unknown> }) => {
         // Find main image from additional_images (acf gallery) if available
         let imageUrl = null;
         if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {

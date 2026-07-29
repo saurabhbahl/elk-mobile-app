@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -33,11 +34,11 @@ export default function EventsScreen() {
 
     const events = eventsData || [];
 
-    const renderEventCard = ({ item, index }: { item: any; index: number }) => (
+    const renderEventCard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
         <TouchableOpacity
             style={styles.eventCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/events/${item.id || index}` as any)}
+            onPress={() => router.push(`/events/${item.id || index}` as Href<string>)}
         >
             <CachedImage
                 uri={item.thumbnail_image?.url}

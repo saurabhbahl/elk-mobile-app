@@ -10,13 +10,13 @@ export interface Waypoint {
   description: string;
   full_description?: string;
   address?: string;
-  featured_image?: any;
-  image_gallery?: any[];
+  featured_image?: Record<string, unknown> | boolean;
+  image_gallery?: unknown[];
   handicap_accessible?: boolean | number | string;
   open_year_round?: boolean | number | string;
   seasonal_notes?: string;
-  external_link?: any;
-  pin_icon_override?: any;
+  external_link?: string;
+  pin_icon_override?: Record<string, unknown> | boolean;
 }
 
 // export const waypoints: Waypoint[] = [

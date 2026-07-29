@@ -32,7 +32,7 @@ export default function TrailsScreen() {
 
     const trails = trailsData || [];
 
-    const renderTrailItem = ({ item, index }: { item: any; index: number }) => (
+    const renderTrailItem = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
         <View style={styles.trailItemContainer}>
             <View style={styles.trailHeaderRow}>
                 <AppText style={styles.trailName}>{item.trail_name || ""}</AppText>

@@ -41,6 +41,9 @@ export function createTables() {
     console.log("Tables created");
 }
 
+
+interface SQLiteTable { name: string; sql: string; }
+interface SQLiteColumn { name: string; type: string; pk: number; notnull: number; }
 export function inspectDatabaseSchema() {
     console.log("\n=========================================");
     console.log("🔍 SQLITE DATABASE SCHEMA INSPECTION");
@@ -48,17 +51,17 @@ export function inspectDatabaseSchema() {
     try {
         const tables = db.getAllSync(
             "SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
-        ) as any[];
-        console.log(`Found ${tables.length} User Table(s):`, tables.map((t: any) => t.name));
+        ) as SQLiteTable[];
+        console.log(`Found ${tables.length} User Table(s):`, tables.map((t: SQLiteTable) => t.name));
 
-        tables.forEach((table: any) => {
+        tables.forEach((table: SQLiteTable) => {
             console.log(`\nTable Name: "${table.name}"`);
             console.log(`Creation SQL: ${table.sql}`);
             try {
-                const columns = db.getAllSync(`PRAGMA table_info("${table.name}");`) as any[];
+                const columns = db.getAllSync(`PRAGMA table_info("${table.name}");`) as SQLiteTable[];
 
                 console.log("Columns:");
-                columns.forEach((col: any) => {
+                columns.forEach((col: SQLiteColumn | unknown) => {
                     console.log(
                         `  - ${col.name} (${col.type || "BLOB"}) ${col.pk ? "🔑 [PRIMARY KEY]" : ""
                         } ${col.notnull ? "⚠️ [NOT NULL]" : ""}`
@@ -68,7 +71,7 @@ export function inspectDatabaseSchema() {
                 console.log(`  Failed to inspect columns for ${table.name}`);
             }
         });
-    } catch (err: any) {
+    } catch (err) {
         console.log("❌ Failed to inspect database schema:", err.message);
     }
     console.log("=========================================\n");

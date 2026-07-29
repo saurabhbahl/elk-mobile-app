@@ -37,7 +37,7 @@ export default function EventDetailScreen() {
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const event = eventsData?.find(
-        (e: any, index: number) => String(e.id || index) === String(id)
+        (e: EventsData, index: number) => String(e.id || index) === String(id)
     );
 
     const rawDescription = event?.full_description || "";

@@ -152,7 +152,7 @@ export async function cacheImageIfNeeded(url: string, forceRefresh: boolean = fa
     let sizeBytes = 0;
     try {
       const info = await FileSystem.getInfoAsync(localPath);
-      sizeBytes = (info as any).size || 0;
+      sizeBytes = ((info as {size?: number}).size) || 0;
     } catch { /* size is a nice-to-have */ }
 
     manifest[url] = {

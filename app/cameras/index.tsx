@@ -55,7 +55,7 @@ export default function LiveCameraScreen() {
     const [activeCamIndex, setActiveCamIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
-    const cameras = (camerasData || []).filter((cam: any) => cam.active !== false);
+    const cameras = (camerasData || []).filter((cam: CamerasData) => cam.active !== false);
     const activeCamera = cameras[activeCamIndex];
 
     const handleTabChange = (index: number) => {
@@ -67,7 +67,7 @@ export default function LiveCameraScreen() {
         setIsPlaying(true);
     };
 
-    const handleWebViewNavigation = (event: any) => {
+    const handleWebViewNavigation = (event: unknown) => {
         // If it's a YouTube embed and the user clicks a link (like the video title or YouTube logo),
         // it tries to navigate away from the /embed/ player. We intercept this and open it natively.
         if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
@@ -193,7 +193,7 @@ export default function LiveCameraScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.tabsScroll}
                         >
-                            {cameras.map((cam: any, index: number) => {
+                            {cameras.map((cam: CamerasData, index: number) => {
                                 const isActive = index === activeCamIndex;
                                 return (
                                     <TouchableOpacity

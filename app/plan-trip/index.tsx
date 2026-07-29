@@ -45,14 +45,14 @@ export default function PlanTripScreen() {
     }
 
     const sections = planTripData?.content_sections || [];
-    const activeSections = sections.filter((sec: any) => {
+    const activeSections = sections.filter((sec: Record<string, unknown>) => {
         // Handle active flag checking flexibly (could be string "1", boolean true, etc.)
         const actVal = sec?.section_active;
         return actVal === undefined || actVal === true || actVal === "1" || actVal === "true" || actVal === "";
     });
 
     // Sort by sort_order if available
-    activeSections.sort((a: any, b: any) => {
+    activeSections.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
         const orderA = parseInt(a.sort_order, 10) || 0;
         const orderB = parseInt(b.sort_order, 10) || 0;
         return orderA - orderB;
@@ -107,7 +107,7 @@ export default function PlanTripScreen() {
                     ) : null}
 
                     {activeSections.length > 0 ? (
-                        activeSections.map((sec: any, index: number) => {
+                        activeSections.map((sec: Record<string, unknown>, index: number) => {
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <View key={index} style={styles.sectionCard}>

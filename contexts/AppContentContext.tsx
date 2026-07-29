@@ -37,59 +37,244 @@ export interface HomeScreenData {
     map_view_button_label?: string;
     programs_block_heading?: string;
     programs_to_display?: number | string;
-    programs?: any[];
+    programs?: ProgramsData[];
     event_block_heading?: string;
     event_view_all_label?: string;
-    featured_event?: any; // WordPress Post Object structure
+    featured_event?: EventsData; // WordPress Post Object structure
     trails_block_heading?: string;
     trail_links_to_show?: number | string;
-    trails?: any[];
+    trails?: TrailsData[];
 }
+
+export interface ProgramsData {
+    id?: number;
+    updated_at?: string;
+    program_name?: string;
+    thumbnail_image?: Record<string, unknown>;
+    short_description?: string;
+    full_description?: string;
+    schedule__dates?: string;
+    location?: unknown[];
+    registration_link?: string;
+    category__tag?: unknown[];
+    featured?: boolean;
+    active?: boolean;
+    sort_order?: string;
+}
+
+export interface TrailsData {
+    id?: number;
+    updated_at?: string;
+    trail_name?: string;
+    featured_image?: boolean | Record<string, unknown>;
+    description?: string;
+    trailhead_address?: string;
+    distance?: string;
+    seasonal_closure?: string;
+    active?: boolean;
+    sort_order?: string;
+}
+
+export interface EventsData {
+    id?: number;
+    updated_at?: string;
+    event_name?: string;
+    thumbnail_image?: Record<string, unknown>;
+    short_description?: string;
+    full_description?: string;
+    "start_date_&_time"?: string;
+    "end_date_&_time"?: string;
+    location_name?: string;
+    location_address?: string;
+    location_poi_link?: unknown[];
+    registration__ticket_link?: string;
+    category__tag?: string;
+    featured?: boolean;
+    active?: boolean;
+}
+
+export interface RentalsData {
+    id?: number;
+    updated_at?: string;
+    rental_name?: string;
+    additional_images?: boolean;
+    short_description?: string;
+    full_description?: string;
+    capacity?: string;
+    rental_type?: string;
+    availability_notes?: string;
+    pricing_notes?: string;
+    cta_1_label_?: string;
+    cta_1_link?: string;
+    cta_2_label?: string;
+    cta_2_link?: string;
+    map_poi_link?: unknown[];
+    active?: boolean;
+    sort_order?: string;
+}
+
+export interface TipsData {
+    id?: number;
+    updated_at?: string;
+    tip_title?: string;
+    tip_body?: string;
+    tip_icon__image?: Record<string, unknown>;
+    category__tag?: boolean;
+    active?: boolean;
+    sort_order?: string;
+}
+
+export interface PlanYourTripData {
+    screen_title?: string;
+    hero_image?: string;
+    intro_paragraph?: string;
+    content_sections?: unknown[];
+}
+
+export interface CamerasData {
+    id?: number;
+    updated_at?: string;
+    camera_name?: string;
+    stream_url?: string;
+    stream_type?: string;
+    thumbnail__poster?: Record<string, unknown>;
+    description?: string;
+    active?: boolean;
+    sort_order?: string;
+}
+
+export interface VisitorsData {
+    screen_title?: string;
+    hero?: Record<string, unknown>;
+    image_gallery?: unknown[];
+    body_copy?: string;
+    address?: string;
+    phone_number?: string;
+    hours_of_operation?: boolean;
+    accessibility_notes?: string;
+    cta_1_label?: string;
+    cta_1_link?: Record<string, unknown>;
+    cta_2_label?: string;
+    cta_2_link?: Record<string, unknown>;
+    map_poi_link?: unknown[];
+}
+
+export interface ProgramsSettingData {
+    screen_title?: string;
+    layout?: string;
+    filter_bar_enabled?: boolean;
+}
+
+export interface EventSettingsData {
+    screen_title?: string;
+    past_events_visibility?: string;
+    filter_bar_enabled?: boolean;
+}
+
+export interface LiveCamSettingsData {
+    screen_title?: string;
+    offline_message?: string;
+    quality_note?: string;
+}
+
+export interface TrailSettingsData {
+    screen_title?: string;
+    filter_bar_enabled?: boolean;
+    default_sort?: string;
+}
+
+export interface RentalSettingsData {
+    screen_title?: string;
+    intro_text?: string;
+}
+
+export interface TipsScreenSettingsData {
+    screen_title?: string;
+    intro_paragraph?: string;
+    header_icon?: string;
+}
+
+export interface MapSettingsData {
+    screen_title?: string;
+    default_map_center?: Record<string, unknown>;
+    latitude?: string;
+    longitude?: string;
+    default_zoom_level?: string;
+    map_style?: string;
+}
+
+export interface NavigationData {
+    nav_item_label?: string;
+    nav_image?: Record<string, unknown> | boolean;
+    nav_link?: Record<string, unknown>;
+    nav_order?: number;
+}
+
+export interface PoisData {
+    id?: number;
+    updated_at?: string;
+    poi_name?: string;
+    pin_popup_summary?: string;
+    full_description?: string;
+    latitude?: string;
+    longitude?: string;
+    featured_image?: Record<string, unknown>;
+    image_gallery?: boolean;
+    address?: string;
+    handicap_accessible?: boolean;
+    open_year_round?: boolean;
+    seasonal_notes?: string;
+    external_link?: string;
+    pin_icon_override?: Record<string, unknown> | boolean;
+    active?: boolean;
+    sort_order?: string;
+}
+
 
 export interface AppContentData {
     app_branding?: AppBranding;
     popup_content?: PopupContent;
     home_screen?: HomeScreenData;
-    programs?: any[];
-    events?: any[];
-    trails?: any[];
-    rentals?: any[];
-    tips?: any[];
-    plan_your_trip?: any;
-    cameras?: any[];
-    visitors?: any;
-    programs_setting?: any;
-    event_settings?: any;
-    live_cam_settings?: any;
-    trail_settings?: any;
-    rental_settings?: any;
-    tips_screen_settings?: any;
-    map_settings?: any;
-    navigation?: any[];
-    pois?: any[];
+    programs?: ProgramsData[];
+    events?: EventsData[];
+    trails?: TrailsData[];
+    rentals?: RentalsData[];
+    tips?: TipsData[];
+    plan_your_trip?: PlanYourTripData;
+    cameras?: CamerasData[];
+    visitors?: VisitorsData;
+    programs_setting?: ProgramsSettingData;
+    event_settings?: EventSettingsData;
+    live_cam_settings?: LiveCamSettingsData;
+    trail_settings?: TrailSettingsData;
+    rental_settings?: RentalSettingsData;
+    tips_screen_settings?: TipsScreenSettingsData;
+    map_settings?: MapSettingsData;
+    navigation?: NavigationData[];
+    pois?: PoisData[];
 }
 
 interface AppContentContextType {
     brandData: AppBranding | null;
     popupData: PopupContent | null;
     homeData: HomeScreenData | null;
-    programsData: any[] | null;
-    eventsData: any[] | null;
-    trailsData: any[] | null;
-    rentalsData: any[] | null;
-    tipsData: any[] | null;
-    planTripData: any | null;
-    camerasData: any[] | null;
-    visitorsData: any | null;
-    programsSettingData: any | null;
-    eventSettingsData: any | null;
-    liveCamSettingsData: any | null;
-    trailSettingsData: any | null;
-    rentalSettingsData: any | null;
-    tipsScreenSettingsData: any | null;
-    mapSettingsData: any | null;
-    navigationData: any[] | null;
-    poisData: any[] | null;
+    programsData: ProgramsData[] | null;
+    eventsData: EventsData[] | null;
+    trailsData: TrailsData[] | null;
+    rentalsData: RentalsData[] | null;
+    tipsData: TipsData[] | null;
+    planTripData: PlanYourTripData | null;
+    camerasData: CamerasData[] | null;
+    visitorsData: VisitorsData | null;
+    programsSettingData: ProgramsSettingData | null;
+    eventSettingsData: EventSettingsData | null;
+    liveCamSettingsData: LiveCamSettingsData | null;
+    trailSettingsData: TrailSettingsData | null;
+    rentalSettingsData: RentalSettingsData | null;
+    tipsScreenSettingsData: TipsScreenSettingsData | null;
+    mapSettingsData: MapSettingsData | null;
+    navigationData: NavigationData[] | null;
+    poisData: PoisData[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     isSyncing: boolean;
     syncProgress: number;
@@ -105,23 +290,23 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [brandData, setBrandData] = useState<AppBranding | null>(null);
     const [popupData, setPopupData] = useState<PopupContent | null>(null);
     const [homeData, setHomeData] = useState<HomeScreenData | null>(null);
-    const [programsData, setProgramsData] = useState<any[] | null>(null);
-    const [eventsData, setEventsData] = useState<any[] | null>(null);
-    const [trailsData, setTrailsData] = useState<any[] | null>(null);
-    const [rentalsData, setRentalsData] = useState<any[] | null>(null);
-    const [tipsData, setTipsData] = useState<any[] | null>(null);
-    const [planTripData, setPlanTripData] = useState<any | null>(null);
-    const [camerasData, setCamerasData] = useState<any[] | null>(null);
-    const [visitorsData, setVisitorsData] = useState<any | null>(null);
-    const [programsSettingData, setProgramsSettingData] = useState<any | null>(null);
-    const [eventSettingsData, setEventSettingsData] = useState<any | null>(null);
-    const [liveCamSettingsData, setLiveCamSettingsData] = useState<any | null>(null);
-    const [trailSettingsData, setTrailSettingsData] = useState<any | null>(null);
-    const [rentalSettingsData, setRentalSettingsData] = useState<any | null>(null);
-    const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<any | null>(null);
-    const [mapSettingsData, setMapSettingsData] = useState<any | null>(null);
-    const [navigationData, setNavigationData] = useState<any[] | null>(null);
-    const [poisData, setPoisData] = useState<any[] | null>(null);
+    const [programsData, setProgramsData] = useState<ProgramsData[] | null>(null);
+    const [eventsData, setEventsData] = useState<EventsData[] | null>(null);
+    const [trailsData, setTrailsData] = useState<TrailsData[] | null>(null);
+    const [rentalsData, setRentalsData] = useState<RentalsData[] | null>(null);
+    const [tipsData, setTipsData] = useState<TipsData[] | null>(null);
+    const [planTripData, setPlanTripData] = useState<PlanYourTripData | null>(null);
+    const [camerasData, setCamerasData] = useState<CamerasData[] | null>(null);
+    const [visitorsData, setVisitorsData] = useState<VisitorsData | null>(null);
+    const [programsSettingData, setProgramsSettingData] = useState<ProgramsSettingData | null>(null);
+    const [eventSettingsData, setEventSettingsData] = useState<EventSettingsData | null>(null);
+    const [liveCamSettingsData, setLiveCamSettingsData] = useState<LiveCamSettingsData | null>(null);
+    const [trailSettingsData, setTrailSettingsData] = useState<TrailSettingsData | null>(null);
+    const [rentalSettingsData, setRentalSettingsData] = useState<RentalSettingsData | null>(null);
+    const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<TipsScreenSettingsData | null>(null);
+    const [mapSettingsData, setMapSettingsData] = useState<MapSettingsData | null>(null);
+    const [navigationData, setNavigationData] = useState<NavigationData[] | null>(null);
+    const [poisData, setPoisData] = useState<PoisData[] | null>(null);
 
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
@@ -136,7 +321,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         try {
             // Settings mapping
             const settings = db.getAllSync("SELECT key, json_data FROM app_settings;") as { key: string, json_data: string }[];
-            const settingsMap: Record<string, any> = {};
+            const settingsMap: Record<string, unknown> = {};
             settings.forEach(s => {
                 try {
                     settingsMap[s.key] = JSON.parse(s.json_data);
@@ -161,7 +346,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
             // CPT Records mapping
             const records = db.getAllSync("SELECT type, json_data FROM app_records;") as { type: string, json_data: string }[];
-            const recordsMap: Record<string, any[]> = {
+            const recordsMap: Record<string, unknown[]> = {
                 programs: [],
                 events: [],
                 trails: [],
@@ -190,7 +375,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             setCamerasData(recordsMap.cameras);
 
             if (recordsMap.pois) {
-                const mappedPois = recordsMap.pois.map((poi: any) => ({
+                const mappedPois = recordsMap.pois.map((poi: PoisData) => ({
                     ...poi,
                     id: parseInt(poi.id, 10),
                     coordinate: {

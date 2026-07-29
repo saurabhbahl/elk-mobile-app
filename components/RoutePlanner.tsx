@@ -23,7 +23,7 @@ export interface RoutePlannerProps {
   startPoint: Waypoint | null;
   destinationPoint: Waypoint | null;
   stopPoints: Waypoint[];           // intermediate stops
-  location: any;
+  location: unknown;
   isCalculatingRoute: boolean;
   pickerType: 'start' | 'end' | 'stop';
   onClose: () => void;
@@ -49,7 +49,7 @@ function WaypointSelector({
   label: string;
   selected: Waypoint | null;
   waypoints: Waypoint[];
-  location: any;
+  location: unknown;
   showCurrentLocation?: boolean;
   onSelect: (wp: Waypoint) => void;
 }) {

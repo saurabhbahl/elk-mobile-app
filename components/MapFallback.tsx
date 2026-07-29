@@ -10,10 +10,10 @@ import { HeaderOverlay } from './HeaderOverlay';
 
 interface MapFallbackProps {
   userLocation?: { latitude: number; longitude: number };
-  currentRegion: any;
+  currentRegion: unknown;
   mainRouteCoordinates: Coordinate[];
   orangeRouteCoordinates: Coordinate[];
-  onPointSelect: (point: any) => void;
+  onPointSelect: (point: unknown) => void;
 }
 
 export const MapFallback = ({

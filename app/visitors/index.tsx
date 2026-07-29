@@ -40,7 +40,7 @@ export default function VisitorsCenterScreen() {
 
     const images: string[] = [];
     if (visitorsData?.image_gallery && Array.isArray(visitorsData.image_gallery)) {
-        visitorsData.image_gallery.forEach((img: any) => {
+        visitorsData.image_gallery.forEach((img: Record<string, unknown>) => {
             if (img?.url) images.push(img.url);
         });
     }

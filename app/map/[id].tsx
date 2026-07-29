@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import CachedImage from "@/components/CachedImage";
 import { openExternalLink } from "@/utils/openLink";
@@ -74,7 +75,7 @@ export default function WaypointDetailsScreen() {
                 {/* Featured Image / Gallery */}
                 {waypoint.image_gallery && Array.isArray(waypoint.image_gallery) && waypoint.image_gallery.length > 0 ? (
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageSliderContainer}>
-                        {waypoint.image_gallery.map((img: any, idx: number) => (
+                        {waypoint.image_gallery.map((img: Record<string, unknown>, idx: number) => (
                             <CachedImage
                                 key={idx}
                                 uri={typeof img === 'string' ? img : img.url || img.sizes?.large}

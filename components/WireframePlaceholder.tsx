@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { View, StyleSheet } from "react-native";
 
 interface WireframePlaceholderProps {
-    style?: any;
+    style?: unknown;
     children?: React.ReactNode;
 }
 
 export default function WireframePlaceholder({ style, children }: WireframePlaceholderProps) {
     const [dims, setDims] = useState({ width: 0, height: 0 });
 
-    const onLayout = (event: any) => {
+    const onLayout = (event: unknown) => {
         const { width: w, height: h } = event.nativeEvent.layout;
         setDims({ width: w, height: h });
     };

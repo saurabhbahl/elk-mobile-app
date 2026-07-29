@@ -346,7 +346,7 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
   }
   
   // Apply dark mode adjustments
-  style.layers.forEach((layer: any) => {
+  style.layers.forEach((layer: Record<string, unknown>) => {
     if (layer.id === 'background') {
       layer.paint = { 'background-color': '#111413' };
     } else if (layer.id === 'osm-base') {

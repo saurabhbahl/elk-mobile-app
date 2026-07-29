@@ -33,7 +33,7 @@ const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
 async function isValidMbtiles(uri: string): Promise<boolean> {
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
-    if (!fileInfo.exists || (fileInfo as any).size < 1024 * 1024) {
+    if (!fileInfo.exists || fileInfo.size < 1024 * 1024) {
       // If it's smaller than 1MB, it's definitely incomplete/corrupt
       return false;
     }
@@ -69,7 +69,7 @@ export const useOfflineMap = () => {
         if (storedList) {
           const filenames = JSON.parse(storedList);
           if (Array.isArray(filenames)) {
-            expectedFiles = filenames.map((name: string) => ({ uri: docDir + name } as any));
+            expectedFiles = filenames.map((name: string) => ({ uri: docDir + name } as { uri: string }));
           }
         }
       } catch (e) {}
@@ -165,7 +165,7 @@ export const useOfflineMap = () => {
             }));
             await AsyncStorage.setItem(
               '@elk_downloaded_maps',
-              JSON.stringify(remoteFiles.map((rf: any) => rf.filename))
+              JSON.stringify(remoteFiles.map((rf: { filename: string, url: string }) => rf.filename))
             );
           }
         }
@@ -222,7 +222,7 @@ export const useOfflineMap = () => {
           const finalInfo = await FileSystem.getInfoAsync(tmpUri);
           
           // An MBTiles file should be at least a few MBs. If it's less than 1MB, it's likely an error page or corrupt.
-          const isLargeEnough = finalInfo.exists && (finalInfo as any).size > 1024 * 1024;
+          const isLargeEnough = finalInfo.exists && finalInfo.size > 1024 * 1024;
 
           if (!valid || !isLargeEnough) {
             await FileSystem.deleteAsync(tmpUri, { idempotent: true });
@@ -254,7 +254,7 @@ export const useOfflineMap = () => {
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
-    } catch (error: any) {
+    } catch (error) {
       if (error?.message && error.message.toLowerCase().includes('cancel')) {
         console.log('Download was cancelled.');
       } else {

@@ -66,7 +66,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   const [timePart, timeUnit] = (timeRemaining || '0 min').split(' ');
   const [distPart, distUnit] = (distanceRemaining || '0.0 mi').split(' ');
 
-  const iconName = getTurnIcon(nextInstruction.text) as any;
+  const iconName = getTurnIcon(nextInstruction.text) as never;
 
   React.useEffect(() => {
     if (!isPanelCollapsed) {

@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { Image } from "expo-image";
@@ -65,7 +66,7 @@ export default function QuickLinks() {
                             }
                         ]}
                         activeOpacity={0.8}
-                        onPress={() => router.replace(item.nav_link.url as any)}
+                        onPress={() => router.replace(item.nav_link.url as Href<string>)}
                     >
                         {item.nav_image ? (
                             <Image

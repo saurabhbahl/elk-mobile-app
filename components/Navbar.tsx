@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
@@ -13,7 +14,7 @@ export default function Navbar() {
 
     return (
         <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.push("/(home)" as any)} activeOpacity={0.8}>
+            <TouchableOpacity onPress={() => router.push("/(home)" as Href<string>)} activeOpacity={0.8}>
                 <Image
                     source={require("@/assets/images/logo.png")}
                     style={styles.headerLogo}
@@ -31,7 +32,7 @@ export default function Navbar() {
                 <TouchableOpacity 
                     style={styles.tipsContainer} 
                     activeOpacity={0.7}
-                    onPress={() => router.push("/map/settings" as any)}
+                    onPress={() => router.push("/map/settings" as Href<string>)}
                 >
                     <View style={styles.tipsCircle}>
                         <MaterialCommunityIcons name="cog" size={20} color={colors.onSurface} />
@@ -45,7 +46,7 @@ export default function Navbar() {
                 <TouchableOpacity 
                     style={styles.tipsContainer} 
                     activeOpacity={0.7}
-                    onPress={() => router.push("/tips" as any)}
+                    onPress={() => router.push("/tips" as Href<string>)}
                 >
                     <View style={styles.tipsCircle}>
                         <MaterialCommunityIcons name="paw" size={20} color={colors.onSurface} />

@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import CachedImage from "@/components/CachedImage";
 import { router } from "expo-router";
@@ -38,11 +39,11 @@ export default function ProgramsScreen() {
     const layoutValue = typeof programsSettingData?.layout === 'object' ? programsSettingData.layout.value : programsSettingData?.layout;
     const isGrid = (layoutValue || "").toLowerCase() !== "list";
 
-    const renderProgramCard = ({ item, index }: { item: any; index: number }) => (
+    const renderProgramCard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
         <TouchableOpacity
             style={isGrid ? styles.programCard : styles.programListCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/programs/${item.id || index}` as any)}
+            onPress={() => router.push(`/programs/${item.id || index}` as Href<string>)}
         >
             <CachedImage
                 uri={item.thumbnail_image?.url}

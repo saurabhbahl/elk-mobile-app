@@ -34,7 +34,7 @@ export default function ProgramDetailScreen() {
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const program = programsData?.find(
-        (p: any, index: number) => String(p.id || index) === String(id)
+        (p: ProgramsData, index: number) => String(p.id || index) === String(id)
     );
 
     if (apiStatus === "fetching") {

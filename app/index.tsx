@@ -1,3 +1,4 @@
+import { Href } from "expo-router";
 import AppText from "@/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -60,7 +61,7 @@ export default function LandingScreen() {
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
-                                    onPress={() => router.push("/(home)" as any)}
+                                    onPress={() => router.push("/(home)" as Href<string>)}
                                 >
                                     <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
                                         {brandData?.app_tagline}
