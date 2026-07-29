@@ -1,6 +1,6 @@
+import { cacheImageIfNeeded, clearImageCache } from '@/utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
 import { db } from './index';
-import { cacheImageIfNeeded, clearImageCache } from '@/utils/imageCache';
 
 // Helper to set nested object properties in-place
 function setNestedValue(obj: any, path: string[], value: any) {
@@ -180,6 +180,10 @@ export async function fetchAndStoreAll(
     let json: any;
     try {
       json = JSON.parse(text);
+      // Support new API format where everything is nested under a "data" object
+      if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
+        json = json.data;
+      }
     } catch (e) {
       throw new Error('Invalid JSON response from API');
     }
@@ -302,7 +306,12 @@ export async function triggerDeltaSync(): Promise<boolean> {
     if (!response.ok) return false;
 
     const text = await response.text();
-    const json = JSON.parse(text);
+    let json = JSON.parse(text);
+
+    // Support new API format where everything is nested under a "data" object
+    if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
+      json = json.data;
+    }
 
     // Build map of locally stored last_modified values
     const localMap = loadLocalModifiedMap();
@@ -333,24 +342,39 @@ export async function triggerDeltaSync(): Promise<boolean> {
       }
     }
 
-    // Check if settings-level content changed (compare settings hash)
+    // Check which specific settings have changed by comparing JSON strings
     const settingsKeys = [
       'app_branding', 'popup_content', 'home_screen', 'plan_your_trip',
       'visitors', 'programs_setting', 'event_settings', 'live_cam_settings',
       'trail_settings', 'rental_settings', 'tips_screen_settings',
       'map_settings', 'navigation'
     ];
-    const serverSettingsHash = hashString(JSON.stringify(settingsKeys.map(k => json[k])));
-    const localSettingsHash = getLastSyncMetadata('settings_hash') || '';
-    const settingsChanged = serverSettingsHash !== localSettingsHash;
 
-    if (changedRecords.length === 0 && !settingsChanged) {
-      console.log('[Sync] All records up to date (last_modified match). Skipping write.');
+    // Load existing settings from SQLite
+    const existingSettingsRows = db.getAllSync('SELECT key, json_data FROM app_settings;') as { key: string; json_data: string }[];
+    const localSettingsMap = new Map<string, string>();
+    for (const row of existingSettingsRows) {
+      localSettingsMap.set(row.key, row.json_data || '');
+    }
+
+    const changedSettings: { key: string, data: any }[] = [];
+    for (const key of settingsKeys) {
+      if (json[key] !== undefined) {
+        const serverJsonString = JSON.stringify(json[key]);
+        const localJsonString = localSettingsMap.get(key) || '';
+        if (serverJsonString !== localJsonString) {
+          changedSettings.push({ key, data: json[key] });
+        }
+      }
+    }
+
+    if (changedRecords.length === 0 && changedSettings.length === 0) {
+      console.log('[Sync] All records and settings up to date. Skipping write.');
       db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', String(Date.now())]);
       return false;
     }
 
-    console.log(`[Sync] ${changedRecords.length} changed record(s) detected. settingsChanged=${settingsChanged}`);
+    console.log(`[Sync] ${changedRecords.length} changed record(s), ${changedSettings.length} changed setting(s) detected.`);
 
     // For changed records only — re-cache images via unified imageCache
     // cacheImageIfNeeded always re-downloads for changed records (updates lastAccessed + manifest)
@@ -361,8 +385,8 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
       for (const item of images) {
         try {
-          // Force fresh download by passing URL — imageCache will overwrite existing file
-          const localUri = await cacheImageIfNeeded(item.url);
+          // Force fresh download by passing URL + true — imageCache will overwrite existing file
+          const localUri = await cacheImageIfNeeded(item.url, true);
           setNestedValue(rec, item.path.slice(2), localUri);
         } catch (err) {
           console.warn(`[Sync] Failed to re-cache image for changed record:`, err);
@@ -381,14 +405,9 @@ export async function triggerDeltaSync(): Promise<boolean> {
         );
       }
 
-      // Update settings if changed
-      if (settingsChanged) {
-        for (const key of settingsKeys) {
-          if (json[key]) {
-            db.runSync('INSERT OR REPLACE INTO app_settings (key, json_data) VALUES (?, ?);', [key, JSON.stringify(json[key])]);
-          }
-        }
-        db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['settings_hash', serverSettingsHash]);
+      // Update ONLY changed settings
+      for (const { key, data } of changedSettings) {
+        db.runSync('INSERT OR REPLACE INTO app_settings (key, json_data) VALUES (?, ?);', [key, JSON.stringify(data)]);
       }
 
       db.runSync("INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?);", ['last_sync_time', String(Date.now())]);

@@ -1,6 +1,6 @@
 import AppText from "@/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, ImageBackground } from "expo-image";
+import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
 import {
@@ -15,12 +15,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
+import CachedImage from "@/components/CachedImage";
 import { STREAM_TYPES } from "@/constants/streamTypes";
-import { useTheme } from "@/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useTheme } from "@/context/ThemeContext";
 import { useAppContent } from "@/contexts/AppContentContext";
 import { useNetInfo } from "@react-native-community/netinfo";
-import CachedImage from "@/components/CachedImage";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -222,14 +222,7 @@ export default function LiveCameraScreen() {
                     {/* Active Camera Video Preview Box */}
                     <View style={styles.playerContainer}>
                         {activeCamera ? (
-                            isConnected === false ? (
-                                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
-                                    <Ionicons name="wifi-outline" size={48} color="#C62828" />
-                                    <AppText style={styles.noCameraText}>
-                                        {liveCamSettingsData?.offline_message || ""}
-                                    </AppText>
-                                </View>
-                            ) : isPlaying ? (
+                            isPlaying ? (
                                 renderPlayer()
                             ) : (
                                 <TouchableOpacity

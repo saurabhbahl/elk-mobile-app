@@ -4,14 +4,6 @@ export function createTables() {
     console.log("Creating tables...");
 
     db.execSync(`
-    CREATE TABLE IF NOT EXISTS movies (
-      id TEXT PRIMARY KEY,
-      title TEXT,
-      releaseYear TEXT
-    );
-    `);
-
-    db.execSync(`
     CREATE TABLE IF NOT EXISTS sync_metadata (
       key TEXT PRIMARY KEY,
       value TEXT

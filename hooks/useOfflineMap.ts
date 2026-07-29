@@ -29,9 +29,15 @@ export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
 const isExpoGo = Constants.appOwnership === 'expo';
 const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
 
-/** Check if a file at the given URI is a valid SQLite/MBTiles database */
+/** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
 async function isValidMbtiles(uri: string): Promise<boolean> {
   try {
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (!fileInfo.exists || (fileInfo as any).size < 1024 * 1024) {
+      // If it's smaller than 1MB, it's definitely incomplete/corrupt
+      return false;
+    }
+
     const header = await FileSystem.readAsStringAsync(uri, {
       encoding: FileSystem.EncodingType.Base64,
       length: 16,
@@ -186,11 +192,18 @@ export const useOfflineMap = () => {
           }
         }
 
-        console.log(`Downloading ${file.name} from: ${file.downloadUrl}`);
+        const tmpUri = file.uri + '.tmp';
+        console.log(`Downloading ${file.name} from: ${file.downloadUrl} to temporary file ${tmpUri}`);
+
+        // Delete any leftover temporary file
+        const tmpInfo = await FileSystem.getInfoAsync(tmpUri);
+        if (tmpInfo.exists) {
+          await FileSystem.deleteAsync(tmpUri, { idempotent: true });
+        }
 
         const downloadResumable = FileSystem.createDownloadResumable(
           file.downloadUrl,
-          file.uri,
+          tmpUri,
           {},
           (progress) => {
             if (progress.totalBytesExpectedToWrite > 0) {
@@ -204,18 +217,32 @@ export const useOfflineMap = () => {
         downloadResumableRef.current = downloadResumable;
         const result = await downloadResumable.downloadAsync();
         if (result && result.status === 200) {
-          // Validate downloaded file is a real SQLite/MBTiles database
-          const valid = await isValidMbtiles(file.uri);
-          if (!valid) {
-            await FileSystem.deleteAsync(file.uri, { idempotent: true });
+          // Validate downloaded file is a real SQLite/MBTiles database and not empty
+          const valid = await isValidMbtiles(tmpUri);
+          const finalInfo = await FileSystem.getInfoAsync(tmpUri);
+          
+          // An MBTiles file should be at least a few MBs. If it's less than 1MB, it's likely an error page or corrupt.
+          const isLargeEnough = finalInfo.exists && (finalInfo as any).size > 1024 * 1024;
+
+          if (!valid || !isLargeEnough) {
+            await FileSystem.deleteAsync(tmpUri, { idempotent: true });
             throw new Error(
-              `Downloaded file "${file.name}" is not a valid MBTiles database.\n` +
+              `Downloaded file "${file.name}" is not a valid MBTiles database or is too small.\n` +
               `The server may be returning an error page instead of the file.\n` +
               `Check: ${file.downloadUrl}`
             );
           }
+          
+          // Rename the tmp file to the final destination ONLY when 100% complete and valid
+          await FileSystem.moveAsync({
+            from: tmpUri,
+            to: file.uri,
+          });
+          
           completedDownloads++;
         } else {
+          // Clean up failed temp file
+          await FileSystem.deleteAsync(tmpUri, { idempotent: true });
           throw new Error(`Download failed with HTTP status ${result?.status}`);
         }
       }

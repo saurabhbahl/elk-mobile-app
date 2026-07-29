@@ -1,6 +1,7 @@
 import { Lexend_500Medium } from '@expo-google-fonts/lexend';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, usePathname, useSegments } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from "expo-status-bar";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
@@ -33,6 +34,9 @@ import { createTables, inspectDatabaseSchema } from "@/database/schema";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useNetInfo } from "@react-native-community/netinfo";
 
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
+
 export const MapResetContext = createContext<{ mapKey: number; resetMap: () => void }>({
   mapKey: 0,
   resetMap: () => { },
@@ -53,6 +57,8 @@ export const NavigationModeContext = createContext<{
 export function useNavigationMode() {
   return useContext(NavigationModeContext);
 }
+
+
 
 export const unstable_settings = {
   anchor: "(home)",
@@ -86,15 +92,20 @@ export default function RootLayout() {
     try {
       createTables();
       inspectDatabaseSchema();
-      // Temporary check to print database records
-      const { MovieRepository } = require("@/database/repositories/movieRepository");
-      console.log("Movies in local DB on startup:", MovieRepository.getAll());
+
       setDbReady(true);
     } catch (error) {
       console.log("Database Error:", error);
     }
 
   }, []);
+
+  useEffect(() => {
+    if (dbReady && fontsLoaded) {
+      // Hide the native splash screen only once fonts and DB are ready
+      SplashScreen.hideAsync();
+    }
+  }, [dbReady, fontsLoaded]);
 
   console.log("Network Type:", type);
   if (!dbReady || !fontsLoaded) {
@@ -148,7 +159,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
     const timer = setInterval(() => {
       console.log("[Sync] Triggering scheduled 30m delta check.");
       refreshData();
-    }, 30 * 60 * 1000);
+    }, 30 * 1000);
 
     // Foreground listener
     const handleAppStateChange = (nextAppState: AppStateStatus) => {

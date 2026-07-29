@@ -111,8 +111,9 @@ async function evictLRU(manifest: CacheManifest): Promise<CacheManifest> {
  * Download and cache an image if not already cached.
  * Updates lastAccessed on every call (even cache hits).
  * Returns local file:/// URI on success, or original URL as fallback.
+ * @param forceRefresh If true, ignores the cache and forces a fresh download.
  */
-export async function cacheImageIfNeeded(url: string): Promise<string> {
+export async function cacheImageIfNeeded(url: string, forceRefresh: boolean = false): Promise<string> {
   if (!url || !url.startsWith('http')) return url;
 
   try {
@@ -120,7 +121,7 @@ export async function cacheImageIfNeeded(url: string): Promise<string> {
     const manifest = await readManifest();
 
     // Cache hit — verify local file still exists, then update lastAccessed
-    if (manifest[url]) {
+    if (manifest[url] && !forceRefresh) {
       const entry = manifest[url];
       const info = await FileSystem.getInfoAsync(entry.localPath);
       if (info.exists) {
