@@ -15,7 +15,7 @@ import NetInfo from '@react-native-community/netinfo';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleProp, ImageStyle } from 'react-native';
 import WireframePlaceholder from './WireframePlaceholder';
-import { cacheImageIfNeeded, getOriginalUrl } from '@/utils/imageCache';
+import { cacheImageIfNeeded, getOriginalUrl } from '@/src/utils/imageCache';
 
 interface CachedImageProps {
   /** The image URI — may be a local file:/// path, http:// URL, or null/undefined */

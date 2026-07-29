@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';

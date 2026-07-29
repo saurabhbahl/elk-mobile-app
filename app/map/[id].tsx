@@ -1,7 +1,7 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
-import CachedImage from "@/components/CachedImage";
-import { openExternalLink } from "@/utils/openLink";
+import AppText from "@/src/components/AppText";
+import CachedImage from "@/src/components/CachedImage";
+import { openExternalLink } from "@/src/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -10,9 +10,9 @@ import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "reac
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useTheme } from "../../context/ThemeContext";
-import { useAppContent } from "../../contexts/AppContentContext";
-import { normalizeHex } from "../../utils/colorUtils";
+import { useTheme } from "../../src/context/ThemeContext";
+import { useAppContent } from "../../src/contexts/AppContentContext";
+import { normalizeHex } from "../../src/utils/colorUtils";
 
 const { width: windowWidth } = Dimensions.get("window");
 

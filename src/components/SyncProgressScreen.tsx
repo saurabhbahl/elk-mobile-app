@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
 import AppText from './AppText';
-import { useAppContent } from '@/contexts/AppContentContext';
+import { useAppContent } from '@/src/contexts/AppContentContext';
 import { StatusBar } from 'expo-status-bar';
 
 const { width } = Dimensions.get('window');

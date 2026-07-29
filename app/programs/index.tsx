@@ -1,6 +1,6 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
-import CachedImage from "@/components/CachedImage";
+import AppText from "@/src/components/AppText";
+import CachedImage from "@/src/components/CachedImage";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
@@ -12,9 +12,8 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
 import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
@@ -27,9 +26,8 @@ const getValidColor = (color: string | undefined) => {
 
 export default function ProgramsScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { homeData, brandData, programsData, apiStatus, programsSettingData } = useAppContent();
+    const { brandData, programsData, apiStatus, programsSettingData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 

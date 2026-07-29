@@ -13,7 +13,7 @@ import { decodePolyline } from '../utils/mapUtils';
 
 // Import the bundled static route polylines
 // These are encoded polyline6 strings representing real road geometry
-import * as staticRoutes from '../assets/static_routes.json';
+import * as staticRoutes from '../../assets/static_routes.json';
 
 // Cache keys - bump version to bust stale cache
 const MAIN_ROUTE_KEY = 'main_route_v6';

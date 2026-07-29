@@ -1,5 +1,6 @@
-import { db } from '@/database';
-import { fetchAndStoreAll, isSyncComplete, triggerDeltaSync } from '@/database/sync';
+import { SyncManager } from "../services/SyncManager";
+import { appRepository } from "../repositories/AppRepository";
+
 import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -319,20 +320,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     // Load data from local SQLite database into memory
     const loadFromSQLite = () => {
         try {
-            // Settings mapping
-            const settings = db.getAllSync("SELECT key, json_data FROM app_settings;") as { key: string, json_data: string }[];
-            const settingsMap: Record<string, unknown> = {};
-            settings.forEach(s => {
-                try {
-                    settingsMap[s.key] = JSON.parse(s.json_data);
-                } catch (e) {
-                    console.error(`Error parsing settings key ${s.key}:`, e);
-                }
-            });
+            const settingsMap = appRepository.getAllSettings();
 
-            if (settingsMap.app_branding) setBrandData(settingsMap.app_branding);
-            if (settingsMap.popup_content) setPopupData(settingsMap.popup_content);
-            if (settingsMap.home_screen) setHomeData(settingsMap.home_screen);
+            if (settingsMap.app_branding) setBrandData(settingsMap.app_branding as AppBranding);
+            if (settingsMap.popup_content) setPopupData(settingsMap.popup_content as PopupContent);
+            if (settingsMap.home_screen) setHomeData(settingsMap.home_screen as HomeScreenData);
             if (settingsMap.plan_your_trip) setPlanTripData(settingsMap.plan_your_trip);
             if (settingsMap.visitors) setVisitorsData(settingsMap.visitors);
             if (settingsMap.programs_setting) setProgramsSettingData(settingsMap.programs_setting);
@@ -342,37 +334,16 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (settingsMap.rental_settings) setRentalSettingsData(settingsMap.rental_settings);
             if (settingsMap.tips_screen_settings) setTipsScreenSettingsData(settingsMap.tips_screen_settings);
             if (settingsMap.map_settings) setMapSettingsData(settingsMap.map_settings);
-            if (settingsMap.navigation) setNavigationData(settingsMap.navigation);
+            if (settingsMap.navigation) setNavigationData(settingsMap.navigation as NavigationData[]);
 
-            // CPT Records mapping
-            const records = db.getAllSync("SELECT type, json_data FROM app_records;") as { type: string, json_data: string }[];
-            const recordsMap: Record<string, unknown[]> = {
-                programs: [],
-                events: [],
-                trails: [],
-                rentals: [],
-                tips: [],
-                pois: [],
-                cameras: []
-            };
+            const recordsMap = appRepository.getAllRecords();
 
-            records.forEach(r => {
-                try {
-                    const parsed = JSON.parse(r.json_data);
-                    if (recordsMap[r.type]) {
-                        recordsMap[r.type].push(parsed);
-                    }
-                } catch (e) {
-                    console.error(`Error parsing record of type ${r.type}:`, e);
-                }
-            });
-
-            setProgramsData(recordsMap.programs);
-            setEventsData(recordsMap.events);
-            setTrailsData(recordsMap.trails);
-            setRentalsData(recordsMap.rentals);
-            setTipsData(recordsMap.tips);
-            setCamerasData(recordsMap.cameras);
+            setProgramsData(recordsMap.programs as ProgramsData[]);
+            setEventsData(recordsMap.events as EventsData[]);
+            setTrailsData(recordsMap.trails as TrailsData[]);
+            setRentalsData(recordsMap.rentals as RentalsData[]);
+            setTipsData(recordsMap.tips as TipsData[]);
+            setCamerasData(recordsMap.cameras as CamerasData[]);
 
             if (recordsMap.pois) {
                 const mappedPois = recordsMap.pois.map((poi: PoisData) => ({
@@ -401,7 +372,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         setSyncProgress(0);
         setSyncStatusText("Getting things ready...");
 
-        const success = await fetchAndStoreAll((progress, status) => {
+        const success = await SyncManager.fetchAndStoreAll((progress, status) => {
             setSyncProgress(progress);
             setSyncStatusText('Getting things ready...');
         });
@@ -428,7 +399,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
         setIsSyncing(true);
         try {
-            const hasUpdates = await triggerDeltaSync();
+            const hasUpdates = await SyncManager.triggerDeltaSync();
             if (hasUpdates) {
                 loadFromSQLite();
             }
@@ -443,7 +414,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Boot Logic
     useEffect(() => {
-        const isComplete = isSyncComplete();
+        const isComplete = SyncManager.isSyncComplete();
         if (isComplete) {
             loadFromSQLite();
             setApiStatus('loading');

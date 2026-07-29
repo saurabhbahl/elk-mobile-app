@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
@@ -15,11 +15,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
-import CachedImage from "@/components/CachedImage";
-import { STREAM_TYPES } from "@/constants/streamTypes";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
-import { useTheme } from "@/context/ThemeContext";
-import { useAppContent } from "@/contexts/AppContentContext";
+import CachedImage from "@/src/components/CachedImage";
+import { STREAM_TYPES } from "@/src/constants/streamTypes";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 const getValidColor = (color: string | undefined) => {

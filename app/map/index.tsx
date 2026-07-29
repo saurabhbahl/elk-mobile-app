@@ -1,5 +1,5 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 /**
  * index.tsx — Map Screen
  *
@@ -36,22 +36,22 @@ import {
 } from "react-native";
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addOpacity, normalizeHex } from '../../utils/colorUtils';
+import { addOpacity, normalizeHex } from '../../src/utils/colorUtils';
 
 // Constants & theme
-import { getMapStyle } from '../../constants/mapStyle';
-import { LIGHT_COLORS, LIGHT_FONTS } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
+import { getMapStyle } from '../../src/constants/mapStyle';
+import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 
 // Components
-import { MapRouteLayers } from '../../components/MapRouteLayers';
-import { NavigationHeader } from '../../components/NavigationHeader';
-import { NavigationOverlay } from '../../components/NavigationOverlay';
-import { RoutePlanner } from '../../components/RoutePlanner';
+import { MapRouteLayers } from '../../src/components/MapRouteLayers';
+import { NavigationHeader } from '../../src/components/NavigationHeader';
+import { NavigationOverlay } from '../../src/components/NavigationOverlay';
+import { RoutePlanner } from '../../src/components/RoutePlanner';
 
 // Data & utils
-import { territoryLabelFeature } from '../../data/territoryLabels';
-import { Waypoint } from '../../data/waypoints';
+import { territoryLabelFeature } from '../../src/data/territoryLabels';
+import { Waypoint } from '../../src/data/waypoints';
 import {
   calcDistance,
   calculateBearing,
@@ -60,14 +60,14 @@ import {
   findNearestPointIndex,
   getTurnInstruction,
   toLngLat,
-} from '../../utils/mapUtils';
+} from '../../src/utils/mapUtils';
 
 // Hooks
-import { useAppContent } from '../../contexts/AppContentContext';
-import { useOfflineMap } from '../../hooks/useOfflineMap';
-import { useOfflineRouter } from '../../hooks/useOfflineRouter';
-import { useRouteLoader } from '../../hooks/useRouteLoader';
-import { preloadRouteIndex } from '../../utils/routeLookup';
+import { useAppContent } from '../../src/contexts/AppContentContext';
+import { useOfflineMap } from '../../src/hooks/useOfflineMap';
+import { useOfflineRouter } from '../../src/hooks/useOfflineRouter';
+import { useRouteLoader } from '../../src/hooks/useRouteLoader';
+import { preloadRouteIndex } from '../../src/utils/routeLookup';
 import { useMapReset, useNavigationMode } from '../_layout';
 
 const isExpoGo = Constants.appOwnership === 'expo';

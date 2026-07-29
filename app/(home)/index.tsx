@@ -1,5 +1,5 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
@@ -16,15 +16,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 import { useIsFocused } from '@react-navigation/native';
 
-import WireframePlaceholder from "@/components/WireframePlaceholder";
-import CachedImage from "@/components/CachedImage";
+import WireframePlaceholder from "@/src/components/WireframePlaceholder";
+import CachedImage from "@/src/components/CachedImage";
 
 // Get screen dimensions for dynamic calculations
 const { width } = Dimensions.get("window");
 
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;

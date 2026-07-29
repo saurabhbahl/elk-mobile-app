@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -14,11 +14,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import RenderHTML from 'react-native-render-html';
 
-import CachedImage from "@/components/CachedImage";
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
-import { openExternalLink } from "@/utils/openLink";
+import CachedImage from "@/src/components/CachedImage";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { openExternalLink } from "@/src/utils/openLink";
 
 const { width } = Dimensions.get("window");
 

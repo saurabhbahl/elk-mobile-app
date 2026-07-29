@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 /**
  * NavigationHeader
  *
@@ -19,8 +19,8 @@ import { Animated,
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
-import { useTheme } from '@/context/ThemeContext';
-import { useAppContent } from '@/contexts/AppContentContext';
+import { useTheme } from '@/src/context/ThemeContext';
+import { useAppContent } from '@/src/contexts/AppContentContext';
 import { normalizeHex } from '../utils/colorUtils';
 
 interface NavigationHeaderProps {

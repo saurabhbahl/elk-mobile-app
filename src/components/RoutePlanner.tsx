@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {

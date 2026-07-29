@@ -1,13 +1,13 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
-import { useAppContent } from "@/contexts/AppContentContext";
+import AppText from "@/src/components/AppText";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 export default function QuickLinks() {
     const { colors, fonts, isDark } = useTheme();

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Modal, StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
 import AppText from './AppText';
 import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from '@/src/context/ThemeContext';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAppContent } from '@/contexts/AppContentContext';
+import { useAppContent } from '@/src/contexts/AppContentContext';
 
 export default function OfflinePopup({ forceShowForTesting = false }: { forceShowForTesting?: boolean }) {
     const netInfo = useNetInfo();

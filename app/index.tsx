@@ -1,5 +1,5 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -10,9 +10,9 @@ const { width, height } = Dimensions.get("window");
 const diagonal = Math.sqrt(width * width + height * height);
 const angle = Math.atan2(height, width) * (180 / Math.PI);
 
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();

@@ -1,12 +1,12 @@
 import { Href } from "expo-router";
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 export default function Navbar() {
     const { colors, fonts, isDark } = useTheme();
