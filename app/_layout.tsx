@@ -7,11 +7,11 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import Navbar from "@/components/Navbar";
-import OfflinePopup from "@/components/OfflinePopup";
-import QuickLinks from "@/components/QuickLinks";
-import SyncProgressScreen from "@/components/SyncProgressScreen";
-import { useAppContent } from "@/contexts/AppContentContext";
+import Navbar from "@/src/components/Navbar";
+import OfflinePopup from "@/src/components/OfflinePopup";
+import QuickLinks from "@/src/components/QuickLinks";
+import SyncProgressScreen from "@/src/components/SyncProgressScreen";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 
 import {
   EBGaramond_500Medium,
@@ -28,10 +28,10 @@ import {
 
 import "react-native-reanimated";
 
-import { ThemeProvider as CustomThemeProvider, useTheme } from "@/context/ThemeContext";
-import { AppContentProvider } from "@/contexts/AppContentContext";
-import { createTables, inspectDatabaseSchema } from "@/database/schema";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ThemeProvider as CustomThemeProvider, useTheme } from "@/src/context/ThemeContext";
+import { AppContentProvider } from "@/src/contexts/AppContentContext";
+import { createTables, inspectDatabaseSchema } from "@/src/database/schema";
+import { useColorScheme } from "@/src/hooks/use-color-scheme";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -144,7 +144,7 @@ export default function RootLayout() {
   );
 }
 
-function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, isNavigating: boolean }) {
+function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string | null | undefined, isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
   const { brandData, apiStatus, refreshData } = useAppContent();
   const pathname = usePathname();
@@ -181,7 +181,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: any, is
   }
 
   // Hide headers on splash (index) and modal routes
-  const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
+  const isSplash = (segments as Href<string>).length === 0 || ((segments as Href<string>).length === 1 && (segments as Href<string>)[0] === 'index');
   const isModal = pathname === '/modal';
   const isSettings = pathname === '/map/settings';
   const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;

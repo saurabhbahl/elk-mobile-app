@@ -1,4 +1,5 @@
-import AppText from "@/components/AppText";
+import { Href } from "expo-router";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -11,10 +12,10 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import CachedImage from "@/components/CachedImage";
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import CachedImage from "@/src/components/CachedImage";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 const { width } = Dimensions.get("window");
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
@@ -33,11 +34,11 @@ export default function EventsScreen() {
 
     const events = eventsData || [];
 
-    const renderEventCard = ({ item, index }: { item: any; index: number }) => (
+    const renderEventCard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
         <TouchableOpacity
             style={styles.eventCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/events/${item.id || index}` as any)}
+            onPress={() => router.push(`/events/${item.id || index}` as Href<string>)}
         >
             <CachedImage
                 uri={item.thumbnail_image?.url}

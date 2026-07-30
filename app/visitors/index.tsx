@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
@@ -14,11 +14,11 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
-import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 
-import { openExternalLink } from "@/utils/openLink";
+import { openExternalLink } from "@/src/utils/openLink";
 
 const { width } = Dimensions.get("window");
 const CAROUSEL_WIDTH = width - 32;
@@ -40,7 +40,7 @@ export default function VisitorsCenterScreen() {
 
     const images: string[] = [];
     if (visitorsData?.image_gallery && Array.isArray(visitorsData.image_gallery)) {
-        visitorsData.image_gallery.forEach((img: any) => {
+        visitorsData.image_gallery.forEach((img: Record<string, unknown>) => {
             if (img?.url) images.push(img.url);
         });
     }

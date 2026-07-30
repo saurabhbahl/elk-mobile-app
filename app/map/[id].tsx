@@ -1,6 +1,7 @@
-import AppText from "@/components/AppText";
-import CachedImage from "@/components/CachedImage";
-import { openExternalLink } from "@/utils/openLink";
+import { Href } from "expo-router";
+import AppText from "@/src/components/AppText";
+import CachedImage from "@/src/components/CachedImage";
+import { openExternalLink } from "@/src/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -9,9 +10,9 @@ import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "reac
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useTheme } from "../../context/ThemeContext";
-import { useAppContent } from "../../contexts/AppContentContext";
-import { normalizeHex } from "../../utils/colorUtils";
+import { useTheme } from "../../src/context/ThemeContext";
+import { useAppContent } from "../../src/contexts/AppContentContext";
+import { normalizeHex } from "../../src/utils/colorUtils";
 
 const { width: windowWidth } = Dimensions.get("window");
 
@@ -74,7 +75,7 @@ export default function WaypointDetailsScreen() {
                 {/* Featured Image / Gallery */}
                 {waypoint.image_gallery && Array.isArray(waypoint.image_gallery) && waypoint.image_gallery.length > 0 ? (
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageSliderContainer}>
-                        {waypoint.image_gallery.map((img: any, idx: number) => (
+                        {waypoint.image_gallery.map((img: Record<string, unknown>, idx: number) => (
                             <CachedImage
                                 key={idx}
                                 uri={typeof img === 'string' ? img : img.url || img.sizes?.large}

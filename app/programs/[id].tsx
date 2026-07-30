@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -12,10 +12,10 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import CachedImage from "@/components/CachedImage";
-import { useAppContent } from "@/contexts/AppContentContext";
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
+import CachedImage from "@/src/components/CachedImage";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -34,7 +34,7 @@ export default function ProgramDetailScreen() {
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const program = programsData?.find(
-        (p: any, index: number) => String(p.id || index) === String(id)
+        (p: ProgramsData, index: number) => String(p.id || index) === String(id)
     );
 
     if (apiStatus === "fetching") {

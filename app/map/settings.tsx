@@ -1,16 +1,16 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LIGHT_COLORS, LIGHT_FONTS } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
-import { useAppContent } from '../../contexts/AppContentContext';
-import { useOfflineMap } from '../../hooks/useOfflineMap';
-import { useRoutePreloader } from '../../hooks/useRoutePreloader';
-import { normalizeHex } from '../../utils/colorUtils';
-import { clearImageCache, getCacheSizeLabel } from '../../utils/imageCache';
-import { clearAllRoutes, getAllCachedRoutes } from '../../utils/routeDatabase';
+import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+import { useAppContent } from '../../src/contexts/AppContentContext';
+import { useOfflineMap } from '../../src/hooks/useOfflineMap';
+import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
+import { normalizeHex } from '../../src/utils/colorUtils';
+import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
+import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();

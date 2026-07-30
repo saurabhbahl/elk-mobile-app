@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -11,9 +11,9 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
-import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
 
@@ -32,7 +32,7 @@ export default function TrailsScreen() {
 
     const trails = trailsData || [];
 
-    const renderTrailItem = ({ item, index }: { item: any; index: number }) => (
+    const renderTrailItem = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
         <View style={styles.trailItemContainer}>
             <View style={styles.trailHeaderRow}>
                 <AppText style={styles.trailName}>{item.trail_name || ""}</AppText>

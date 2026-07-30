@@ -1,4 +1,4 @@
-import AppText from "@/components/AppText";
+import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -12,9 +12,9 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
-import { useTheme } from "@/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/constants/theme";
-import { useAppContent } from "@/contexts/AppContentContext";
+import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
 
@@ -45,14 +45,14 @@ export default function PlanTripScreen() {
     }
 
     const sections = planTripData?.content_sections || [];
-    const activeSections = sections.filter((sec: any) => {
+    const activeSections = sections.filter((sec: Record<string, unknown>) => {
         // Handle active flag checking flexibly (could be string "1", boolean true, etc.)
         const actVal = sec?.section_active;
         return actVal === undefined || actVal === true || actVal === "1" || actVal === "true" || actVal === "";
     });
 
     // Sort by sort_order if available
-    activeSections.sort((a: any, b: any) => {
+    activeSections.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
         const orderA = parseInt(a.sort_order, 10) || 0;
         const orderB = parseInt(b.sort_order, 10) || 0;
         return orderA - orderB;
@@ -107,7 +107,7 @@ export default function PlanTripScreen() {
                     ) : null}
 
                     {activeSections.length > 0 ? (
-                        activeSections.map((sec: any, index: number) => {
+                        activeSections.map((sec: Record<string, unknown>, index: number) => {
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <View key={index} style={styles.sectionCard}>
