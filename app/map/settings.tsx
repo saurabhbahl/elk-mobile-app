@@ -11,6 +11,7 @@ import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
 import { normalizeHex } from '../../src/utils/colorUtils';
 import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
 import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
+import { router } from 'expo-router';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -104,6 +105,42 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      {/* ── Custom Header ──────────────────────────────────────────────────────── */}
+      <View style={{
+        backgroundColor: brandPrimary || '#8B1E1E',
+        paddingTop: insets.top,
+        height: 56 + insets.top,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        zIndex: 10,
+      }}>
+        <TouchableOpacity 
+          onPress={() => router.back()} 
+          style={{ flexDirection: 'row', alignItems: 'center', minWidth: 60 }}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons name="arrow-back-ios" size={18} color="#FFFFFF" />
+          <AppText style={{ color: '#FFFFFF', fontSize: 16, fontFamily: fonts.bodyMedium }}>back</AppText>
+        </TouchableOpacity>
+        
+        <AppText style={{ 
+          color: '#FFFFFF', 
+          fontSize: 18, 
+          fontFamily: "Lexend_500Medium",
+        }}>
+          Settings
+        </AppText>
+        
+        <View style={{ minWidth: 60 }} />
+      </View>
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
         {/* ── Theme Selection Section ────────────────────────────────────────── */}

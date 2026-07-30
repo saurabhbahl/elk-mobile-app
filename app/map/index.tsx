@@ -23,6 +23,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Easing,
   FlatList,
   Pressable,
@@ -216,7 +217,30 @@ function MapScreen() {
   const { setIsNavigating: setLayoutNavigating } = useNavigationMode();
   useEffect(() => {
     setLayoutNavigating(isNavigating || isCalculatingRoute);
+    return () => {
+      setLayoutNavigating(false);
+    };
   }, [isNavigating, isCalculatingRoute, setLayoutNavigating]);
+
+  // Handle Android hardware back button in navigation mode
+  useEffect(() => {
+    if (!isNavigating) return;
+
+    const onBackPress = () => {
+      handleExitNavigation();
+      router.back();
+      return true; // prevent default behavior
+    };
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isNavigating, handleExitNavigation]);
 
   // ── Camera & misc refs ──────────────────────────────────────────────────────
   const cameraRef = useRef<unknown>(null);
@@ -823,7 +847,7 @@ function MapScreen() {
         {waypoint.pin_icon_override ? (
           <Image
             source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : waypoint.pin_icon_override.url }}
-            style={{ width: isSelected ? 44 : 36, height: isSelected ? 44 : 36 }}
+            style={{ width: isSelected ? 32 : 24, height: isSelected ? 32 : 24 }}
             contentFit="contain"
           />
         ) : (

@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, LayoutAnimation, Platform, UIManager } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { safeStorage as AsyncStorage } from '../utils/asyncStorage';
 import { LIGHT_COLORS, DARK_COLORS, LIGHT_FONTS, DARK_FONTS } from '../constants/theme';
 
@@ -49,6 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback(async (newTheme: Theme) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setThemeState(newTheme);
     try {
       await AsyncStorage.setItem(THEME_KEY, newTheme);
@@ -58,6 +63,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setThemeState(prev => {
       const newTheme = prev === 'light' ? 'dark' : 'light';
       AsyncStorage.setItem(THEME_KEY, newTheme).catch(() => {});

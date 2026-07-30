@@ -248,16 +248,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
         <Stack.Screen
           name="map/settings"
           options={{
-            headerShown: true,
-            title: "Settings",
-            headerBackTitle: "back",
-            headerStyle: {
-              backgroundColor: primaryColor || undefined,
-            },
-            headerTintColor: "#FFFFFF",
-            headerTitleStyle: {
-              fontFamily: "Lexend_500Medium",
-            }
+            headerShown: false,
           }}
         />
         <Stack.Screen
