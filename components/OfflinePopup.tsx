@@ -13,7 +13,10 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     const { brandData } = useAppContent();
     const primaryColor = brandData?.brand_color_primary || "#007AFF";
 
-    const isOffline = forceShowForTesting || netInfo.isConnected === false || (netInfo.isConnected === true && netInfo.isInternetReachable === false);
+    // Only show offline when explicitly disconnected (isConnected === false).
+    // isInternetReachable is unreliable on Android release builds (often null) so we
+    // do NOT use it to trigger offline mode — avoids false "offline" on strong WiFi.
+    const isOffline = forceShowForTesting || netInfo.isConnected === false;
     const [visible, setVisible] = useState(false);
 
 
@@ -50,7 +53,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                         
                         // Fetch the latest fresh state directly
                         const state = await NetInfo.fetch();
-                        const currentlyOffline = forceShowForTesting || state.isConnected === false || (state.isConnected === true && state.isInternetReachable === false);
+                        const currentlyOffline = forceShowForTesting || state.isConnected === false;
                         
                         // If still offline, show it again after a brief moment
                         if (currentlyOffline) {

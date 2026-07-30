@@ -216,10 +216,16 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         setSyncProgress(0);
         setSyncStatusText("Getting things ready...");
 
-        const success = await fetchAndStoreAll((progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatusText('Getting things ready...');
-        });
+        let success = false;
+        try {
+            success = await fetchAndStoreAll((progress) => {
+                setSyncProgress(progress);
+                setSyncStatusText('Getting things ready...');
+            });
+        } catch (e: any) {
+            console.error('[Sync] Unexpected error during initial sync:', e);
+            success = false;
+        }
 
         setIsSyncing(false);
 
@@ -231,7 +237,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             }, 1000);
             return true;
         } else {
-            setSyncError("Synchronization failed. Please check your internet connection.");
+            setSyncError("Could not connect to the server. Please check your internet connection and try again.");
             return false;
         }
     };

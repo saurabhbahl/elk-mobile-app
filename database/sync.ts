@@ -2,6 +2,13 @@ import { cacheImageIfNeeded, clearImageCache } from '@/utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
 import { db } from './index';
 
+// Fetch with a timeout to prevent hanging on slow/dead API
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 30000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id));
+}
+
 // Helper to set nested object properties in-place
 function setNestedValue(obj: any, path: string[], value: any) {
   let current = obj;
@@ -156,14 +163,15 @@ export async function fetchAndStoreAll(
 ): Promise<boolean> {
   const netInfo = await NetInfo.fetch();
   if (!netInfo.isConnected) {
-    throw new Error('No network connection available for initial sync');
+    console.warn('[Sync] No network connection available for initial sync.');
+    return false;
   }
 
   try {
     if (onProgress) onProgress(0.05, 'Fetching content data...');
     const timestamp = new Date().getTime();
     const baseUrl = process.env.EXPO_PUBLIC_SITE_URL;
-    const response = await fetch(`${baseUrl}/elk/wp-json/elk/v1/data?_t=${timestamp}&sync=full`, {
+    const response = await fetchWithTimeout(`${baseUrl}/elk/wp-json/elk/v1/data?_t=${timestamp}&sync=full`, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -171,7 +179,7 @@ export async function fetchAndStoreAll(
         'Accept': 'application/json',
         'User-Agent': 'ElkMobileApp/1.0'
       }
-    });
+    }, 30000);
 
     if (!response.ok) {
       throw new Error(`API response error: ${response.status}`);
@@ -312,9 +320,8 @@ export async function triggerDeltaSync(): Promise<boolean> {
 
     const baseUrl = process.env.EXPO_PUBLIC_SITE_URL;
     const apiUrl = `${baseUrl}/elk/wp-json/elk/v1/data?_t=${timestamp}${lastSyncQuery}`;
-    console.log(apiUrl);
 
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithTimeout(apiUrl, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -322,7 +329,7 @@ export async function triggerDeltaSync(): Promise<boolean> {
         'Accept': 'application/json',
         'User-Agent': 'ElkMobileApp/1.0'
       }
-    });
+    }, 30000);
 
     if (!response.ok) return false;
 

@@ -37,7 +37,15 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
   }, []);
 
   useEffect(() => {
-    if (!uri) {
+    // Normalize uri: handle object shape { url: string }, numbers, or other non-strings
+    let normalized: string | null = null;
+    if (uri && typeof uri === 'object' && (uri as any).url) {
+      normalized = (uri as any).url;
+    } else if (typeof uri === 'string' && uri.length > 0) {
+      normalized = uri;
+    }
+
+    if (!normalized) {
       setResolvedUri(null);
       setHasError(false);
       return;
@@ -45,31 +53,31 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
 
     setHasError(false);
 
-    if (uri.startsWith('file://')) {
+    if (normalized.startsWith('file://')) {
       // Already a local path — use directly; error handler will fall back if missing
-      setResolvedUri(uri);
+      setResolvedUri(normalized);
       return;
     }
 
-    if (uri.startsWith('http')) {
+    if (normalized.startsWith('http')) {
       // Network URL — try to cache on-view if connected, otherwise use expo-image's
       // own internal cache (cachePolicy: 'disk') which survives our custom cache clear
       NetInfo.fetch().then(({ isConnected }) => {
         if (!mountedRef.current) return;
         if (isConnected) {
-          cacheImageIfNeeded(uri)
+          cacheImageIfNeeded(normalized!)
             .then(local => { if (mountedRef.current) setResolvedUri(local); })
-            .catch(() => { if (mountedRef.current) setResolvedUri(uri); });
+            .catch(() => { if (mountedRef.current) setResolvedUri(normalized); });
         } else {
           // Offline — use the http URL; expo-image will serve from its own disk cache
-          setResolvedUri(uri);
+          setResolvedUri(normalized);
         }
       });
       return;
     }
 
     // Unknown scheme — use as-is
-    setResolvedUri(uri);
+    setResolvedUri(normalized);
   }, [uri]);
 
   const handleError = async () => {
