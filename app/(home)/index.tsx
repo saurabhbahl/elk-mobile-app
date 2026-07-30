@@ -2,7 +2,7 @@ import AppText from "@/src/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
 import { Image, ImageBackground } from "expo-image";
-import { Href, router } from "expo-router";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -22,9 +22,10 @@ import CachedImage from "@/src/components/CachedImage";
 // Get screen dimensions for dynamic calculations
 const { width, height } = Dimensions.get("window");
 
+import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { EventsData, ProgramsData, TrailsData, useAppContent } from "@/src/contexts/AppContentContext";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -81,7 +82,7 @@ export default function HomeScreen() {
                                 <TouchableOpacity
                                     style={styles.aboutKecaBadge}
                                     activeOpacity={0.8}
-                                    onPress={() => router.push("/visitors" as Href<string>)}
+                                    onPress={() => router.push("/visitors")}
                                 >
                                     <AppText style={styles.aboutKecaText}>
                                         {homeData.hero_cta_button_label}
@@ -124,7 +125,7 @@ export default function HomeScreen() {
                                 <TouchableOpacity
                                     style={styles.viewMapButton}
                                     activeOpacity={0.9}
-                                    onPress={() => router.push("/map" as Href<string>)}
+                                    onPress={() => router.push("/map")}
                                 >
                                     <AppText style={styles.viewMapButtonText}>{homeData.map_view_button_label}</AppText>
                                 </TouchableOpacity>
@@ -170,11 +171,11 @@ export default function HomeScreen() {
                                         key={program.id || index}
                                         style={styles.programCard}
                                         activeOpacity={0.85}
-                                        onPress={() => router.push(`/programs` as Href<string>)}
+                                        onPress={() => router.push(`/programs/${program.id}`)}
                                     >
                                         <View style={styles.programCardImageContainer}>
                                             <CachedImage
-                                                uri={program.thumbnail_image?.url}
+                                                uri={program.thumbnail_image?.url as string}
                                                 style={StyleSheet.absoluteFill}
                                                 contentFit="cover"
                                             />
@@ -224,7 +225,7 @@ export default function HomeScreen() {
                                     <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_block_heading}</AppText>
                                 </View>
                                 {homeData?.event_view_all_label ? (
-                                    <TouchableOpacity onPress={() => router.push("/events" as Href<string>)}>
+                                    <TouchableOpacity onPress={() => router.push("/events" as any)}>
                                         <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_view_all_label}</AppText>
                                     </TouchableOpacity>
                                 ) : null}
@@ -236,15 +237,15 @@ export default function HomeScreen() {
                             style={styles.featuredCard}
                             activeOpacity={0.85}
                             onPress={() => {
-                                const eventId = homeData.featured_event[0].id;
+                                const eventId = (homeData.featured_event as any)[0]?.id || (homeData.featured_event as any)?.id;
                                 const eventIndex = eventsData?.findIndex((e: EventsData) => String(e.id) === String(eventId));
                                 const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
-                                router.push(`/events/${targetId}` as Href<string>);
+                                router.push(`/events/${targetId}` as any);
                             }}
                         >
                             <View style={styles.programCardImageContainer}>
                                 <CachedImage
-                                    uri={homeData.featured_event[0].thumbnail_image?.url}
+                                    uri={(homeData.featured_event as any)[0]?.thumbnail_image?.url as string}
                                     style={StyleSheet.absoluteFill}
                                     contentFit="cover"
                                 />
@@ -261,7 +262,7 @@ export default function HomeScreen() {
                                         {homeData.featured_event[0].event_name || ""}
                                     </AppText>
                                     <AppText style={styles.cardLocation} numberOfLines={1}>
-                                        {homeData.featured_event[0].location_name}
+                                        {homeData.featured_event[0].short_description}
                                     </AppText>
                                 </View>
 
@@ -280,7 +281,7 @@ export default function HomeScreen() {
                             <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                                 <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
                             </View>
-                            <TouchableOpacity onPress={() => router.push("/trails" as Href<string>)}>
+                            <TouchableOpacity onPress={() => router.push("/trails")}>
                                 <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.trails_block_heading}</AppText>
                             </TouchableOpacity>
                         </View>
@@ -295,7 +296,7 @@ export default function HomeScreen() {
                                         key={trail.id || index}
                                         style={styles.trailPill}
                                         activeOpacity={0.8}
-                                        onPress={() => router.push("/trails" as Href<string>)}
+                                        onPress={() => router.push("/trails")}
                                     >
                                         <AppText style={styles.trailName}>{trail.trail_name || ""}</AppText>
                                         <AppText style={styles.trailDistance}>{trail.distance ? `  |  ${trail.distance}` : ""}</AppText>

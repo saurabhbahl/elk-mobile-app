@@ -19,7 +19,7 @@ import CachedImage from "@/src/components/CachedImage";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, CamerasData } from "@/src/contexts/AppContentContext";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 const getValidColor = (color: string | undefined) => {
@@ -67,7 +67,7 @@ export default function LiveCameraScreen() {
         setIsPlaying(true);
     };
 
-    const handleWebViewNavigation = (event: unknown) => {
+    const handleWebViewNavigation = (event: any) => {
         // If it's a YouTube embed and the user clicks a link (like the video title or YouTube logo),
         // it tries to navigate away from the /embed/ player. We intercept this and open it natively.
         if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
@@ -232,7 +232,7 @@ export default function LiveCameraScreen() {
                                 >
                                     <View style={styles.playerImage}>
                                         <CachedImage
-                                            uri={activeCamera.thumbnail__poster?.url}
+                                            uri={activeCamera.thumbnail__poster?.url as string}
                                             style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
                                         />

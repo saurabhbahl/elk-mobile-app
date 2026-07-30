@@ -106,7 +106,7 @@ export default function RentalsScreen() {
                         {item.cta_1_label_ && item.cta_1_link ? (
                             <TouchableOpacity
                                 style={[styles.ctaButton, primaryColor ? { backgroundColor: primaryColor } : null]}
-                                onPress={() => handlePressLink(item.cta_1_link)}
+                                onPress={() => handlePressLink(item.cta_1_link as string)}
                             >
                                 <AppText style={[styles.ctaButtonText, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : null]}>
                                     {item.cta_1_label_}
@@ -117,7 +117,7 @@ export default function RentalsScreen() {
                         {item.cta_2_label && item.cta_2_link ? (
                             <TouchableOpacity
                                 style={[styles.ctaButtonOutline, primaryColor ? { borderColor: primaryColor } : null]}
-                                onPress={() => handlePressLink(item.cta_2_link)}
+                                onPress={() => handlePressLink(item.cta_2_link as string)}
                             >
                                 <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
                                     {item.cta_2_label}
@@ -167,7 +167,7 @@ export default function RentalsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList
+                <FlatList<RentalsData>
                     data={rentals}
                     keyExtractor={(item, index) => item.id?.toString() || index.toString()}
                     renderItem={renderRentalItem}

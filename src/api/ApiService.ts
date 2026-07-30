@@ -50,7 +50,14 @@ export class ApiService {
   /**
    * Specialized sync fetch
    */
-  static async fetchSyncData(): Promise<Record<string, unknown>> {
-    return this.get<Record<string, unknown>>('data', { sync: 'full', t: String(Date.now()) });
+  static async fetchSyncData(isDelta = false, lastSyncTime?: string): Promise<Record<string, unknown>> {
+    const params: Record<string, string> = { t: String(Date.now()) };
+    if (isDelta && lastSyncTime) {
+      params.sync = 'incremental';
+      params.last_sync = lastSyncTime;
+    } else {
+      params.sync = 'full';
+    }
+    return this.get<Record<string, unknown>>('data', params);
   }
 }

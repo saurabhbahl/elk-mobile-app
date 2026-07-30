@@ -90,7 +90,7 @@ export default function ProgramDetailScreen() {
                 {/* Banner Image */}
                 <View style={styles.bannerContainer}>
                     <CachedImage
-                        uri={program.thumbnail_image?.url}
+                        uri={program.thumbnail_image?.url as string}
                         style={styles.bannerImage}
                         contentFit="cover"
                     />

@@ -1,4 +1,5 @@
-import { cacheImageIfNeeded, clearImageCache } from '../utils/imageCache';
+import { Image } from 'expo-image';
+import { clearImageCache } from '../utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
 import { db } from '../database/index';
 import { ApiService } from '../api/ApiService';
@@ -81,7 +82,18 @@ export class SyncManager {
   static async triggerDeltaSync(): Promise<boolean> {
     console.log("[SyncManager] Triggering background delta sync");
     try {
-      const res = await this.fetchAndStoreAll();
+      const lastSyncTime = appRepository.getMetadata('last_full_sync');
+      const settingsMap = appRepository.getAllSettings();
+      
+      // If lastSyncTime is missing, or critical settings like app_branding are corrupted (empty array from previous bug), force full sync
+      if (!lastSyncTime || !settingsMap.app_branding || (Array.isArray(settingsMap.app_branding) && settingsMap.app_branding.length === 0)) {
+          console.log("[SyncManager] Missing or corrupt local data (empty arrays). Forcing FULL sync.");
+          const res = await this.fetchAndStoreAll();
+          console.log("[SyncManager] Background full sync completed. Result:", res);
+          return res;
+      }
+
+      const res = await this.fetchAndStoreAll(undefined, true, lastSyncTime);
       console.log("[SyncManager] Background delta sync completed. Result:", res);
       return res;
     } catch (e) {
@@ -105,7 +117,9 @@ export class SyncManager {
   }
 
   static async fetchAndStoreAll(
-    onProgress?: (progress: number, status: string) => void
+    onProgress?: (progress: number, status: string) => void,
+    isDelta = false,
+    lastSyncTime?: string
   ): Promise<boolean> {
     const netInfo = await NetInfo.fetch();
     if (!netInfo.isConnected) {
@@ -116,8 +130,10 @@ export class SyncManager {
       if (onProgress) onProgress(0.05, 'Fetching content data...');
       
       console.log("[SyncManager] Fetching sync data from API...");
-      let json = await ApiService.fetchSyncData();
-      console.log("[SyncManager] Sync data response keys:", Object.keys(json || {}));
+      console.log("[SyncManager] Fetching sync data from API...");
+      let rootJson = await ApiService.fetchSyncData(isDelta, lastSyncTime);
+      let syncTime = typeof rootJson.sync_time === 'string' ? rootJson.sync_time : new Date().toISOString();
+      let json = rootJson;
       if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
         json = json.data as Record<string, unknown>;
         console.log("[SyncManager] Unwrapped data payload keys:", Object.keys(json || {}));
@@ -125,7 +141,7 @@ export class SyncManager {
 
       // Early save branding to SQLite so it can be loaded on the splash screen immediately
       try {
-        if (json.app_branding) {
+        if (json.app_branding && (!Array.isArray(json.app_branding) || json.app_branding.length > 0)) {
           console.log("[SyncManager] Saving app branding settings early...");
           appRepository.upsertSetting('app_branding', JSON.stringify(json.app_branding));
         }
@@ -141,10 +157,13 @@ export class SyncManager {
       for (let i = 0; i < totalImages; i++) {
         const item = imagesToDownload[i];
         try {
-          const localUri = await cacheImageIfNeeded(item.url);
-          setNestedValue(json, item.path, localUri);
+          // Wrap prefetch in a 3-second timeout to prevent infinite hangs
+          await Promise.race([
+            Image.prefetch(item.url),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+          ]);
         } catch (err) {
-          console.warn(`Failed to pre-cache image: ${item.url}`, err);
+          console.warn(`Failed to pre-cache image (or timed out): ${item.url}`);
         }
 
         downloadedCount++;
@@ -157,7 +176,9 @@ export class SyncManager {
       if (onProgress) onProgress(0.95, 'Saving database tables...');
 
       db.withTransactionSync(() => {
-        appRepository.clearAll();
+        if (!isDelta) {
+          appRepository.clearAll();
+        }
 
         const settingsKeys = [
           'app_branding', 'popup_content', 'home_screen', 'plan_your_trip',
@@ -167,8 +188,10 @@ export class SyncManager {
         ];
         
         for (const key of settingsKeys) {
-          if (json[key]) {
-            appRepository.upsertSetting(key, JSON.stringify(json[key]));
+          const val = json[key];
+          // For settings, only upsert if present and not an empty array
+          if (val && (!Array.isArray(val) || val.length > 0)) {
+            appRepository.upsertSetting(key, JSON.stringify(val));
           }
         }
 
@@ -192,8 +215,20 @@ export class SyncManager {
           }
         }
 
+        // Process deletions if any
+        if (isDelta && json.deleted && typeof json.deleted === 'object') {
+          const deleted = json.deleted as Record<string, unknown[]>;
+          for (const item of recordTypes) {
+            if (deleted[item.type] && Array.isArray(deleted[item.type])) {
+              deleted[item.type].forEach((idToDel: unknown) => {
+                appRepository.deleteRecord(String(idToDel), item.type);
+              });
+            }
+          }
+        }
+
         appRepository.upsertMetadata('is_sync_complete', 'true');
-        appRepository.upsertMetadata('last_full_sync', new Date().toISOString());
+        appRepository.upsertMetadata('last_full_sync', syncTime);
       });
 
       if (onProgress) onProgress(1.0, 'Sync complete!');

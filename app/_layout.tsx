@@ -183,7 +183,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   }
 
   // Hide headers on splash (index) and modal routes
-  const isSplash = (segments as Href<string>).length === 0 || ((segments as Href<string>).length === 1 && (segments as Href<string>)[0] === 'index');
+  const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
   const isModal = pathname === '/modal';
   const isSettings = pathname === '/map/settings';
   const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;

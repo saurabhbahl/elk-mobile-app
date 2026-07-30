@@ -42,17 +42,17 @@ export default function SyncProgressScreen() {
     const Content = (
         <View style={styles.overlay}>
             <View style={styles.brandingContainer}>
-                {brandData?.logo_primary?.url ? (
+                {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
                     <Image
-                        source={{ uri: brandData.logo_primary.url }}
+                        source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                         style={styles.logo}
                         contentFit="contain"
                     />
                 ) : null}
 
-                {brandData?.logo_secondary?.url ? (
+                {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
                     <Image
-                        source={{ uri: brandData.logo_secondary.url }}
+                        source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                         style={styles.explorer}
                         contentFit="contain"
                     />

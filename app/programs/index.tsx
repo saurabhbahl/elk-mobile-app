@@ -35,17 +35,17 @@ export default function ProgramsScreen() {
     const programs = programsData || [];
     
     // ACF select fields sometimes return an object { value: 'list', label: 'List' }
-    const layoutValue = typeof programsSettingData?.layout === 'object' ? programsSettingData.layout.value : programsSettingData?.layout;
+    const layoutValue = typeof programsSettingData?.layout === 'object' ? (programsSettingData.layout as any).value : programsSettingData?.layout;
     const isGrid = (layoutValue || "").toLowerCase() !== "list";
 
     const renderProgramCard = ({ item, index }: { item: ProgramsData; index: number }) => (
         <TouchableOpacity
             style={isGrid ? styles.programCard : styles.programListCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/programs/${item.id || index}` as any)}
+            onPress={() => router.push(`/programs/${item.id || index}` as Href)}
         >
             <CachedImage
-                uri={item.thumbnail_image?.url}
+                uri={item.thumbnail_image?.url as string}
                 style={isGrid ? styles.programCardImage : styles.programListCardImage}
                 contentFit="cover"
             />

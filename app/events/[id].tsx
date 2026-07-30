@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import RenderHTML from 'react-native-render-html';
 
 import CachedImage from "@/src/components/CachedImage";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, EventsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { openExternalLink } from "@/src/utils/openLink";
@@ -96,7 +96,7 @@ export default function EventDetailScreen() {
                 {/* Banner Image */}
                 <View style={styles.bannerContainer}>
                     <CachedImage
-                        uri={event.thumbnail_image?.url}
+                        uri={event.thumbnail_image?.url as string}
                         style={styles.bannerImage}
                         contentFit="cover"
                     />

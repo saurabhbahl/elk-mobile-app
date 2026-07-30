@@ -34,7 +34,7 @@ export default function TipsScreen() {
     const tips = tipsData || [];
 
     const renderTipItem = ({ item }: { item: TipsData }) => {
-        const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : item.tip_icon__image?.url;
+        const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
 
         return (
             <View style={styles.tipCard}>
@@ -60,7 +60,7 @@ export default function TipsScreen() {
                     {item.tip_body ? (
                         <RenderHTML
                             contentWidth={width - 64}
-                            source={{ html: item.tip_body }}
+                            source={{ html: item.tip_body as string }}
                             baseStyle={{
                                 fontSize: 13,
                                 color: colors.onSurfaceVariant,
@@ -83,9 +83,9 @@ export default function TipsScreen() {
 
             {tipsScreenSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>
-                    {(typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : tipsScreenSettingsData.header_icon?.url) ? (
+                    {(typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : (tipsScreenSettingsData.header_icon as any)?.url) ? (
                         <CachedImage
-                            uri={typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : tipsScreenSettingsData.header_icon?.url}
+                            uri={typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : (tipsScreenSettingsData.header_icon as any)?.url}
                             style={styles.headerIcon}
                             contentFit="contain"
                         />

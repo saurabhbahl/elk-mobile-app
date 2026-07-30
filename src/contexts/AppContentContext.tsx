@@ -336,7 +336,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         try {
             const settingsMap = appRepository.getAllSettings();
 
-            if (settingsMap.app_branding) setBrandData(settingsMap.app_branding as AppBranding);
+            console.log("[SQLite] Loaded app_branding:", JSON.stringify(settingsMap.app_branding, null, 2));
+
+            if (settingsMap.app_branding && !Array.isArray(settingsMap.app_branding)) {
+                setBrandData(settingsMap.app_branding as AppBranding);
+            }
             if (settingsMap.popup_content) setPopupData(settingsMap.popup_content as PopupContent);
             if (settingsMap.home_screen) {
                 console.log("[SQLite] Loaded welcome heading:", (settingsMap.home_screen as any).hero_welcome_heading);

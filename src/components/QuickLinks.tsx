@@ -21,7 +21,8 @@ export default function QuickLinks() {
     // Find the currently active index
     const activeIndex = navigationData ? navigationData.findIndex((item) => {
         if (!item.nav_link?.url) return false;
-        return pathname === item.nav_link.url || (item.nav_link.url !== '/' && pathname.startsWith(item.nav_link.url));
+        const url = item.nav_link.url as string;
+        return pathname === url || (url !== '/' && pathname.startsWith(url));
     }) : -1;
 
     // Scroll active item to the center of the screen
@@ -46,7 +47,8 @@ export default function QuickLinks() {
             return navigationData.map((item, index) => {
                 if (!item.nav_item_label || !item.nav_link?.url) return null;
 
-                const isActive = pathname === item.nav_link.url || (item.nav_link.url !== '/' && pathname.startsWith(item.nav_link.url));
+                const url = item.nav_link.url as string;
+                const isActive = pathname === url || (url !== '/' && pathname.startsWith(url));
 
                 return (
                     <TouchableOpacity
@@ -66,7 +68,7 @@ export default function QuickLinks() {
                             }
                         ]}
                         activeOpacity={0.8}
-                        onPress={() => router.replace((item.nav_link?.url || '/') as any)}
+                        onPress={() => router.push((item.nav_link as any)?.url as any)}
                     >
                         {item.nav_image ? (
                             <Image

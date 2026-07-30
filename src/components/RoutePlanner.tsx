@@ -49,7 +49,7 @@ function WaypointSelector({
   label: string;
   selected: Waypoint | null;
   waypoints: Waypoint[];
-  location: unknown;
+  location: any;
   showCurrentLocation?: boolean;
   onSelect: (wp: Waypoint) => void;
 }) {

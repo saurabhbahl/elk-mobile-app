@@ -13,7 +13,7 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, EventsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 
@@ -34,14 +34,14 @@ export default function EventsScreen() {
 
     const events = eventsData || [];
 
-    const renderEventCard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
+    const renderEventCard = ({ item, index }: { item: EventsData; index: number }) => (
         <TouchableOpacity
             style={styles.eventCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/events/${item.id || index}` as Href<string>)}
+            onPress={() => router.push(`/events/${item.id || index}` as Href)}
         >
             <CachedImage
-                uri={item.thumbnail_image?.url}
+                uri={item.thumbnail_image?.url as string}
                 style={styles.eventCardImage}
                 contentFit="cover"
             />

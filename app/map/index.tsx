@@ -107,8 +107,8 @@ function MapScreen() {
   // ── Map engine ──────────────────────────────────────────────────────────────
   const [mapEngineError, setMapEngineError] = useState<string | null>(null);
   const [mapComponents] = useState<{
-    Map: unknown; Camera: unknown; GeoJSONSource: unknown;
-    Layer: unknown; Marker: unknown; UserLocation: unknown;
+    Map: any; Camera: any; GeoJSONSource: any;
+    Layer: any; Marker: any; UserLocation: any;
   } | null>(() => {
     if (isExpoGo) return null;
     try {
@@ -124,7 +124,7 @@ function MapScreen() {
       } else {
         setMapEngineError(`Required components missing. Keys: ${Object.keys(ML).join(', ')}`);
       }
-    } catch (e: EventsData) {
+    } catch (e: any) {
       setMapEngineError(e.message || 'Failed to load MapLibre module');
     }
     return null;
@@ -155,13 +155,13 @@ function MapScreen() {
 
   // Active route lives in a ref to avoid re-renders on every GPS tick.
   // routeVersion is bumped to signal MapRouteLayers to re-read the ref.
-  const activeRouteRef = useRef<unknown>(null);
-  const fullRouteRef = useRef<unknown>(null);
+  const activeRouteRef = useRef<any>(null);
+  const fullRouteRef = useRef<any>(null);
   const [routeVersion, setRouteVersion] = useState(0);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(null);
-  const [location, setLocation] = useState<unknown>(null);
+  const [location, setLocation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Waypoint | null>(null);
@@ -223,28 +223,11 @@ function MapScreen() {
   }, [isNavigating, isCalculatingRoute, setLayoutNavigating]);
 
   // Handle Android hardware back button in navigation mode
-  useEffect(() => {
-    if (!isNavigating) return;
-
-    const onBackPress = () => {
-      handleExitNavigation();
-      router.back();
-      return true; // prevent default behavior
-    };
-
-    const subscription = BackHandler.addEventListener(
-      'hardwareBackPress',
-      onBackPress
-    );
-
-    return () => {
-      subscription.remove();
-    };
-  }, [isNavigating, handleExitNavigation]);
+  // (Moved BackHandler below handleExitNavigation)
 
   // ── Camera & misc refs ──────────────────────────────────────────────────────
-  const cameraRef = useRef<unknown>(null);
-  const mapRef = useRef<unknown>(null);
+  const cameraRef = useRef<any>(null);
+  const mapRef = useRef<any>(null);
   const flatListRef = useRef<FlatList>(null);
   const isTappingMarker = useRef(false);
   const hasCenteredOnce = useRef(false);
@@ -273,8 +256,8 @@ function MapScreen() {
     const lngStr = mapSettingsData?.longitude || mapSettingsData?.default_map_center?.longitude || mapSettingsData?.default_map_center?.long || mapSettingsData?.default_map_center?.lng;
 
     if (latStr && lngStr) {
-      const lat = parseFloat(latStr);
-      const lng = parseFloat(lngStr);
+      const lat = parseFloat(latStr as string);
+      const lng = parseFloat(lngStr as string);
       if (!isNaN(lat) && !isNaN(lng)) {
         return { latitude: lat, longitude: lng };
       }
@@ -481,7 +464,7 @@ function MapScreen() {
     }
   }, [isNavigating]);
 
-  const handleScrollEnd = useCallback((event: unknown) => {
+  const handleScrollEnd = useCallback((event: any) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
     const waypoint = waypoints[index];
     if (waypoint) {
@@ -738,7 +721,7 @@ function MapScreen() {
               const distStr = distAcc > 400
                 ? `${(distAcc / 1609.34).toFixed(1)} mi`
                 : `${Math.round(distAcc * 3.28084)} ft`;
-              instruction = { ...turn, distance: `In ${distStr}` };
+              instruction = { ...turn, distance: `In ${distStr}` } as any;
               break;
             }
           }
@@ -795,24 +778,21 @@ function MapScreen() {
           return next;
         });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('CRASH PREVENTED in NavUpdate:', err);
     }
   }, [location, isNavigating, isCalculatingRoute, startActualNavigation]);
 
   // ── Exit navigation ─────────────────────────────────────────────────────────
-  // Do NOT call resetMap() — that unmounts the whole screen and shows the
-  // initializing loader. Instead just reset local navigation state in-place.
   const handleExitNavigation = useCallback(() => {
     activeRouteRef.current = null;
     fullRouteRef.current = null;
     lastSliceIdx.current = -1;
 
-    // Clear route parameters from the router to prevent auto-retriggering on focus
     router.setParams({
       routeToWaypointId: undefined,
       navRequestId: undefined
-    } as Href<string>);
+    } as any);
 
     hasHandledNavParam.current = false;
     hasArrivedRef.current = false;
@@ -828,15 +808,27 @@ function MapScreen() {
         distanceRemaining: '0.0 mi',
         timeRemaining: '0 min',
         arrivalTime: '--:--',
-        nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: "straight" as never },
+        nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: "straight" as any } as any,
       });
     });
   }, []);
 
+  // Handle Android hardware back button in navigation mode
+  useEffect(() => {
+    if (!isNavigating) return;
+    const onBackPress = () => {
+      handleExitNavigation();
+      router.back();
+      return true;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => { subscription.remove(); };
+  }, [isNavigating, handleExitNavigation]);
+
   // ── Memoized waypoint marker ────────────────────────────────────────────────
   const WaypointMarker = useMemo(() => React.memo(({
-    waypoint, isSelected, onPress, Marker: MarkerComp,
-  }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; Marker: unknown }) => (
+    waypoint, isSelected, onPress, Marker: MarkerComp
+  }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; Marker: any }) => (
     <MarkerComp
       key={`waypoint-${waypoint.id}`}
       id={`waypoint-${waypoint.id}`}
@@ -846,7 +838,7 @@ function MapScreen() {
       <TouchableOpacity onPress={() => onPress(waypoint)}>
         {waypoint.pin_icon_override ? (
           <Image
-            source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : waypoint.pin_icon_override.url }}
+            source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : (waypoint.pin_icon_override as any).url }}
             style={{ width: isSelected ? 32 : 24, height: isSelected ? 32 : 24 }}
             contentFit="contain"
           />
@@ -960,14 +952,14 @@ function MapScreen() {
           logo={false}
           attribution={false}
           compass={false}
-          onPress={(event: unknown) => {
+          onPress={(event: any) => {
             if (isTappingMarker.current) return;
             if (isNavigating) return;
             setSelectedWaypoint(null);
             activeRouteRef.current = null;
             setRouteVersion(v => v + 1);
           }}
-          onRegionDidChange={(feature: unknown) => {
+          onRegionDidChange={(feature: any) => {
             // Track map center for drop-pin crosshair
             const center = feature?.nativeEvent?.center ?? feature?.center;
             if (Array.isArray(center) && center.length === 2) {
@@ -1023,8 +1015,8 @@ function MapScreen() {
           <MapRouteLayers
             GeoJSONSource={GeoJSONSource}
             Layer={Layer}
-            mainRouteFeature={mainRouteFeature as Record<string, unknown>}
-            orangeRouteFeature={orangeRouteFeature as Record<string, unknown>}
+            mainRouteFeature={mainRouteFeature as any}
+            orangeRouteFeature={orangeRouteFeature as any}
             activeRouteData={activeRouteRef.current}
             routeVersion={routeVersion}
             isNavigating={isNavigating}
@@ -1141,7 +1133,7 @@ function MapScreen() {
                   {waypoints.map(wp => (
                     <TouchableOpacity
                       key={wp.id}
-                      onPress={() => router.push(`/map/${wp.id}` as Href<string>)}
+                      onPress={() => router.push(`/map/${wp.id}` as any)}
                       style={{
                         backgroundColor: isDark ? colors.surfaceContainer : '#ffffff',
                         borderRadius: 12, padding: 16, marginBottom: 10,

@@ -52,7 +52,7 @@ export default function PlanTripScreen() {
     });
 
     // Sort by sort_order if available
-    activeSections.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    activeSections.sort((a: any, b: any) => {
         const orderA = parseInt(a.sort_order, 10) || 0;
         const orderB = parseInt(b.sort_order, 10) || 0;
         return orderA - orderB;
@@ -107,7 +107,7 @@ export default function PlanTripScreen() {
                     ) : null}
 
                     {activeSections.length > 0 ? (
-                        activeSections.map((sec: Record<string, unknown>, index: number) => {
+                        activeSections.map((sec: any, index: number) => {
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <View key={index} style={styles.sectionCard}>
@@ -115,12 +115,12 @@ export default function PlanTripScreen() {
                                         {iconUrl ? (
                                             <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
                                         ) : null}
-                                        <AppText style={styles.sectionHeading}>{sec.section_heading || ""}</AppText>
+                                        <AppText style={styles.sectionHeading}>{(sec.section_heading as string) || ""}</AppText>
                                     </View>
                                     {sec.section_body ? (
                                         <RenderHTML
                                             contentWidth={width - 32 - 32} // padding inside section card
-                                            source={{ html: sec.section_body }}
+                                            source={{ html: sec.section_body as string }}
                                             baseStyle={{
                                                 fontSize: 13,
                                                 color: colors.onSurface,

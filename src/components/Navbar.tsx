@@ -4,7 +4,7 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Href, router } from "expo-router";
+import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -32,19 +32,19 @@ export default function Navbar() {
             { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
         ]}>
             <View style={styles.leftActions}>
-                <TouchableOpacity onPress={() => router.push("/(home)" as Href<string>)} activeOpacity={0.8}>
-                    {brandData?.logo_primary?.url ? (
+                <TouchableOpacity onPress={() => router.push("/")} activeOpacity={0.8}>
+                    {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
                         <Image
-                            source={{ uri: brandData.logo_primary.url }}
+                            source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                             style={styles.headerLogo}
                             contentFit="contain"
                         />
                     ) : null}
                 </TouchableOpacity>
 
-                {brandData?.logo_secondary?.url ? (
+                {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
                     <Image
-                        source={{ uri: brandData.logo_secondary.url }}
+                        source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                         style={styles.headerExplorer}
                         contentFit="contain"
                     />

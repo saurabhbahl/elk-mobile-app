@@ -25,6 +25,16 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
   }
 
   /**
+   * Delete a single record type
+   */
+  deleteRecord(id: string, type: string) {
+    this.execute(
+      `DELETE FROM app_records WHERE id = ? AND type = ?`,
+      [id, type]
+    );
+  }
+
+  /**
    * Save settings
    */
   upsertSetting(key: string, jsonData: string) {
