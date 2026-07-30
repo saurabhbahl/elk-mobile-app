@@ -12,8 +12,9 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
@@ -37,11 +38,11 @@ export default function ProgramsScreen() {
     const layoutValue = typeof programsSettingData?.layout === 'object' ? programsSettingData.layout.value : programsSettingData?.layout;
     const isGrid = (layoutValue || "").toLowerCase() !== "list";
 
-    const renderProgramCard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
+    const renderProgramCard = ({ item, index }: { item: ProgramsData; index: number }) => (
         <TouchableOpacity
             style={isGrid ? styles.programCard : styles.programListCard}
             activeOpacity={0.8}
-            onPress={() => router.push(`/programs/${item.id || index}` as Href<string>)}
+            onPress={() => router.push(`/programs/${item.id || index}` as any)}
         >
             <CachedImage
                 uri={item.thumbnail_image?.url}

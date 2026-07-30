@@ -63,13 +63,13 @@ export const useOfflineMap = () => {
   const checkMapStatus = useCallback(async () => {
     try {
       // Use dynamically saved list if available, else fall back to static list
-      let expectedFiles = MBTILES_PATHS;
+      let expectedFiles: Array<{ name?: string; path?: string; uri: string }> = MBTILES_PATHS;
       try {
         const storedList = await AsyncStorage.getItem('@elk_downloaded_maps');
         if (storedList) {
           const filenames = JSON.parse(storedList);
           if (Array.isArray(filenames)) {
-            expectedFiles = filenames.map((name: string) => ({ uri: docDir + name } as { uri: string }));
+            expectedFiles = filenames.map((name: string) => ({ uri: docDir + name }));
           }
         }
       } catch (e) {}
@@ -255,7 +255,8 @@ export const useOfflineMap = () => {
         throw new Error('Downloads finished but some files are still missing');
       }
     } catch (error) {
-      if (error?.message && error.message.toLowerCase().includes('cancel')) {
+      const err = error as Error;
+      if (err?.message && err.message.toLowerCase().includes('cancel')) {
         console.log('Download was cancelled.');
       } else {
         console.warn('Error downloading maps:', error);

@@ -13,7 +13,7 @@ import RenderHTML from 'react-native-render-html';
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, TrailsData } from "@/src/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
 
@@ -32,7 +32,7 @@ export default function TrailsScreen() {
 
     const trails = trailsData || [];
 
-    const renderTrailItem = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
+    const renderTrailItem = ({ item, index }: { item: TrailsData; index: number }) => (
         <View style={styles.trailItemContainer}>
             <View style={styles.trailHeaderRow}>
                 <AppText style={styles.trailName}>{item.trail_name || ""}</AppText>

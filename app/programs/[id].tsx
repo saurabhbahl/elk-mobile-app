@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
 import CachedImage from "@/src/components/CachedImage";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 

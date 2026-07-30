@@ -44,6 +44,7 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
     const branding = d.app_branding as Record<string, unknown>;
     addImage(branding.logo_primary, ['app_branding', 'logo_primary']);
     addImage(branding.logo_secondary, ['app_branding', 'logo_secondary']);
+    addImage(branding.splash_loading_screen_background, ['app_branding', 'splash_loading_screen_background']);
   }
   // 2. Popup Content
   if (d.popup_content) {
@@ -80,8 +81,11 @@ export class SyncManager {
   static async triggerDeltaSync(): Promise<boolean> {
     console.log("[SyncManager] Triggering background delta sync");
     try {
-      return await this.fetchAndStoreAll();
+      const res = await this.fetchAndStoreAll();
+      console.log("[SyncManager] Background delta sync completed. Result:", res);
+      return res;
     } catch (e) {
+      console.error("[SyncManager] Background delta sync error:", e);
       return false;
     }
   }
@@ -111,9 +115,22 @@ export class SyncManager {
     try {
       if (onProgress) onProgress(0.05, 'Fetching content data...');
       
+      console.log("[SyncManager] Fetching sync data from API...");
       let json = await ApiService.fetchSyncData();
+      console.log("[SyncManager] Sync data response keys:", Object.keys(json || {}));
       if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
         json = json.data as Record<string, unknown>;
+        console.log("[SyncManager] Unwrapped data payload keys:", Object.keys(json || {}));
+      }
+
+      // Early save branding to SQLite so it can be loaded on the splash screen immediately
+      try {
+        if (json.app_branding) {
+          console.log("[SyncManager] Saving app branding settings early...");
+          appRepository.upsertSetting('app_branding', JSON.stringify(json.app_branding));
+        }
+      } catch (err) {
+        console.warn('Failed to save branding early:', err);
       }
 
       if (onProgress) onProgress(0.2, 'Preparing image downloads...');

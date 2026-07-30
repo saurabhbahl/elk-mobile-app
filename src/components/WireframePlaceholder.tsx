@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, LayoutChangeEvent, StyleProp, ViewStyle } from "react-native";
 
 interface WireframePlaceholderProps {
-    style?: unknown;
+    style?: StyleProp<ViewStyle>;
     children?: React.ReactNode;
 }
 
 export default function WireframePlaceholder({ style, children }: WireframePlaceholderProps) {
     const [dims, setDims] = useState({ width: 0, height: 0 });
 
-    const onLayout = (event: unknown) => {
+    const onLayout = (event: LayoutChangeEvent) => {
         const { width: w, height: h } = event.nativeEvent.layout;
         setDims({ width: w, height: h });
     };

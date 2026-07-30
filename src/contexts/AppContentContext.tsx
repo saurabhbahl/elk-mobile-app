@@ -15,6 +15,9 @@ export interface AppBranding {
     };
     brand_color_primary?: string;
     brand_color__secondary?: string;
+    splash_loading_screen_background?: {
+        url: string;
+    } | string;
 }
 
 export interface PopupContent {
@@ -98,7 +101,7 @@ export interface RentalsData {
     id?: number;
     updated_at?: string;
     rental_name?: string;
-    additional_images?: boolean;
+    additional_images?: any;
     short_description?: string;
     full_description?: string;
     capacity?: string;
@@ -120,16 +123,16 @@ export interface TipsData {
     tip_title?: string;
     tip_body?: string;
     tip_icon__image?: Record<string, unknown>;
-    category__tag?: boolean;
+    category__tag?: any;
     active?: boolean;
     sort_order?: string;
 }
 
 export interface PlanYourTripData {
     screen_title?: string;
-    hero_image?: string;
+    hero_image?: any;
     intro_paragraph?: string;
-    content_sections?: unknown[];
+    content_sections?: any[];
 }
 
 export interface CamerasData {
@@ -231,6 +234,17 @@ export interface PoisData {
     sort_order?: string;
 }
 
+export interface MappedPoisData extends Omit<PoisData, 'image_gallery'> {
+    id: number;
+    coordinate: {
+        latitude: number;
+        longitude: number;
+    };
+    title: string;
+    description: string;
+    image_gallery?: any;
+}
+
 
 export interface AppContentData {
     app_branding?: AppBranding;
@@ -275,7 +289,7 @@ interface AppContentContextType {
     tipsScreenSettingsData: TipsScreenSettingsData | null;
     mapSettingsData: MapSettingsData | null;
     navigationData: NavigationData[] | null;
-    poisData: PoisData[] | null;
+    poisData: MappedPoisData[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
     isSyncing: boolean;
     syncProgress: number;
@@ -307,7 +321,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [tipsScreenSettingsData, setTipsScreenSettingsData] = useState<TipsScreenSettingsData | null>(null);
     const [mapSettingsData, setMapSettingsData] = useState<MapSettingsData | null>(null);
     const [navigationData, setNavigationData] = useState<NavigationData[] | null>(null);
-    const [poisData, setPoisData] = useState<PoisData[] | null>(null);
+    const [poisData, setPoisData] = useState<MappedPoisData[] | null>(null);
 
     const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
 
@@ -324,7 +338,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
             if (settingsMap.app_branding) setBrandData(settingsMap.app_branding as AppBranding);
             if (settingsMap.popup_content) setPopupData(settingsMap.popup_content as PopupContent);
-            if (settingsMap.home_screen) setHomeData(settingsMap.home_screen as HomeScreenData);
+            if (settingsMap.home_screen) {
+                console.log("[SQLite] Loaded welcome heading:", (settingsMap.home_screen as any).hero_welcome_heading);
+                console.log("[SQLite] Loaded intro paragraph:", (settingsMap.home_screen as any).hero_intro_paragraph);
+                setHomeData(settingsMap.home_screen as HomeScreenData);
+            }
             if (settingsMap.plan_your_trip) setPlanTripData(settingsMap.plan_your_trip);
             if (settingsMap.visitors) setVisitorsData(settingsMap.visitors);
             if (settingsMap.programs_setting) setProgramsSettingData(settingsMap.programs_setting);
@@ -375,6 +393,13 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         const success = await SyncManager.fetchAndStoreAll((progress, status) => {
             setSyncProgress(progress);
             setSyncStatusText('Getting things ready...');
+            // Load branding early if it has been written to the DB
+            try {
+                const settingsMap = appRepository.getAllSettings();
+                if (settingsMap.app_branding) {
+                    setBrandData(settingsMap.app_branding as AppBranding);
+                }
+            } catch (_) {}
         });
 
         setIsSyncing(false);

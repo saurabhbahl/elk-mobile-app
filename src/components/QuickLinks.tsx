@@ -66,11 +66,11 @@ export default function QuickLinks() {
                             }
                         ]}
                         activeOpacity={0.8}
-                        onPress={() => router.replace(item.nav_link.url as Href<string>)}
+                        onPress={() => router.replace((item.nav_link?.url || '/') as any)}
                     >
                         {item.nav_image ? (
                             <Image
-                                source={{ uri: typeof item.nav_image === 'string' ? item.nav_image : item.nav_image?.url }}
+                                source={{ uri: typeof item.nav_image === 'string' ? item.nav_image : (item.nav_image as Record<string, string>)?.url }}
                                 style={styles.menuCardImage}
                                 contentFit="cover"
                                 transition={200}

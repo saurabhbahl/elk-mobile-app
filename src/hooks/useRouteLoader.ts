@@ -51,7 +51,7 @@ export const useRouteLoader = () => {
   // ── Initialize from bundled static polylines synchronously ──────────────────
   // This ensures the map always shows road-following routes immediately.
   const [mainRouteCoordinates, setMainRouteCoordinates] = useState<Coordinate[]>(() => {
-    const poly = (staticRoutes as Record<string, { geometry: { coordinates: [number, number][] } }>).mainRoute;
+    const poly = (staticRoutes as unknown as Record<string, string>).mainRoute;
     const coords = tryDecode(poly);
     if (coords) {
       return coords;
@@ -61,7 +61,7 @@ export const useRouteLoader = () => {
   });
 
   const [orangeRouteCoordinates, setOrangeRouteCoordinates] = useState<Coordinate[]>(() => {
-    const poly = (staticRoutes as Record<string, { geometry: { coordinates: [number, number][] } }>).orangeRoute;
+    const poly = (staticRoutes as unknown as Record<string, string>).orangeRoute;
     const coords = tryDecode(poly);
     if (coords) {
       return coords;

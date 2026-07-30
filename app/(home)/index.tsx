@@ -1,35 +1,37 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from '@react-navigation/native';
 import { Image, ImageBackground } from "expo-image";
-import { router } from "expo-router";
+import { Href, router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator,
+import {
+    ActivityIndicator,
     Dimensions,
     Modal,
     ScrollView,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import RenderHTML from 'react-native-render-html';
-import { useIsFocused } from '@react-navigation/native';
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import CachedImage from "@/src/components/CachedImage";
 
 // Get screen dimensions for dynamic calculations
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-import { useAppContent } from "@/src/contexts/AppContentContext";
-import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { useAppContent } from "@/src/contexts/AppContentContext";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith('#') ? color : `#${color}`;
 };
+
+
 
 // Global session variable to track if the user has dismissed the popup during this app launch
 let hasDismissedPopupSession = false;
@@ -38,7 +40,7 @@ export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
     const { colors, fonts, isDark } = useTheme();
     const isFocused = useIsFocused();
-    
+
     const { popupData, homeData, brandData, eventsData } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
@@ -48,7 +50,7 @@ export default function HomeScreen() {
     useEffect(() => {
         if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
             setShowPopup(true);
-            
+
         }
     }, [isFocused, popupData]);
 
@@ -56,57 +58,60 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
+
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Unified QuickLinks and Welcome Section Wrapper */}
-                <View style={{ position: 'relative' }}>
-                    {/* Background Block covering QuickLinks, Title, and 75% of the banner height (banner is 160px, so bottom 40 leaves 75% coverage) */}
-                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 40, backgroundColor: primaryColor }} />
+                {/* Welcome Message */}
+                {homeData?.hero_welcome_heading ? (
+                    <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
+                        {homeData.hero_welcome_heading}
+                    </AppText>
+                ) : null}
 
-                    
+                {/* Welcome Banner Card */}
+                <View style={styles.welcomeBannerContainer}>
+                    <ImageBackground
+                        source={require("../../assets/images/welcome.jpg")}
+                        style={styles.welcomeBannerCard}
+                        imageStyle={{ borderRadius: 10 }}
+                    >
+                        <View style={styles.welcomeBannerOverlay}>
+                            {/* Top Right Pill Badge: About KECA */}
+                            {homeData?.hero_cta_button_label ? (
+                                <TouchableOpacity
+                                    style={styles.aboutKecaBadge}
+                                    activeOpacity={0.8}
+                                    onPress={() => router.push("/visitors" as Href<string>)}
+                                >
+                                    <AppText style={styles.aboutKecaText}>
+                                        {homeData.hero_cta_button_label}
+                                    </AppText>
+                                </TouchableOpacity>
+                            ) : null}
 
-                    {/* Welcome Message */}
-                    {homeData?.hero_welcome_heading ? (
-                        <AppText style={[styles.welcomeTitle, { color: isDark ? "#FFFFFF" : secondaryColor }]}>
-                            {homeData.hero_welcome_heading}
-                        </AppText>
-                    ) : null}
-
-                    {/* Welcome Banner */}
-                    <Image source={require("../../assets/images/welcome.jpg")} style={styles.welcomeBanner} contentFit="cover" />
+                            {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
+                            {homeData?.hero_intro_paragraph ? (
+                                <View style={styles.welcomeIntroContainer}>
+                                    <RenderHTML
+                                        contentWidth={width}
+                                        source={{ html: homeData.hero_intro_paragraph }}
+                                        baseStyle={styles.welcomeIntroText as any}
+                                        tagsStyles={{
+                                            p: { marginVertical: 0, padding: 0 }
+                                        }}
+                                    />
+                                </View>
+                            ) : null}
+                        </View>
+                    </ImageBackground>
                 </View>
-
-                {/* Welcome Description */}
-                {homeData?.hero_intro_paragraph ? (
-                    <RenderHTML
-                        contentWidth={width - 40}
-                        source={{ html: homeData.hero_intro_paragraph }}
-                        baseStyle={{
-                            fontSize: 13,
-                            color: colors.onSurface,
-                            textAlign: "center",
-                            lineHeight: 18,
-                            marginBottom: 12,
-                        }}
-                        tagsStyles={{ p: { textAlign: "center", margin: 0 } }}
-                    />
-                ) : null}
-
-                {/* Read More Button */}
-                {homeData?.hero_cta_button_label ? (
-                    <TouchableOpacity style={[styles.readMoreButton, { backgroundColor: primaryColor }]} activeOpacity={0.8}>
-                        <AppText style={[styles.readMoreButtonText, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.hero_cta_button_label}</AppText>
-                    </TouchableOpacity>
-                ) : null}
-
-                {/* Find Your Next Adventure Section */}
-                <AppText style={[styles.sectionHeader, { color: isDark ? "#FFFFFF" : primaryColor }]}>Find your next adventure</AppText>
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.subSectionTitleRow}>
-                        <Ionicons name="map-outline" size={18} color="#333333" />
+                        <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                            <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                        </View>
                         <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.map_block_heading}</AppText>
                     </View>
                 ) : null}
@@ -114,14 +119,14 @@ export default function HomeScreen() {
                 {/* Map Card */}
                 {homeData?.map_block_heading ? (
                     <View style={styles.mapCardContainer}>
-                        <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 12 }}>
+                        <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
                             {homeData?.map_view_button_label ? (
-                                <TouchableOpacity 
-                                    style={[styles.viewMapButton, { backgroundColor: primaryColor }]} 
+                                <TouchableOpacity
+                                    style={styles.viewMapButton}
                                     activeOpacity={0.9}
                                     onPress={() => router.push("/map" as Href<string>)}
                                 >
-                                    <AppText style={[styles.viewMapButtonText, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.map_view_button_label}</AppText>
+                                    <AppText style={styles.viewMapButtonText}>{homeData.map_view_button_label}</AppText>
                                 </TouchableOpacity>
                             ) : null}
                         </ImageBackground>
@@ -133,7 +138,9 @@ export default function HomeScreen() {
                     <>
                         {homeData?.programs_block_heading ? (
                             <View style={styles.subSectionTitleRow}>
-                                <Ionicons name="calendar-outline" size={18} color="#333333" />
+                                <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                                    <Image source={require('../../assets/images/programicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                                </View>
                                 <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.programs_block_heading}</AppText>
                             </View>
                         ) : null}
@@ -144,27 +151,63 @@ export default function HomeScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.programsHorizontalList}
                         >
-                            {homeData.programs.map((program: ProgramsData, index: number) => (
-                                <TouchableOpacity
-                                    key={program.id || index}
-                                    style={styles.programCard}
-                                    activeOpacity={0.8}
-                                    onPress={() => router.push(`/programs` as Href<string>)}
-                                >
-                                    <CachedImage
-                                        uri={program.thumbnail_image?.url}
-                                        style={styles.programCardImage}
-                                        contentFit="cover"
-                                    />
-                                    <View style={styles.programCardContent}>
-                                        <AppText style={styles.programCardName} numberOfLines={1}>{program.program_name || ""}</AppText>
-                                        <AppText style={styles.programCardDate}>{program.schedule__dates || ""}</AppText>
-                                        <View style={[styles.arrowCircle, { backgroundColor: primaryColor }]}>
-                                            <Ionicons name="arrow-forward" size={12} color={secondaryColor || ""} />
+                            {homeData.programs.map((program: ProgramsData, index: number) => {
+                                // Simple date badge parser
+                                let badge = null;
+                                const dateStr = program.schedule__dates;
+                                if (dateStr) {
+                                    const match = dateStr.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d+)/i);
+                                    if (match && match[1] && match[2]) {
+                                        badge = {
+                                            month: match[1].toUpperCase().slice(0, 3),
+                                            day: match[2]
+                                        };
+                                    }
+                                }
+
+                                return (
+                                    <TouchableOpacity
+                                        key={program.id || index}
+                                        style={styles.programCard}
+                                        activeOpacity={0.85}
+                                        onPress={() => router.push(`/programs` as Href<string>)}
+                                    >
+                                        <View style={styles.programCardImageContainer}>
+                                            <CachedImage
+                                                uri={program.thumbnail_image?.url}
+                                                style={StyleSheet.absoluteFill}
+                                                contentFit="cover"
+                                            />
+                                            {badge && (
+                                                <View style={styles.cardBadge}>
+                                                    <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
+                                                    <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
+                                                </View>
+                                            )}
                                         </View>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
+
+                                        <ImageBackground
+                                            source={require('../../assets/images/vectors.png')}
+                                            style={styles.programCardBottomSection}
+                                            imageStyle={{ tintColor: '#FFFFFF', opacity: 1 }}
+                                            contentFit="cover"
+                                        >
+                                            <View style={styles.programCardTextCol}>
+                                                <AppText style={styles.programCardName} numberOfLines={1}>
+                                                    {program.program_name || ""}
+                                                </AppText>
+                                                <AppText style={styles.cardLocation} numberOfLines={1}>
+                                                    Elk Country Visitor Center
+                                                </AppText>
+                                            </View>
+
+                                            <View style={styles.cardViewButton}>
+                                                <AppText style={styles.cardViewButtonText}>View</AppText>
+                                            </View>
+                                        </ImageBackground>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </ScrollView>
                     </>
                 ) : null}
@@ -175,7 +218,9 @@ export default function HomeScreen() {
                         {homeData?.event_block_heading ? (
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
-                                    <Ionicons name="calendar" size={18} color="#000000" />
+                                    <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                                        <Image source={require('../../assets/images/eventicon.png')} style={styles.sectionIconImgLg} contentFit="contain" />
+                                    </View>
                                     <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_block_heading}</AppText>
                                 </View>
                                 {homeData?.event_view_all_label ? (
@@ -189,7 +234,7 @@ export default function HomeScreen() {
                         {/* Featured Event Card */}
                         <TouchableOpacity
                             style={styles.featuredCard}
-                            activeOpacity={0.8}
+                            activeOpacity={0.85}
                             onPress={() => {
                                 const eventId = homeData.featured_event[0].id;
                                 const eventIndex = eventsData?.findIndex((e: EventsData) => String(e.id) === String(eventId));
@@ -197,38 +242,46 @@ export default function HomeScreen() {
                                 router.push(`/events/${targetId}` as Href<string>);
                             }}
                         >
-                            <View style={styles.featuredCardLeft}>
+                            <View style={styles.programCardImageContainer}>
                                 <CachedImage
                                     uri={homeData.featured_event[0].thumbnail_image?.url}
-                                    style={styles.featuredCardImage}
+                                    style={StyleSheet.absoluteFill}
                                     contentFit="cover"
                                 />
-                                <View style={[styles.featuredArrowCircle, { backgroundColor: primaryColor }]}>
-                                    <Ionicons name="arrow-forward" size={12} color={secondaryColor || ""} />
+                            </View>
+
+                            <ImageBackground
+                                source={require('../../assets/images/vectors.png')}
+                                style={styles.programCardBottomSection}
+                                imageStyle={{ opacity: 1 }}
+                                contentFit="cover"
+                            >
+                                <View style={styles.programCardTextCol}>
+                                    <AppText style={styles.featuredEventName} numberOfLines={1}>
+                                        {homeData.featured_event[0].event_name || ""}
+                                    </AppText>
+                                    <AppText style={styles.cardLocation} numberOfLines={1}>
+                                        {homeData.featured_event[0].location_name}
+                                    </AppText>
                                 </View>
-                            </View>
-                            <View style={styles.featuredCardRight}>
-                                <AppText style={styles.featuredEventName}>{homeData.featured_event[0].event_name || ""}</AppText>
-                                <AppText style={styles.featuredEventDate}>
-                                    {homeData.featured_event[0]['start_date_&_time'] || ""}
-                                </AppText>
-                                <AppText style={styles.featuredEventDesc} numberOfLines={3}>
-                                    {homeData.featured_event[0].short_description ? homeData.featured_event[0].short_description.replace(/<\/?[^>]+(>|$)/g, "").trim() : ""}
-                                </AppText>
-                            </View>
+
+                                <View style={styles.cardViewButton}>
+                                    <AppText style={styles.cardViewButtonText}>View</AppText>
+                                </View>
+                            </ImageBackground>
                         </TouchableOpacity>
                     </>
                 ) : null}
 
                 {/* Hit the Trails Section */}
                 {homeData?.trails_block_heading ? (
-                    <View style={[styles.trailsContainer, { backgroundColor: primaryColor }]}>
-                        {/* Extension view for overscroll */}
-                        <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: 1000, backgroundColor: primaryColor }} />
-                        <View style={styles.trailsHeaderRow}>
-                            <MaterialCommunityIcons name="image-filter-hdr" size={20} color={secondaryColor || ""} />
+                    <View style={styles.trailsSectionContainer}>
+                        <View style={styles.subSectionTitleRow}>
+                            <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                                <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                            </View>
                             <TouchableOpacity onPress={() => router.push("/trails" as Href<string>)}>
-                                <AppText style={[styles.trailsTitle, { color: isDark ? "#FFFFFF" : secondaryColor }]}>{homeData.trails_block_heading}</AppText>
+                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.trails_block_heading}</AppText>
                             </TouchableOpacity>
                         </View>
                         <ScrollView
@@ -238,13 +291,18 @@ export default function HomeScreen() {
                         >
                             {homeData?.trails && Array.isArray(homeData.trails) && homeData.trails.length > 0 ? (
                                 homeData.trails.map((trail: TrailsData, index: number) => (
-                                    <View key={trail.id || index} style={styles.trailPill}>
+                                    <TouchableOpacity
+                                        key={trail.id || index}
+                                        style={styles.trailPill}
+                                        activeOpacity={0.8}
+                                        onPress={() => router.push("/trails" as Href<string>)}
+                                    >
                                         <AppText style={styles.trailName}>{trail.trail_name || ""}</AppText>
-                                        <AppText style={styles.trailDistance}>{trail.distance ? `${trail.distance}` : "N/A"}</AppText>
-                                    </View>
+                                        <AppText style={styles.trailDistance}>{trail.distance ? `  |  ${trail.distance}` : ""}</AppText>
+                                    </TouchableOpacity>
                                 ))
                             ) : (
-                                <AppText style={{ color: "#FFFFFF", fontSize: 13 }}>No trails available</AppText>
+                                <AppText style={{ color: colors.onSurfaceVariant, fontSize: 13, marginLeft: 16 }}>No trails available</AppText>
                             )}
                         </ScrollView>
                     </View>
@@ -345,7 +403,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     header: {
-        height: 64,
+        height: 144,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -407,9 +465,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     menuCard: {
-        width: 120,
-        height: 90,
-        borderRadius: 8,
+        width: 160.75,
+        height: 110.05,
+        borderTopLeftRadius: 12.37,
+        borderTopRightRadius: 12.37,
         borderWidth: 1,
         borderColor: colors.outlineVariant,
         overflow: "hidden",
@@ -437,47 +496,68 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     welcomeTitle: {
-        fontSize: 18,
-        fontWeight: "bold",
-        textAlign: "center",
+        fontSize: width < 380 ? 20 : 22,
+        fontWeight: '400',
+        textAlign: "left",
         color: colors.onSurface,
         marginVertical: 14,
-        lineHeight: 22,
+        lineHeight: width < 380 ? 20 : 22,
         paddingHorizontal: 16,
     },
 
-    welcomeBanner: {
-        height: 160,
+    welcomeBannerContainer: {
         marginHorizontal: 16,
-        borderRadius: 12,
+        marginBottom: 20,
+        borderRadius: 10,
+        overflow: 'hidden',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
         borderWidth: 1,
         borderColor: colors.outlineVariant,
-        width: "auto",
     },
 
-    welcomeDescription: {
-        fontSize: 13,
-        color: colors.onSurface,
-        textAlign: "center",
-        lineHeight: 18,
-        marginHorizontal: 20,
-        marginTop: 12,
+    welcomeBannerCard: {
+        width: '100%',
+        height: 250,
     },
 
-    readMoreButton: {
-        alignSelf: "center",
-        backgroundColor: "#E0E0E0",
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginTop: 12,
-        marginBottom: 20,
+    welcomeBannerOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.2)', // Subtle overlay
+        padding: 16,
+        justifyContent: 'space-between',
     },
 
-    readMoreButtonText: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: colors.onSurface,
+    aboutKecaBadge: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#000000', // Black badge matching reference
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 14,
+    },
+
+    aboutKecaText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: 'bold',
+    },
+
+    welcomeIntroContainer: {
+        maxWidth: '85%',
+    },
+
+    welcomeIntroText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        lineHeight: 22,
+        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+        textDecorationLine: 'underline', // Match design lines under parts
     },
 
     sectionHeader: {
@@ -498,14 +578,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     subSectionTitle: {
-        fontSize: 15,
-        fontWeight: "700",
+        fontSize: width < 380 ? 18 : 20,
+        fontWeight: '600',
         color: colors.onSurface,
     },
 
     mapCardContainer: {
         marginHorizontal: 16,
-        borderRadius: 12,
+        borderRadius: 10.69,
         borderWidth: 1,
         borderColor: colors.outlineVariant,
         overflow: "hidden",
@@ -513,7 +593,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     mapCard: {
-        height: 160,
+        height: 250,
         width: "100%",
     },
 
@@ -521,21 +601,19 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         position: "absolute",
         bottom: 12,
         right: 12,
-        backgroundColor: colors.surface,
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: colors.outlineVariant,
-        shadowColor: colors.onSurface,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        backgroundColor: "#0F0F0F", // Black pill matching reference
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
     },
 
     viewMapButtonText: {
-        color: colors.onSurface,
+        color: "#FFFFFF", // White text
         fontSize: 12,
         fontWeight: "bold",
     },
@@ -547,47 +625,106 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     programCard: {
-        width: 170,
-        height: 145,
+        width: 286,
+        height: 250,
         borderRadius: 10,
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
         overflow: "hidden",
-        backgroundColor: colors.surface,
+        backgroundColor: "#000000",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: colors.outlineVariant,
+        flexDirection: 'column',
     },
 
-    programCardImage: {
-        height: 90,
+    programCardImageContainer: {
+        width: '100%',
+        flex: 1,
+        position: 'relative',
     },
 
-    programCardContent: {
-        paddingHorizontal: 8,
-        paddingVertical: 6,
-        position: "relative",
+    programCardBottomSection: {
+        width: '100%',
+        height: 80,
+        backgroundColor: '#000000',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
     },
 
-    programCardName: {
-        fontSize: 13,
-        fontWeight: "700",
-        color: colors.onSurface,
+    programCardTextCol: {
+        flex: 1,
+        paddingRight: 12,
     },
 
-    programCardDate: {
+    cardBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: '#000000',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderBottomLeftRadius: 10,
+        alignItems: 'center',
+        zIndex: 5,
+    },
+
+    cardBadgeMonth: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
+        textAlign: 'center',
+    },
+
+    cardBadgeDay: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        marginTop: 1,
+        textAlign: 'center',
+    },
+
+    cardTextContainerFull: {
+        position: 'absolute',
+        bottom: 16,
+        left: 16,
+        right: 85, // Leave room for the View button
+        zIndex: 5,
+    },
+
+    cardLocation: {
         fontSize: 11,
-        color: "#888888",
+        color: 'rgba(255, 255, 255, 0.8)',
         marginTop: 2,
     },
 
-    arrowCircle: {
-        position: "absolute",
-        right: 8,
-        top: 12,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: "#E0E0E0",
-        justifyContent: "center",
-        alignItems: "center",
+    cardViewButton: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+
+    cardViewButtonText: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#000000',
+    },
+
+    programCardName: {
+        fontSize: width < 380 ? 14 : 16,
+        fontWeight: '700',
+        color: "#FFFFFF",
     },
 
     featuredEventHeaderRow: {
@@ -606,8 +743,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     featuredSectionTitle: {
-        fontSize: 15,
-        fontWeight: "700",
+        fontSize: width < 380 ? 18 : 20,
+        fontWeight: '600',
         color: colors.onSurface,
     },
 
@@ -618,110 +755,86 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     featuredCard: {
-        flexDirection: "row",
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
-        marginHorizontal: 16,
-        padding: 10,
-        alignItems: "center",
-        marginBottom: 20,
-    },
-
-    featuredCardLeft: {
-        position: "relative",
-    },
-
-    featuredCardImage: {
-        width: 100,
-        height: 90,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#E0E0E0",
-    },
-
-    featuredArrowCircle: {
-        position: "absolute",
-        right: 6,
-        bottom: 6,
-        width: 20,
-        height: 20,
+        height: 269.33,
         borderRadius: 10,
-        backgroundColor: "#E0E0E0",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-    featuredCardRight: {
-        flex: 1,
-        marginLeft: 12,
+        overflow: "hidden",
+        backgroundColor: '#000000',
+        marginHorizontal: 16,
+        marginBottom: 24,
+        flexDirection: 'column',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: colors.outlineVariant,
     },
 
     featuredEventName: {
-        fontSize: 14,
-        fontWeight: "700",
-        color: colors.onSurface,
+        fontSize: width < 380 ? 14 : 16,
+        fontWeight: '700',
+        color: "#FFFFFF",
     },
 
-    featuredEventDate: {
-        fontSize: 11,
-        color: "#888888",
-        marginVertical: 2,
+    sectionIconImg: {
+        width: 16,
+        height: 16,
+        tintColor: '#FFFFFF',
     },
 
-    featuredEventDesc: {
-        fontSize: 11,
-        color: colors.onSurfaceVariant,
-        lineHeight: 14,
+    sectionIconImgLg: {
+        width: 16,
+        height: 16,
     },
 
-    trailsContainer: {
-        backgroundColor: colors.outline,
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
+    trailsSectionContainer: {
+        marginTop: 16,
+        marginBottom: 12,
     },
 
-    trailsHeaderRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 10,
-        gap: 6,
-    },
-
-    trailsTitle: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: colors.surface,
+    sectionIconCircle: {
+        width: 30,
+        height: 30,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 2,
     },
 
     trailsHorizontalList: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
         gap: 8,
-        paddingRight: 16,
     },
 
     trailPill: {
         flexDirection: "row",
-        backgroundColor: colors.surface,
-        borderRadius: 16,
+        backgroundColor: '#0F0F0F',
+        borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 6,
         alignItems: "center",
+        justifyContent: 'center',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
     },
 
     trailName: {
-        fontSize: 12,
-        fontWeight: "700",
-        color: colors.onSurface,
+        fontSize: 14,
+        fontWeight: '400',
+        fontFamily: 'Lexend_500Medium',
+        color: "#FFFFFF",
     },
 
     trailDistance: {
-        fontSize: 11,
-        color: colors.onSurfaceVariant,
-        marginLeft: 6,
-        fontWeight: "500",
+        fontSize: 14,
+        color: "#AAAAAA",
+        fontWeight: '400',
+        fontFamily: 'Lexend_500Medium',
     },
 
     // Modal styles
@@ -748,26 +861,31 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     closeButton: {
         position: "absolute",
-        top: 14,
-        right: 14,
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: colors.onSurface,
+        top: 16,
+        right: 16,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         justifyContent: "center",
         alignItems: "center",
         zIndex: 10,
     },
 
+    modalTextContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingTop: 16,
+    },
+
     modalTitle: {
         fontSize: 22,
         fontWeight: "bold",
-        color: colors.onSurface,
+        textAlign: "center",
     },
 
     modalBody: {
         fontSize: 14,
-        color: colors.onSurfaceVariant,
         textAlign: "center",
         marginTop: 12,
         paddingHorizontal: 20,
@@ -789,7 +907,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     modalTitleDynamic: {
         fontSize: 22,
         fontWeight: "bold",
-        color: colors.surface,
+        color: "#FFFFFF",
         textAlign: "center",
         textShadowColor: "rgba(0, 0, 0, 0.5)",
         textShadowOffset: { width: 0, height: 1 },
@@ -798,7 +916,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     modalBodyDynamic: {
         fontSize: 14,
-        color: colors.surfaceContainerHigh,
+        color: "#FFFFFF",
         textAlign: "center",
         marginTop: 12,
         lineHeight: 18,
@@ -807,10 +925,27 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         textShadowRadius: 3,
     },
 
+    modalCtaButton: {
+        width: "100%",
+        height: 48,
+        borderRadius: 24,
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+
+    modalCtaText: {
+        fontSize: 15,
+        fontWeight: "bold",
+    },
+
     modalLoadingContainer: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: colors.surfaceContainerHigh,
     },
 });

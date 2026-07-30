@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CachedImage from "@/src/components/CachedImage";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, TipsData } from "@/src/contexts/AppContentContext";
 
 const { width } = Dimensions.get("window");
 
@@ -33,7 +33,7 @@ export default function TipsScreen() {
 
     const tips = tipsData || [];
 
-    const renderTipItem = ({ item }: { item: Record<string, unknown> }) => {
+    const renderTipItem = ({ item }: { item: TipsData }) => {
         const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : item.tip_icon__image?.url;
 
         return (

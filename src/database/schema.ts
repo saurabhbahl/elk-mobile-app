@@ -61,7 +61,7 @@ export function inspectDatabaseSchema() {
                 const columns = db.getAllSync(`PRAGMA table_info("${table.name}");`) as SQLiteTable[];
 
                 console.log("Columns:");
-                columns.forEach((col: SQLiteColumn | unknown) => {
+                columns.forEach((col: any) => {
                     console.log(
                         `  - ${col.name} (${col.type || "BLOB"}) ${col.pk ? "🔑 [PRIMARY KEY]" : ""
                         } ${col.notnull ? "⚠️ [NOT NULL]" : ""}`
@@ -72,7 +72,7 @@ export function inspectDatabaseSchema() {
             }
         });
     } catch (err) {
-        console.log("❌ Failed to inspect database schema:", err.message);
+        console.log("❌ Failed to inspect database schema:", (err as Error).message);
     }
     console.log("=========================================\n");
 }

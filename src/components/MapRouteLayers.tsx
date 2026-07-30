@@ -12,8 +12,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 interface MapRouteLayersProps {
-  GeoJSONSource: unknown;
-  Layer: unknown;
+  GeoJSONSource: any;
+  Layer: any;
   mainRouteFeature: GeoJSON.FeatureCollection;
   orangeRouteFeature: GeoJSON.FeatureCollection;
   activeRouteData: GeoJSON.FeatureCollection | null;
@@ -29,7 +29,7 @@ function sliceRoute(
   full: GeoJSON.FeatureCollection,
   count: number
 ): GeoJSON.FeatureCollection {
-  const feature = (full as Href<string>).features?.[0];
+  const feature = (full as any).features?.[0];
   if (!feature) return full;
   const coords: [number, number][] = feature.geometry.coordinates;
   if (coords.length < 2) return { type: 'FeatureCollection', features: [] };
@@ -83,7 +83,7 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
     prevVersionRef.current = routeVersion;
 
     const totalCoords: number =
-      (activeRouteData as Href<string>).features?.[0]?.geometry?.coordinates?.length ?? 0;
+      (activeRouteData as any).features?.[0]?.geometry?.coordinates?.length ?? 0;
 
     if (totalCoords < 2) {
       setAnimatedRoute(null);
@@ -161,7 +161,7 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
       )}
 
       {/* ── Active navigation route (animated snake) ── */}
-      {animatedRoute && (animatedRoute as Href<string>).features?.[0]?.geometry?.coordinates?.length >= 2 && (
+      {animatedRoute && (animatedRoute as any).features?.[0]?.geometry?.coordinates?.length >= 2 && (
         <GeoJSONSource id="active-route-source" data={animatedRoute}>
           <Layer
             id="active-route-casing"

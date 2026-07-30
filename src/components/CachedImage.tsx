@@ -99,8 +99,9 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
       }
 
       // Also handle case where the uri prop itself is the http URL
-      if (uri && uri.startsWith('http') && mountedRef.current) {
-        setResolvedUri(uri);
+      const uriStr = typeof uri === 'object' ? (uri as any)?.url : uri;
+      if (typeof uriStr === 'string' && uriStr.startsWith('http') && mountedRef.current) {
+        setResolvedUri(uriStr);
         setHasError(false);
         return;
       }

@@ -16,7 +16,7 @@ import RenderHTML from 'react-native-render-html';
 import CachedImage from "@/src/components/CachedImage";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContent, RentalsData } from "@/src/contexts/AppContentContext";
 import { openExternalLink } from "@/src/utils/openLink";
 
 const { width } = Dimensions.get("window");
@@ -42,7 +42,7 @@ export default function RentalsScreen() {
         }
     };
 
-    const renderRentalItem = ({ item }: { item: Record<string, unknown> }) => {
+    const renderRentalItem = ({ item }: { item: RentalsData }) => {
         // Find main image from additional_images (acf gallery) if available
         let imageUrl = null;
         if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {

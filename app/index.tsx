@@ -1,6 +1,6 @@
 import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
-import { Image } from "expo-image";
+import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator, Dimensions, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -20,58 +20,73 @@ export default function LandingScreen() {
     const bgColor = brandData?.brand_color_primary;
     const secColor = brandData?.brand_color__secondary;
 
+    const bgImageUri = brandData?.splash_loading_screen_background
+        ? (typeof brandData.splash_loading_screen_background === 'string'
+            ? brandData.splash_loading_screen_background
+            : (brandData.splash_loading_screen_background as any)?.url ?? null)
+        : null;
+
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const Inner = (
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.content}>
+                {apiStatus !== 'fetching' && (
+                    <>
+                        {brandData?.logo_primary?.url ? (
+                            <Image
+                                source={{ uri: brandData.logo_primary.url }}
+                                style={styles.logo}
+                                contentFit="contain"
+                            />
+                        ) : null}
+
+                        {brandData?.logo_secondary?.url ? (
+                            <Image
+                                source={{ uri: brandData.logo_secondary.url }}
+                                style={styles.explorer}
+                                contentFit="contain"
+                            />
+                        ) : null}
+
+                        {apiStatus === 'loading' ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
+                                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                                <AppText style={{ fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}>Loading...</AppText>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
+                                onPress={() => router.push("/(home)" as Href<string>)}
+                            >
+                                <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
+                                    {brandData?.app_tagline}
+                                </AppText>
+                            </TouchableOpacity>
+                        )}
+                    </>
+                )}
+            </View>
+        </SafeAreaView>
+    );
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.surfaceContainerHigh} />
-
-            {/* Background Wireframe Crossed Lines */}
-            <View style={styles.diagonalLineContainer} pointerEvents="none">
-                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `${angle}deg` }] }, secColor ? { backgroundColor: secColor } : {}]} />
-                <View style={[styles.line, { width: diagonal, transform: [{ rotate: `-${angle}deg` }] }, secColor ? { backgroundColor: secColor } : {}]} />
-            </View>
-
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.content}>
-                    {apiStatus !== 'fetching' && (
-                        <>
-                            {brandData?.logo_primary?.url ? (
-                                <Image
-                                    source={{ uri: brandData.logo_primary.url }}
-                                    style={styles.logo}
-                                    contentFit="contain"
-                                />
-                            ) : null}
-
-                            {brandData?.logo_secondary?.url ? (
-                                <Image
-                                    source={{ uri: brandData.logo_secondary.url }}
-                                    style={styles.explorer}
-                                    contentFit="contain"
-                                />
-                            ) : null}
-
-                            {apiStatus === 'loading' ? (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
-                                    <ActivityIndicator size="small" color="#000000" style={{ marginRight: 8 }} />
-                                    <AppText style={{ fontSize: 16, fontWeight: 'bold', color: colors.onSurface }}>Loading...</AppText>
-                                </View>
-                            ) : (
-                                <TouchableOpacity
-                                    activeOpacity={0.8}
-                                    style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
-                                    onPress={() => router.push("/(home)" as Href<string>)}
-                                >
-                                    <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
-                                        {brandData?.app_tagline}
-                                    </AppText>
-                                </TouchableOpacity>
-                            )}
-                        </>
-                    )}
+            <StatusBar barStyle="light-content" />
+            {bgImageUri ? (
+                <ImageBackground
+                    source={{ uri: bgImageUri }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                >
+                    <View style={styles.darkOverlay}>{Inner}</View>
+                </ImageBackground>
+            ) : (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: bgColor || '#2E3B2F' }]}>
+                    <View style={styles.darkOverlay}>{Inner}</View>
                 </View>
-            </SafeAreaView>
+            )}
         </View>
     );
 }
@@ -79,7 +94,12 @@ export default function LandingScreen() {
 const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.surfaceContainerHigh, // Light grey wireframe background
+        backgroundColor: colors.surfaceContainerHigh,
+    },
+
+    darkOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
     },
 
     diagonalLineContainer: {

@@ -3,17 +3,26 @@ import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } fro
 import AppText from './AppText';
 import { useAppContent } from '@/src/contexts/AppContentContext';
 import { StatusBar } from 'expo-status-bar';
+import { Image, ImageBackground } from 'expo-image';
+import { useTheme } from '@/src/context/ThemeContext';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const getValidColor = (color: string | undefined) => {
+    if (!color) return undefined;
+    return color.startsWith('#') ? color : `#${color}`;
+};
 
 export default function SyncProgressScreen() {
     const { 
+        brandData,
         isSyncing, 
         syncProgress, 
         syncStatusText, 
         syncError, 
         performInitialSync 
     } = useAppContent();
+    const { colors, isDark } = useTheme();
 
     useEffect(() => {
         // Automatically start sync on mount
@@ -21,40 +30,90 @@ export default function SyncProgressScreen() {
     }, []);
 
     const progressPercent = Math.round(syncProgress * 100);
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const bgImageUri = brandData?.splash_loading_screen_background 
+        ? (typeof brandData.splash_loading_screen_background === 'string'
+            ? brandData.splash_loading_screen_background
+            : brandData.splash_loading_screen_background.url)
+        : null;
+
+    const Content = (
+        <View style={styles.overlay}>
+            <View style={styles.brandingContainer}>
+                {brandData?.logo_primary?.url ? (
+                    <Image
+                        source={{ uri: brandData.logo_primary.url }}
+                        style={styles.logo}
+                        contentFit="contain"
+                    />
+                ) : null}
+
+                {brandData?.logo_secondary?.url ? (
+                    <Image
+                        source={{ uri: brandData.logo_secondary.url }}
+                        style={styles.explorer}
+                        contentFit="contain"
+                    />
+                ) : null}
+            </View>
+
+            <View style={styles.cardContainer}>
+                {syncError ? (
+                    <View style={styles.errorBox}>
+                        <AppText style={styles.errorText}>{syncError}</AppText>
+                        <TouchableOpacity 
+                            style={[styles.retryButton, primaryColor ? { backgroundColor: primaryColor } : {}]} 
+                            onPress={performInitialSync}
+                            activeOpacity={0.8}
+                        >
+                            <AppText style={[styles.retryButtonText, secondaryColor ? { color: secondaryColor } : {}]}>Retry Setup</AppText>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={styles.progressCard}>
+                        <View style={styles.loadingRow}>
+                            <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 10 }} />
+                            <AppText style={styles.statusText}>{syncStatusText || "Setting up offline database..."}</AppText>
+                        </View>
+                        
+                        <View style={styles.progressBarBg}>
+                            <View 
+                                style={[
+                                    styles.progressBarFill, 
+                                    { width: `${progressPercent}%` },
+                                    primaryColor ? { backgroundColor: primaryColor } : {}
+                                ]} 
+                            />
+                        </View>
+                        
+                        <View style={styles.progressFooter}>
+                            <AppText style={styles.progressPercent}>{progressPercent}%</AppText>
+                            <AppText style={styles.downloadText}>Offline Mode Setup</AppText>
+                        </View>
+                    </View>
+                )}
+            </View>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
-            <StatusBar style="dark" />
-            <View style={styles.content}>
-                <AppText style={styles.title}>Welcome to Elk Country</AppText>
-                <AppText style={styles.subtitle}>
-                    We are downloading maps, viewing areas, and offline guides so the app works even in "dead zones" without cell service.
-                </AppText>
-
-                <View style={styles.progressContainer}>
-                    {syncError ? (
-                        <View style={styles.errorBox}>
-                            <AppText style={styles.errorText}>{syncError}</AppText>
-                            <TouchableOpacity 
-                                style={styles.retryButton} 
-                                onPress={performInitialSync}
-                                activeOpacity={0.8}
-                            >
-                                <AppText style={styles.retryButtonText}>Retry Setup</AppText>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <>
-                            <View style={styles.progressBarBg}>
-                                <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-                            </View>
-                            <AppText style={styles.progressText}>{progressPercent}%</AppText>
-                            <AppText style={styles.statusText}>{syncStatusText || "Setting up offline database..."}</AppText>
-                            <ActivityIndicator size="small" color="#4f5f4b" style={{ marginTop: 24 }} />
-                        </>
-                    )}
+            <StatusBar style="light" />
+            {bgImageUri ? (
+                <ImageBackground 
+                    source={{ uri: bgImageUri }} 
+                    style={StyleSheet.absoluteFill} 
+                    contentFit="cover"
+                >
+                    {Content}
+                </ImageBackground>
+            ) : (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: primaryColor || '#2E3B2F' }]}>
+                    {Content}
                 </View>
-            </View>
+            )}
         </View>
     );
 }
@@ -62,78 +121,112 @@ export default function SyncProgressScreen() {
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#F8F9FA',
-        justifyContent: 'center',
-        alignItems: 'center',
         zIndex: 9999, // Ensure it sits on top of everything
     },
-    content: {
-        width: width * 0.85,
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)', // Premium dark overlay for readability
+        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 50,
+        paddingHorizontal: 24,
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#2E3B2F',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#666666',
-        textAlign: 'center',
-        lineHeight: 20,
-        marginBottom: 40,
-    },
-    progressContainer: {
+    brandingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
         width: '100%',
+        marginTop: 40,
+    },
+    logo: {
+        width: width * 0.55,
+        height: height * 0.16,
+        marginBottom: 10,
+    },
+    explorer: {
+        width: width * 0.65,
+        height: height * 0.08,
+    },
+    cardContainer: {
+        width: '100%',
+        marginBottom: 30,
+    },
+    progressCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.15)', // Premium translucent glassmorphism
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.25)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 6,
+        backdropFilter: 'blur(20px)', // For web if running on web
+    },
+    loadingRow: {
+        flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 14,
+    },
+    statusText: {
+        fontSize: 14,
+        color: '#FFFFFF',
+        fontWeight: '500',
+        flex: 1,
     },
     progressBarBg: {
         width: '100%',
-        height: 8,
-        backgroundColor: '#E0E0E0',
-        borderRadius: 4,
+        height: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 3,
         overflow: 'hidden',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     progressBarFill: {
         height: '100%',
-        backgroundColor: '#4f5f4b', // Forest Green brand default
-        borderRadius: 4,
+        backgroundColor: '#FFFFFF', // Default accent, will be overridden by brand color
+        borderRadius: 3,
     },
-    progressText: {
-        fontSize: 18,
+    progressFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    progressPercent: {
+        fontSize: 14,
         fontWeight: 'bold',
-        color: '#4f5f4b',
-        marginBottom: 8,
+        color: '#FFFFFF',
     },
-    statusText: {
-        fontSize: 13,
-        color: '#888888',
-        fontStyle: 'italic',
-        textAlign: 'center',
+    downloadText: {
+        fontSize: 12,
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontWeight: '500',
     },
     errorBox: {
-        width: '100%',
+        backgroundColor: 'rgba(211, 47, 47, 0.9)',
+        borderRadius: 16,
+        padding: 24,
         alignItems: 'center',
-        backgroundColor: '#FFEBEE',
-        padding: 20,
-        borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#FFCDD2',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
     },
     errorText: {
         fontSize: 14,
-        color: '#C62828',
+        color: '#FFFFFF',
         textAlign: 'center',
-        marginBottom: 16,
+        marginBottom: 18,
         lineHeight: 20,
+        fontWeight: '500',
     },
     retryButton: {
-        backgroundColor: '#C62828',
-        paddingHorizontal: 24,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 28,
         paddingVertical: 12,
         borderRadius: 24,
         shadowColor: '#000',
@@ -143,7 +236,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     retryButtonText: {
-        color: '#FFFFFF',
+        color: '#D32F2F',
         fontWeight: 'bold',
         fontSize: 14,
     },

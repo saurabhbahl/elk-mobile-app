@@ -1,58 +1,68 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { Href, router } from "expo-router";
+import React from "react";
+import { Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
+
+const { width } = Dimensions.get('window');
+const scale = width / 600;
+const r = (size: number) => Math.min(size * scale, size * 1.5);
+
+const getValidColor = (color: string | undefined) => {
+    if (!color) return undefined;
+    return color.startsWith('#') ? color : `#${color}`;
+};
 
 export default function Navbar() {
     const { colors, fonts, isDark } = useTheme();
+    const { brandData } = useAppContent();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#FFFFFF";
+
     return (
-        <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.push("/(home)" as Href<string>)} activeOpacity={0.8}>
-                <Image
-                    source={require("@/assets/images/logo.png")}
-                    style={styles.headerLogo}
-                    contentFit="contain"
-                />
-            </TouchableOpacity>
-            <Image
-                source={require("@/assets/images/Explorer.png")}
-                style={styles.headerExplorer}
-                contentFit="contain"
-            />
+        <View style={[
+            styles.header,
+            primaryColor ? { backgroundColor: primaryColor } : {},
+            { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
+        ]}>
+            <View style={styles.leftActions}>
+                <TouchableOpacity onPress={() => router.push("/(home)" as Href<string>)} activeOpacity={0.8}>
+                    {brandData?.logo_primary?.url ? (
+                        <Image
+                            source={{ uri: brandData.logo_primary.url }}
+                            style={styles.headerLogo}
+                            contentFit="contain"
+                        />
+                    ) : null}
+                </TouchableOpacity>
+
+                {brandData?.logo_secondary?.url ? (
+                    <Image
+                        source={{ uri: brandData.logo_secondary.url }}
+                        style={styles.headerExplorer}
+                        contentFit="contain"
+                    />
+                ) : null}
+            </View>
 
             <View style={styles.rightActions}>
                 {/* SETTINGS Button */}
-                <TouchableOpacity 
-                    style={styles.tipsContainer} 
+                <TouchableOpacity
+                    style={styles.tipsContainer}
                     activeOpacity={0.7}
-                    onPress={() => router.push("/map/settings" as Href<string>)}
+                    onPress={() => router.push("/map/settings" as any)}
                 >
-                    <View style={styles.tipsCircle}>
-                        <MaterialCommunityIcons name="cog" size={20} color={colors.onSurface} />
+                    <View style={[styles.tipsCircle, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
+                        <MaterialCommunityIcons name="cog" size={18} color={secondaryColor} />
                     </View>
-                    <View style={styles.tipsBadge}>
-                        <AppText style={styles.tipsBadgeText}>SETTINGS</AppText>
-                    </View>
-                </TouchableOpacity>
-
-                {/* TIPS Badge */}
-                <TouchableOpacity 
-                    style={styles.tipsContainer} 
-                    activeOpacity={0.7}
-                    onPress={() => router.push("/tips" as Href<string>)}
-                >
-                    <View style={styles.tipsCircle}>
-                        <MaterialCommunityIcons name="paw" size={20} color={colors.onSurface} />
-                    </View>
-                    <View style={styles.tipsBadge}>
-                        <AppText style={styles.tipsBadgeText}>TIPS →</AppText>
+                    <View style={[styles.tipsBadge, { backgroundColor: secondaryColor }]}>
+                        <AppText style={[styles.tipsBadgeText, { color: primaryColor || '#8B1E1E' }]}>SETTINGS</AppText>
                     </View>
                 </TouchableOpacity>
             </View>
@@ -62,24 +72,31 @@ export default function Navbar() {
 
 const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     header: {
-        height: 64,
+        height: r(144),
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 16,
+        paddingHorizontal: r(16),
         borderBottomWidth: 1,
-        borderBottomColor: colors.outlineVariant,
-        backgroundColor: colors.surface,
+        backgroundColor: "#8B1E1E", // Fallback to premium red
     },
 
     headerLogo: {
-        height: 46,
-        width: 70,
+        height: r(140),
+        width: r(140),
     },
 
     headerExplorer: {
-        height: 30,
-        width: 80,
+        height: r(180),
+        width: r(180),
+        marginTop: r(30),
+    },
+
+    leftActions: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginLeft: r(8),
     },
 
     rightActions: {
@@ -94,28 +111,24 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     tipsCircle: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: colors.surfaceContainerHigh,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: colors.outline,
     },
 
     tipsBadge: {
-        backgroundColor: isDark ? colors.surfaceContainerHigh : "#000000",
         paddingHorizontal: 5,
-        paddingVertical: 2,
-        borderRadius: 8,
-        marginTop: -6,
+        paddingVertical: 1.5,
+        borderRadius: 6,
+        marginTop: -5,
         zIndex: 5,
     },
 
     tipsBadgeText: {
-        color: isDark ? colors.onSurface : "#FFFFFF",
         fontSize: 7,
-        fontWeight: "bold",
+        fontWeight: "900",
     },
 });

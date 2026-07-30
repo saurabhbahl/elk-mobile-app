@@ -144,6 +144,8 @@ export default function RootLayout() {
   );
 }
 
+import BottomNavbar from "@/src/components/BottomNavbar";
+
 function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string | null | undefined, isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
   const { brandData, apiStatus, refreshData } = useAppContent();
@@ -189,15 +191,16 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
       {shouldShowHeader && (
-        <SafeAreaView style={{ backgroundColor: colors.surface }} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={{ backgroundColor: isDark ? colors.surface : primaryColor }} edges={['top', 'left', 'right']}>
           <Navbar />
-          <View style={{ backgroundColor: isDark ? colors.surface : primaryColor }}>
+          <View style={{ backgroundColor: colors.background }}>
             <QuickLinks />
           </View>
         </SafeAreaView>
       )}
       <OfflinePopup />
-      <Stack>
+      <View style={{ flex: 1 }}>
+        <Stack>
         <Stack.Screen
           name="index"
           options={{ headerShown: false, animation: 'none' }}
@@ -276,7 +279,11 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
           name="tips/index"
           options={{ headerShown: false, animation: 'none' }}
         />
-      </Stack>
+        </Stack>
+      </View>
+      {shouldShowHeader && (
+        <BottomNavbar />
+      )}
     </View>
   );
 }

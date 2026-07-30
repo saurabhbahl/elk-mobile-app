@@ -23,6 +23,9 @@ export class ApiService {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       });
 
@@ -48,6 +51,6 @@ export class ApiService {
    * Specialized sync fetch
    */
   static async fetchSyncData(): Promise<Record<string, unknown>> {
-    return this.get<Record<string, unknown>>('data', { sync: 'full' });
+    return this.get<Record<string, unknown>>('data', { sync: 'full', t: String(Date.now()) });
   }
 }

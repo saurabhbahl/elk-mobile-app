@@ -40,7 +40,7 @@ export default function VisitorsCenterScreen() {
 
     const images: string[] = [];
     if (visitorsData?.image_gallery && Array.isArray(visitorsData.image_gallery)) {
-        visitorsData.image_gallery.forEach((img: Record<string, unknown>) => {
+        visitorsData.image_gallery.forEach((img: any) => {
             if (img?.url) images.push(img.url);
         });
     }
@@ -142,7 +142,7 @@ export default function VisitorsCenterScreen() {
                         <TouchableOpacity
                             style={styles.ctaCard}
                             activeOpacity={0.9}
-                            onPress={() => handleOpenLink(visitorsData?.cta_1_link)}
+                            onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
                         >
                             <View style={styles.ctaImagePlaceholder}>
                                 <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
@@ -161,7 +161,7 @@ export default function VisitorsCenterScreen() {
                         <TouchableOpacity
                             style={styles.ctaCard}
                             activeOpacity={0.9}
-                            onPress={() => handleOpenLink(visitorsData?.cta_2_link)}
+                            onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
                         >
                             <View style={styles.ctaImagePlaceholder}>
                                 <Ionicons name="call-outline" size={30} color={bgColor} />
