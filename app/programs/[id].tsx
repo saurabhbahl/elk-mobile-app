@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
-    Dimensions,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -15,9 +14,8 @@ import RenderHTML from 'react-native-render-html';
 import CachedImage from "@/src/components/CachedImage";
 import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-
-const { width } = Dimensions.get("window");
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -80,28 +78,34 @@ export default function ProgramDetailScreen() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
-                        {program.program_name || ""}
-                    </AppText>
-                </View>
+                {isValidData(program.program_name) ? (
+                    <View style={styles.headerRow}>
+                        <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
+                        <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
+                            {program.program_name}
+                        </AppText>
+                    </View>
+                ) : null}
 
                 {/* Banner Image */}
-                <View style={styles.bannerContainer}>
-                    <CachedImage
-                        uri={program.thumbnail_image?.url as string}
-                        style={styles.bannerImage}
-                        contentFit="cover"
-                    />
-                </View>
+                {isValidData(program.thumbnail_image) ? (
+                    <View style={styles.bannerContainer}>
+                        <CachedImage
+                            uri={program.thumbnail_image?.url as string}
+                            style={styles.bannerImage}
+                            contentFit="cover"
+                        />
+                    </View>
+                ) : null}
 
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
-                    <AppText style={styles.scheduleText}>
-                        {program.schedule__dates || ""}
-                    </AppText>
+                    {isValidData(program.schedule__dates) ? (
+                        <AppText style={styles.scheduleText}>
+                            {program.schedule__dates}
+                        </AppText>
+                    ) : null}
 
                     {/* Description Paragraph */}
                     {rawDescription ? (

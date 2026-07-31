@@ -2,7 +2,6 @@ import AppText from "@/src/components/AppText";
 import React from "react";
 import {
     ActivityIndicator,
-    Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
@@ -12,11 +11,10 @@ import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent, TipsData } from "@/src/contexts/AppContentContext";
-
-const { width } = Dimensions.get("window");
+import { TipsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -36,28 +34,36 @@ export default function TipsScreen() {
     const renderTipItem = ({ item }: { item: TipsData }) => {
         const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
 
+        if (!isValidData(item.tip_title) && !isValidData(item.tip_body)) return null;
+
         return (
             <View style={styles.tipCard}>
                 <View style={styles.tipContent}>
-                    <View style={styles.titleRow}>
-                        <View style={styles.titleLeft}>
-                            {imageUrl ? (
-                                <CachedImage
-                                    uri={imageUrl}
-                                    style={styles.tipIcon}
-                                    contentFit="contain"
-                                />
-                            ) : null}
-                            <AppText style={styles.tipTitle}>{item.tip_title || ""}</AppText>
-                        </View>
-                        {item.category__tag ? (
-                            <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
-                                <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>{item.category__tag}</AppText>
+                    {(isValidData(item.tip_title) || isValidData(item.category__tag)) ? (
+                        <View style={styles.titleRow}>
+                            <View style={styles.titleLeft}>
+                                {isValidData(imageUrl) ? (
+                                    <CachedImage
+                                        uri={imageUrl}
+                                        style={styles.tipIcon}
+                                        contentFit="contain"
+                                    />
+                                ) : null}
+                                {isValidData(item.tip_title) ? (
+                                    <AppText style={styles.tipTitle}>{item.tip_title}</AppText>
+                                ) : null}
                             </View>
-                        ) : null}
-                    </View>
+                            {isValidData(item.category__tag) ? (
+                                <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
+                                    <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
+                                        {item.category__tag}
+                                    </AppText>
+                                </View>
+                            ) : null}
+                        </View>
+                    ) : null}
 
-                    {item.tip_body ? (
+                    {isValidData(item.tip_body) ? (
                         <RenderHTML
                             contentWidth={width - 64}
                             source={{ html: item.tip_body as string }}
@@ -78,32 +84,36 @@ export default function TipsScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-
-
-
-            {tipsScreenSettingsData?.screen_title ? (
+            {isValidData(tipsScreenSettingsData?.screen_title) ? (
                 <View style={styles.headerRow}>
-                    {(typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : (tipsScreenSettingsData.header_icon as any)?.url) ? (
-                        <CachedImage
-                            uri={typeof tipsScreenSettingsData.header_icon === 'string' ? tipsScreenSettingsData.header_icon : (tipsScreenSettingsData.header_icon as any)?.url}
-                            style={styles.headerIcon}
-                            contentFit="contain"
-                        />
-                    ) : null}
+                    {(() => {
+                        if (!tipsScreenSettingsData) return null;
+                        const iconUrl = typeof tipsScreenSettingsData.header_icon === 'string'
+                            ? tipsScreenSettingsData.header_icon
+                            : (tipsScreenSettingsData.header_icon as any)?.url;
+                        if (!isValidData(iconUrl)) return null;
+                        return (
+                            <CachedImage
+                                uri={iconUrl}
+                                style={styles.headerIcon}
+                                contentFit="contain"
+                            />
+                        );
+                    })()}
                     <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {tipsScreenSettingsData.screen_title}
+                        {tipsScreenSettingsData?.screen_title}
                     </AppText>
                 </View>
             ) : null}
 
-            {tipsScreenSettingsData?.intro_paragraph ? (
+            {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
                     <RenderHTML
                         contentWidth={width - 32}
-                        source={{ html: tipsScreenSettingsData.intro_paragraph }}
+                        source={{ html: tipsScreenSettingsData?.intro_paragraph || "" }}
                         baseStyle={{
                             fontSize: 14,
-                            color: "#333",
+                            color: isDark ? "#E5E5E5" : "#333",
                             lineHeight: 20,
                             textAlign: "center"
                         }}

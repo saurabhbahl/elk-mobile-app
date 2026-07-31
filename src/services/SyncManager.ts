@@ -227,6 +227,9 @@ export class SyncManager {
           }
         }
 
+        // Cleanup expired events dynamically from database to keep SQLite clean
+        SyncManager.cleanupExpiredEvents();
+
         appRepository.upsertMetadata('is_sync_complete', 'true');
         appRepository.upsertMetadata('last_full_sync', syncTime);
       });
@@ -237,5 +240,74 @@ export class SyncManager {
       console.error('Fetch and store error:', e);
       throw e;
     }
+  }
+
+  static cleanupExpiredEvents() {
+    try {
+      const settings = appRepository.getAllSettings();
+      const eventSettings = settings.event_settings as any;
+      if (!eventSettings) return;
+      
+      const visibility = eventSettings.past_events_visibility;
+      if (visibility?.toLowerCase() !== 'hide') return;
+
+      // 1. Purge from events table
+      const records = appRepository.getAllRecords();
+      if (records.events) {
+        records.events.forEach((ev: any) => {
+          if (SyncManager.isEventExpired(ev, visibility)) {
+            appRepository.deleteRecord(String(ev.id), 'events');
+          }
+        });
+      }
+
+      // 2. We do NOT purge from home_screen setting permanently in SQLite, 
+      // because we would lose the featured_event ID. Instead, we dynamically 
+      // cross-reference it in AppContentContext.tsx on load!
+    } catch (e) {
+      console.warn("Error cleaning up expired events from DB:", e);
+    }
+  }
+
+  static isEventExpired(event: any, pastEventsVisibility: string | undefined | null): boolean {
+    if (!event) return true;
+    if (pastEventsVisibility?.toLowerCase() !== 'hide') return false;
+    
+    const dateStr = event['end_date_&_time'] || event['start_date_&_time'];
+    if (!dateStr || typeof dateStr !== 'string') return false;
+
+    try {
+        let cleanStr = dateStr.replace(' at ', ' ').trim();
+        const match = cleanStr.match(/(\d{2})\/(\d{2})\/(\d{4})(.*)/);
+        if (match) {
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // 0-indexed month
+            const year = parseInt(match[3], 10);
+            const timePart = match[4].trim();
+            
+            let hours = 0;
+            let mins = 0;
+            const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+            if (timeMatch) {
+                let h = parseInt(timeMatch[1], 10);
+                mins = parseInt(timeMatch[2], 10);
+                const isPM = timeMatch[3].toLowerCase() === 'pm';
+                
+                if (isPM && h < 12) h += 12;
+                if (!isPM && h === 12) h = 0;
+                hours = h;
+            }
+            
+            const eventTime = new Date(year, month, day, hours, mins, 0).getTime();
+            
+            if (!isNaN(eventTime)) {
+                return eventTime < Date.now();
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to parse event date for expiration check", e);
+    }
+    
+    return false;
   }
 }

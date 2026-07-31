@@ -1,14 +1,13 @@
 import AppText from "@/src/components/AppText";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
-const { width } = Dimensions.get('window');
 const scale = width / 600;
 const r = (size: number) => Math.min(size * scale, size * 1.5);
 

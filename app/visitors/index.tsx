@@ -3,7 +3,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
 import { ActivityIndicator,
-    Dimensions,
     FlatList,
     Linking,
     ScrollView,
@@ -15,12 +14,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
 
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useAppContent } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 
 import { openExternalLink } from "@/src/utils/openLink";
 
-const { width } = Dimensions.get("window");
 const CAROUSEL_WIDTH = width - 32;
 
 const getValidColor = (color: string | undefined) => {
@@ -80,7 +79,7 @@ export default function VisitorsCenterScreen() {
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Header Row */}
-                    {visitorsData?.screen_title ? (
+                    {isValidData(visitorsData?.screen_title) ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
                             <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
@@ -90,99 +89,107 @@ export default function VisitorsCenterScreen() {
                     ) : null}
 
                     {/* Image Gallery Slider */}
-                    <View style={styles.carouselContainer}>
-                        {images.length > 0 ? (
-                            <>
-                                <FlatList
-                                    ref={flatListRef}
-                                    data={images}
-                                    keyExtractor={(item, index) => index.toString()}
-                                    horizontal
-                                    pagingEnabled
-                                    showsHorizontalScrollIndicator={false}
-                                    onMomentumScrollEnd={(e) => {
-                                        const nextIndex = Math.round(
-                                            e.nativeEvent.contentOffset.x / CAROUSEL_WIDTH
-                                        );
-                                        setActiveIndex(nextIndex);
-                                    }}
-                                    renderItem={({ item }) => (
-                                        <Image
-                                            source={{ uri: item }}
-                                            style={styles.carouselImage}
-                                            contentFit="cover"
-                                        />
-                                    )}
-                                />
-                                {images.length > 1 && (
-                                    <>
-                                        <TouchableOpacity
-                                            style={[styles.arrowButton, { left: 10 }]}
-                                            onPress={handlePrevSlide}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Ionicons name="arrow-back" size={16} color="#333333" />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[styles.arrowButton, { right: 10 }]}
-                                            onPress={handleNextSlide}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Ionicons name="arrow-forward" size={16} color="#333333" />
-                                        </TouchableOpacity>
-                                    </>
+                    {isValidData(images) ? (
+                        <View style={styles.carouselContainer}>
+                            <FlatList
+                                ref={flatListRef}
+                                data={images}
+                                keyExtractor={(item, index) => index.toString()}
+                                horizontal
+                                pagingEnabled
+                                showsHorizontalScrollIndicator={false}
+                                onMomentumScrollEnd={(e) => {
+                                    const nextIndex = Math.round(
+                                        e.nativeEvent.contentOffset.x / CAROUSEL_WIDTH
+                                    );
+                                    setActiveIndex(nextIndex);
+                                }}
+                                renderItem={({ item }) => (
+                                    <Image
+                                        source={{ uri: item }}
+                                        style={styles.carouselImage}
+                                        contentFit="cover"
+                                    />
                                 )}
-                            </>
-                        ) : null}
-                    </View>
+                            />
+                            {images.length > 1 && (
+                                <>
+                                    <TouchableOpacity
+                                        style={[styles.arrowButton, { left: 10 }]}
+                                        onPress={handlePrevSlide}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="arrow-back" size={16} color="#333333" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.arrowButton, { right: 10 }]}
+                                        onPress={handleNextSlide}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Ionicons name="arrow-forward" size={16} color="#333333" />
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </View>
+                    ) : null}
 
                     {/* Call to Actions (CTA) Cards */}
-                    <View style={styles.ctaContainer}>
-                        {/* CTA 1: Get Directions / Address */}
-                        <TouchableOpacity
-                            style={styles.ctaCard}
-                            activeOpacity={0.9}
-                            onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
-                        >
-                            <View style={styles.ctaImagePlaceholder}>
-                                <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
-                            </View>
-                            <View style={styles.ctaContent}>
-                                <AppText style={styles.ctaTitle} numberOfLines={1}>
-                                    {visitorsData?.cta_1_label}
-                                </AppText>
-                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                    {visitorsData?.address}
-                                </AppText>
-                            </View>
-                        </TouchableOpacity>
+                    {(isValidData(visitorsData?.cta_1_label) || isValidData(visitorsData?.cta_2_label)) ? (
+                        <View style={styles.ctaContainer}>
+                            {/* CTA 1: Get Directions / Address */}
+                            {isValidData(visitorsData?.cta_1_label) ? (
+                                <TouchableOpacity
+                                    style={styles.ctaCard}
+                                    activeOpacity={0.9}
+                                    onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
+                                >
+                                    <View style={styles.ctaImagePlaceholder}>
+                                        <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
+                                    </View>
+                                    <View style={styles.ctaContent}>
+                                        <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                            {visitorsData?.cta_1_label}
+                                        </AppText>
+                                        {isValidData(visitorsData?.address) ? (
+                                            <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                {visitorsData?.address}
+                                            </AppText>
+                                        ) : null}
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
 
-                        {/* CTA 2: Call Us / Contact */}
-                        <TouchableOpacity
-                            style={styles.ctaCard}
-                            activeOpacity={0.9}
-                            onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
-                        >
-                            <View style={styles.ctaImagePlaceholder}>
-                                <Ionicons name="call-outline" size={30} color={bgColor} />
-                            </View>
-                            <View style={styles.ctaContent}>
-                                <AppText style={styles.ctaTitle} numberOfLines={1}>
-                                    {visitorsData?.cta_2_label}
-                                </AppText>
-                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                    {visitorsData?.phone_number}
-                                </AppText>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
+                            {/* CTA 2: Call Us / Contact */}
+                            {isValidData(visitorsData?.cta_2_label) ? (
+                                <TouchableOpacity
+                                    style={styles.ctaCard}
+                                    activeOpacity={0.9}
+                                    onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
+                                >
+                                    <View style={styles.ctaImagePlaceholder}>
+                                        <Ionicons name="call-outline" size={30} color={bgColor} />
+                                    </View>
+                                    <View style={styles.ctaContent}>
+                                        <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                            {visitorsData?.cta_2_label}
+                                        </AppText>
+                                        {isValidData(visitorsData?.phone_number) ? (
+                                            <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                {visitorsData?.phone_number}
+                                            </AppText>
+                                        ) : null}
+                                    </View>
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
+                    ) : null}
 
                     {/* Body Copy Section */}
-                    {visitorsData?.body_copy ? (
+                    {isValidData(visitorsData?.body_copy) ? (
                         <View style={{ marginHorizontal: 16, marginTop: 24 }}>
                             <RenderHTML
                                 contentWidth={width - 32}
-                                source={{ html: visitorsData.body_copy }}
+                                source={{ html: visitorsData?.body_copy || "" }}
                                 baseStyle={{
                                     fontSize: 13,
                                     color: colors.onSurface,

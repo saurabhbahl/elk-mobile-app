@@ -19,7 +19,8 @@ import CachedImage from "@/src/components/CachedImage";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { useAppContent, CamerasData } from "@/src/contexts/AppContentContext";
+import { CamerasData, useAppContent } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 const getValidColor = (color: string | undefined) => {
@@ -40,7 +41,7 @@ function NativeVideoPlayer({ source }: { source: string }) {
     }, [player]);
 
     return (
-        <VideoView style={{ flex: 1, width: "100%", height: "100%" }} player={player} allowsFullscreen allowsPictureInPicture />
+        <VideoView style={{ flex: 1, width: "100%", height: "100%" }} player={player} allowsPictureInPicture />
     );
 }
 
@@ -177,11 +178,11 @@ export default function LiveCameraScreen() {
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Header Row */}
-                    {liveCamSettingsData?.screen_title ? (
+                    {isValidData(liveCamSettingsData?.screen_title) ? (
                         <View style={styles.headerRow}>
                             <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
                             <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
-                                {liveCamSettingsData.screen_title}
+                                {liveCamSettingsData?.screen_title}
                             </AppText>
                         </View>
                     ) : null}
@@ -222,7 +223,19 @@ export default function LiveCameraScreen() {
                     {/* Active Camera Video Preview Box */}
                     <View style={styles.playerContainer}>
                         {activeCamera ? (
-                            isPlaying ? (
+                            isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
+                                <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
+                                    <CachedImage
+                                        uri={activeCamera.thumbnail__poster?.url as string}
+                                        style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
+                                        contentFit="cover"
+                                    />
+                                    <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
+                                    <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
+                                        {liveCamSettingsData?.offline_message}
+                                    </AppText>
+                                </View>
+                            ) : isPlaying ? (
                                 renderPlayer()
                             ) : (
                                 <TouchableOpacity
@@ -251,26 +264,23 @@ export default function LiveCameraScreen() {
                     </View>
 
                     {/* Stream Notes and Quality details */}
-                    <View style={styles.detailsContainer}>
-                        {activeCamera?.description ? (
-                            <AppText style={styles.cameraDescription}>
-                                {activeCamera.description.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                            </AppText>
-                        ) : null}
+                    {(isValidData(activeCamera?.description) ||
+                        (isConnected === false && isValidData(liveCamSettingsData?.offline_message)) ||
+                        isValidData(liveCamSettingsData?.quality_note)) ? (
+                        <View style={styles.detailsContainer}>
+                            {isValidData(activeCamera?.description) ? (
+                                <AppText style={styles.cameraDescription}>
+                                    {(activeCamera.description || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                </AppText>
+                            ) : null}
 
-                        {/* General/Global Live Camera Instructions */}
-                        {isConnected === false && liveCamSettingsData?.offline_message ? (
-                            <AppText style={styles.infoText}>
-                                {liveCamSettingsData.offline_message}
-                            </AppText>
-                        ) : null}
-
-                        {liveCamSettingsData?.quality_note ? (
-                            <AppText style={styles.noteText}>
-                                {liveCamSettingsData.quality_note.replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                            </AppText>
-                        ) : null}
-                    </View>
+                            {isValidData(liveCamSettingsData?.quality_note) ? (
+                                <AppText style={styles.noteText}>
+                                    {(liveCamSettingsData?.quality_note || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                </AppText>
+                            ) : null}
+                        </View>
+                    ) : null}
                 </ScrollView>
             )}
         </SafeAreaView>

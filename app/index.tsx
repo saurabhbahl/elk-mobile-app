@@ -3,16 +3,15 @@ import AppText from "@/src/components/AppText";
 import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator, Dimensions, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const { width, height } = Dimensions.get("window");
-const diagonal = Math.sqrt(width * width + height * height);
-const angle = Math.atan2(height, width) * (180 / Math.PI);
 
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width, height } from "@/src/constants/theme";
+
+const diagonal = Math.sqrt(width * width + height * height);
+const angle = Math.atan2(height, width) * (180 / Math.PI);
 
 export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();

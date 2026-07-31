@@ -3,11 +3,11 @@ import { useAppContent } from '@/src/contexts/AppContentContext';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
 import React from 'react';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from './AppText';
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/src/constants/theme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isSmallDevice = SCREEN_HEIGHT < 700;
 const isMediumDevice = SCREEN_HEIGHT >= 700 && SCREEN_HEIGHT < 850;
 const NAV_HEIGHT = isSmallDevice ? 56 : isMediumDevice ? 64 : 70;

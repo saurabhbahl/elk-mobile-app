@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
-    Dimensions,
     Linking,
     ScrollView,
     StatusBar,
@@ -17,10 +16,9 @@ import RenderHTML from 'react-native-render-html';
 import CachedImage from "@/src/components/CachedImage";
 import { useAppContent, EventsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { openExternalLink } from "@/src/utils/openLink";
-
-const { width } = Dimensions.get("window");
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -81,55 +79,58 @@ export default function EventDetailScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
-            
-
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
-                        {event.event_name || ""}
-                    </AppText>
-                </View>
+                {isValidData(event.event_name) ? (
+                    <View style={styles.headerRow}>
+                        <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
+                        <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
+                            {event.event_name}
+                        </AppText>
+                    </View>
+                ) : null}
 
                 {/* Banner Image */}
-                <View style={styles.bannerContainer}>
-                    <CachedImage
-                        uri={event.thumbnail_image?.url as string}
-                        style={styles.bannerImage}
-                        contentFit="cover"
-                    />
-                </View>
+                {isValidData(event.thumbnail_image) ? (
+                    <View style={styles.bannerContainer}>
+                        <CachedImage
+                            uri={event.thumbnail_image?.url as string}
+                            style={styles.bannerImage}
+                            contentFit="cover"
+                        />
+                    </View>
+                ) : null}
 
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
                     {/* Date & Time */}
-                    <View style={styles.infoRow}>
-                        <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
-                        <AppText style={styles.scheduleText}>
-                            {event["start_date_&_time"] || ""}
-                            {event["end_date_&_time"] ? ` - ${event["end_date_&_time"]}` : ""}
-                        </AppText>
-                    </View>
+                    {isValidData(event["start_date_&_time"]) ? (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
+                            <AppText style={styles.scheduleText}>
+                                {event["start_date_&_time"]}
+                                {isValidData(event["end_date_&_time"]) ? ` - ${event["end_date_&_time"]}` : ""}
+                            </AppText>
+                        </View>
+                    ) : null}
 
                     {/* Location */}
-                    {(event.location_name || event.location_address) && (
+                    {(isValidData(event.location_name) || isValidData(event.location_address)) ? (
                         <View style={styles.infoRow}>
                             <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
                             <View>
-                                {event.location_name && (
+                                {isValidData(event.location_name) ? (
                                     <AppText style={styles.locationNameText}>{event.location_name}</AppText>
-                                )}
-                                {event.location_address && (
+                                ) : null}
+                                {isValidData(event.location_address) ? (
                                     <AppText style={styles.locationAddressText}>{event.location_address}</AppText>
-                                )}
+                                ) : null}
                             </View>
                         </View>
-                    )}
+                    ) : null}
 
                     {/* Description Paragraph */}
-                    {rawDescription ? (
+                    {isValidData(rawDescription) ? (
                         <RenderHTML
                             contentWidth={width - 32} // paddingHorizontal is 16 on each side
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
@@ -147,7 +148,7 @@ export default function EventDetailScreen() {
                     ) : null}
 
                     {/* Register Button */}
-                    {event.registration__ticket_link && (
+                    {isValidData(event.registration__ticket_link) ? (
                         <TouchableOpacity
                             style={[styles.registerButton, { backgroundColor: primaryColor }]}
                             onPress={handleRegister}
@@ -157,7 +158,7 @@ export default function EventDetailScreen() {
                                 Register / Buy Tickets
                             </AppText>
                         </TouchableOpacity>
-                    )}
+                    ) : null}
                 </View>
             </ScrollView>
         </SafeAreaView>

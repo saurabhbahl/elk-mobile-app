@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextProps, StyleSheet } from 'react-native';
+import { StyleSheet, Text, TextProps } from 'react-native';
 
 export default function AppText(props: TextProps) {
   return (
@@ -12,6 +12,6 @@ export default function AppText(props: TextProps) {
 const styles = StyleSheet.create({
   defaultText: {
     fontFamily: 'Lexend_500Medium',
-    textTransform: 'capitalize',
+    textTransform: 'capitalize'
   },
 });

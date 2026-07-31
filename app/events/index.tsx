@@ -1,23 +1,22 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { Href, router } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
-    Dimensions,
+import {
+    ActivityIndicator,
     FlatList,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View } from "react-native";
+    View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
-import { useAppContent, EventsData } from "@/src/contexts/AppContentContext";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { EventsData, useAppContent } from "@/src/contexts/AppContentContext";
 
-const { width } = Dimensions.get("window");
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
 const getValidColor = (color: string | undefined) => {
@@ -60,8 +59,8 @@ export default function EventsScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
-            
+
+
 
             {eventSettingsData?.screen_title ? (
                 <View style={styles.headerRow}>

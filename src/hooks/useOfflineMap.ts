@@ -29,6 +29,8 @@ export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
 const isExpoGo = Constants.appOwnership === 'expo';
 const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
 
+let dismissedSession = false;
+
 /** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
 async function isValidMbtiles(uri: string): Promise<boolean> {
   try {
@@ -105,8 +107,18 @@ export const useOfflineMap = () => {
 
   const loadConsent = useCallback(async () => {
     try {
+      if (dismissedSession) {
+        setConsentStatus('dismissed');
+        return;
+      }
       const stored = await AsyncStorage.getItem(CONSENT_KEY);
-      setConsentStatus(stored);
+      if (stored === 'dismissed') {
+        // Clear legacy persistent 'dismissed' status so it transitions to session-only
+        await AsyncStorage.removeItem(CONSENT_KEY);
+        setConsentStatus(null);
+      } else {
+        setConsentStatus(stored);
+      }
     } catch (e) {
       console.log('Error loading consent', e);
     }
@@ -114,10 +126,15 @@ export const useOfflineMap = () => {
 
   const saveConsent = async (status: 'yes' | 'no' | 'dismissed', persist: boolean = true) => {
     try {
-      if (persist) {
-        await AsyncStorage.setItem(CONSENT_KEY, status);
+      if (status === 'dismissed') {
+        dismissedSession = true;
+        setConsentStatus('dismissed');
+      } else {
+        if (persist) {
+          await AsyncStorage.setItem(CONSENT_KEY, status);
+        }
+        setConsentStatus(status);
       }
-      setConsentStatus(status);
     } catch (e) {
       console.log('Error saving consent', e);
     }
@@ -306,6 +323,7 @@ export const useOfflineMap = () => {
       setHasMap(false);
       setDownloadedMapFiles([]);
       setDownloadProgress(0);
+      dismissedSession = false;
       setConsentStatus(null);
       await AsyncStorage.removeItem(CONSENT_KEY);
       console.log('Maps and consent deleted successfully');

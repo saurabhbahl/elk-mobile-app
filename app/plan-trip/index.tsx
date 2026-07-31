@@ -1,22 +1,20 @@
 import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
-import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
-    Dimensions,
-    FlatList,
+import {
+    ActivityIndicator,
     ScrollView,
     StatusBar,
     StyleSheet,
-    View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import RenderHTML from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useAppContent } from "@/src/contexts/AppContentContext";
-
-const { width } = Dimensions.get("window");
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -33,7 +31,7 @@ export default function PlanTripScreen() {
 
     const title = planTripData?.screen_title;
     const intro = planTripData?.intro_paragraph;
-    
+
     // Check if hero_image is an ACF image array/object or just a string URL
     let heroImageUrl = null;
     if (planTripData?.hero_image) {
@@ -62,10 +60,10 @@ export default function PlanTripScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
-            
 
-            {title ? (
+
+
+            {isValidData(title) ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
@@ -80,21 +78,21 @@ export default function PlanTripScreen() {
                 </View>
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    {heroImageUrl ? (
+                    {isValidData(heroImageUrl) ? (
                         <View style={styles.imageContainer}>
-                            <Image 
-                                source={{ uri: heroImageUrl }} 
-                                style={styles.bannerImage} 
-                                contentFit="cover" 
+                            <Image
+                                source={{ uri: heroImageUrl }}
+                                style={styles.bannerImage}
+                                contentFit="cover"
                             />
                         </View>
                     ) : null}
 
-                    {intro ? (
+                    {isValidData(intro) ? (
                         <View style={styles.introContainer}>
                             <RenderHTML
                                 contentWidth={width - 32}
-                                source={{ html: intro }}
+                                source={{ html: intro || "" }}
                                 baseStyle={{
                                     fontSize: 14,
                                     color: colors.onSurface,
@@ -106,18 +104,23 @@ export default function PlanTripScreen() {
                         </View>
                     ) : null}
 
-                    {activeSections.length > 0 ? (
+                    {isValidData(activeSections) ? (
                         activeSections.map((sec: any, index: number) => {
+                            if (!isValidData(sec.section_heading) && !isValidData(sec.section_body)) return null;
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <View key={index} style={styles.sectionCard}>
-                                    <View style={styles.sectionHeader}>
-                                        {iconUrl ? (
-                                            <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
-                                        ) : null}
-                                        <AppText style={styles.sectionHeading}>{(sec.section_heading as string) || ""}</AppText>
-                                    </View>
-                                    {sec.section_body ? (
+                                    {(isValidData(sec.section_heading) || isValidData(iconUrl)) ? (
+                                        <View style={styles.sectionHeader}>
+                                            {isValidData(iconUrl) ? (
+                                                <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
+                                            ) : null}
+                                            {isValidData(sec.section_heading) ? (
+                                                <AppText style={styles.sectionHeading}>{sec.section_heading}</AppText>
+                                            ) : null}
+                                        </View>
+                                    ) : null}
+                                    {isValidData(sec.section_body) ? (
                                         <RenderHTML
                                             contentWidth={width - 32 - 32} // padding inside section card
                                             source={{ html: sec.section_body as string }}

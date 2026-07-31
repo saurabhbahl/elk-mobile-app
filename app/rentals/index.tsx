@@ -1,25 +1,23 @@
 import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
-import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
-    Dimensions,
+import {
+    ActivityIndicator,
     FlatList,
-    Linking,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import RenderHTML from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent, RentalsData } from "@/src/contexts/AppContentContext";
+import { RentalsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { openExternalLink } from "@/src/utils/openLink";
-
-const { width } = Dimensions.get("window");
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -36,7 +34,7 @@ export default function RentalsScreen() {
 
     const rentals = rentalsData || [];
 
-    const handlePressLink = (url: string) => {
+    const handlePressLink = (url: string | undefined) => {
         if (url) {
             openExternalLink(url);
         }
@@ -51,33 +49,40 @@ export default function RentalsScreen() {
 
         return (
             <View style={styles.rentalCard}>
-                <CachedImage
-                    uri={imageUrl}
-                    style={styles.rentalImage}
-                    contentFit="cover"
-                />
+                {isValidData(imageUrl) ? (
+                    <CachedImage
+                        uri={imageUrl}
+                        style={styles.rentalImage}
+                        contentFit="cover"
+                    />
+                ) : null}
+
                 <View style={styles.rentalContent}>
                     <View style={styles.titleRow}>
-                        <AppText style={styles.rentalName}>{item.rental_name || ""}</AppText>
-                        {item.rental_type ? (
+                        {isValidData(item.rental_name) ? (
+                            <AppText style={styles.rentalName}>{item.rental_name}</AppText>
+                        ) : null}
+                        {isValidData(item.rental_type) ? (
                             <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
-                                <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>{item.rental_type}</AppText>
+                                <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
+                                    {item.rental_type}
+                                </AppText>
                             </View>
                         ) : null}
                     </View>
 
-                    {item.capacity ? (
+                    {isValidData(item.capacity) ? (
                         <AppText style={styles.capacityText}>Capacity: {item.capacity}</AppText>
                     ) : null}
 
-                    {item.short_description ? (
+                    {isValidData(item.short_description) ? (
                         <AppText style={styles.shortDesc}>{item.short_description}</AppText>
                     ) : null}
 
-                    {item.full_description ? (
+                    {isValidData(item.full_description) ? (
                         <RenderHTML
                             contentWidth={width - 32 - 32} // main padding 16*2 + inner padding 16*2
-                            source={{ html: item.full_description }}
+                            source={{ html: item.full_description || "" }}
                             baseStyle={{
                                 fontSize: 13,
                                 color: colors.onSurfaceVariant,
@@ -88,43 +93,45 @@ export default function RentalsScreen() {
                         />
                     ) : null}
 
-                    {item.availability_notes ? (
+                    {isValidData(item.availability_notes) ? (
                         <AppText style={styles.notesText}>
                             <AppText style={{ fontWeight: "700" }}>Availability: </AppText>
                             {item.availability_notes}
                         </AppText>
                     ) : null}
 
-                    {item.pricing_notes ? (
+                    {isValidData(item.pricing_notes) ? (
                         <AppText style={styles.notesText}>
                             <AppText style={{ fontWeight: "700" }}>Pricing: </AppText>
                             {item.pricing_notes}
                         </AppText>
                     ) : null}
 
-                    <View style={styles.ctaRow}>
-                        {item.cta_1_label_ && item.cta_1_link ? (
-                            <TouchableOpacity
-                                style={[styles.ctaButton, primaryColor ? { backgroundColor: primaryColor } : null]}
-                                onPress={() => handlePressLink(item.cta_1_link as string)}
-                            >
-                                <AppText style={[styles.ctaButtonText, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : null]}>
-                                    {item.cta_1_label_}
-                                </AppText>
-                            </TouchableOpacity>
-                        ) : null}
+                    {(isValidData(item.cta_1_label_) || isValidData(item.cta_2_label)) ? (
+                        <View style={styles.ctaRow}>
+                            {(isValidData(item.cta_1_label_) && isValidData(item.cta_1_link)) ? (
+                                <TouchableOpacity
+                                    style={[styles.ctaButton, primaryColor ? { backgroundColor: primaryColor } : null]}
+                                    onPress={() => handlePressLink(item.cta_1_link)}
+                                >
+                                    <AppText style={[styles.ctaButtonText, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : null]}>
+                                        {item.cta_1_label_}
+                                    </AppText>
+                                </TouchableOpacity>
+                            ) : null}
 
-                        {item.cta_2_label && item.cta_2_link ? (
-                            <TouchableOpacity
-                                style={[styles.ctaButtonOutline, primaryColor ? { borderColor: primaryColor } : null]}
-                                onPress={() => handlePressLink(item.cta_2_link as string)}
-                            >
-                                <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
-                                    {item.cta_2_label}
-                                </AppText>
-                            </TouchableOpacity>
-                        ) : null}
-                    </View>
+                            {(isValidData(item.cta_2_label) && isValidData(item.cta_2_link)) ? (
+                                <TouchableOpacity
+                                    style={[styles.ctaButtonOutline, primaryColor ? { borderColor: primaryColor } : null]}
+                                    onPress={() => handlePressLink(item.cta_2_link)}
+                                >
+                                    <AppText style={[styles.ctaButtonOutlineText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
+                                        {item.cta_2_label}
+                                    </AppText>
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
+                    ) : null}
                 </View>
             </View>
         );
@@ -134,26 +141,23 @@ export default function RentalsScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
-            
-
-            {rentalSettingsData?.screen_title ? (
+            {isValidData(rentalSettingsData?.screen_title) ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/rentals.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {rentalSettingsData.screen_title}
+                        {rentalSettingsData?.screen_title}
                     </AppText>
                 </View>
             ) : null}
 
-            {rentalSettingsData?.intro_text ? (
+            {isValidData(rentalSettingsData?.intro_text) ? (
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
                     <RenderHTML
                         contentWidth={width - 32}
-                        source={{ html: rentalSettingsData.intro_text }}
+                        source={{ html: rentalSettingsData?.intro_text || "" }}
                         baseStyle={{
                             fontSize: 14,
-                            color: "#333",
+                            color: isDark ? "#E5E5E5" : "#333",
                             lineHeight: 20,
                             textAlign: "center"
                         }}

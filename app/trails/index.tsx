@@ -1,21 +1,20 @@
 import AppText from "@/src/components/AppText";
 import { Image } from "expo-image";
-import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
-    Dimensions,
+import {
+    ActivityIndicator,
     FlatList,
     StatusBar,
     StyleSheet,
-    View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import RenderHTML from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
-import { useAppContent, TrailsData } from "@/src/contexts/AppContentContext";
-
-const { width } = Dimensions.get("window");
+import { TrailsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -32,43 +31,51 @@ export default function TrailsScreen() {
 
     const trails = trailsData || [];
 
-    const renderTrailItem = ({ item, index }: { item: TrailsData; index: number }) => (
-        <View style={styles.trailItemContainer}>
-            <View style={styles.trailHeaderRow}>
-                <AppText style={styles.trailName}>{item.trail_name || ""}</AppText>
-                {item.distance ? (
-                    <AppText style={styles.trailDistance}>{item.distance}</AppText>
+    const renderTrailItem = ({ item, index }: { item: TrailsData; index: number }) => {
+        if (!isValidData(item.trail_name) && !isValidData(item.description)) return null;
+
+        return (
+            <View style={styles.trailItemContainer}>
+                {(isValidData(item.trail_name) || isValidData(item.distance)) ? (
+                    <View style={styles.trailHeaderRow}>
+                        {isValidData(item.trail_name) ? (
+                            <AppText style={styles.trailName}>{item.trail_name}</AppText>
+                        ) : null}
+                        {isValidData(item.distance) ? (
+                            <AppText style={styles.trailDistance}>{item.distance}</AppText>
+                        ) : null}
+                    </View>
                 ) : null}
+                {isValidData(item.description) ? (
+                    <RenderHTML
+                        contentWidth={width - 32}
+                        source={{ html: item.description || "" }}
+                        baseStyle={{
+                            fontSize: 13,
+                            color: "#555555",
+                            lineHeight: 18,
+                        }}
+                        tagsStyles={{ p: { marginVertical: 4 } }}
+                    />
+                ) :
+                    <AppText style={styles.trailDescription}>No description available.</AppText>
+                }
             </View>
-            {item.description ? (
-                <RenderHTML
-                    contentWidth={width - 32}
-                    source={{ html: item.description }}
-                    baseStyle={{
-                        fontSize: 13,
-                        color: "#555555",
-                        lineHeight: 18,
-                    }}
-                    tagsStyles={{ p: { marginVertical: 4 } }}
-                />
-            ) : (
-                <AppText style={styles.trailDescription}>No description available.</AppText>
-            )}
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
-            
 
-            {trailSettingsData?.screen_title ? (
+
+
+            {isValidData(trailSettingsData?.screen_title) ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {trailSettingsData.screen_title}
+                        {trailSettingsData?.screen_title}
                     </AppText>
                 </View>
             ) : null}

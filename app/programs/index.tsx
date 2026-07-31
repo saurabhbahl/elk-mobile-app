@@ -4,7 +4,6 @@ import CachedImage from "@/src/components/CachedImage";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
-    Dimensions,
     FlatList,
     StatusBar,
     StyleSheet,
@@ -14,10 +13,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { Image } from "expo-image";
+import { isValidData } from "@/src/utils/validation";
 
-const { width } = Dimensions.get("window");
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
 const getValidColor = (color: string | undefined) => {
@@ -50,12 +49,16 @@ export default function ProgramsScreen() {
                 contentFit="cover"
             />
             <View style={isGrid ? styles.programCardContent : styles.programListCardContent}>
-                <AppText style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
-                    {item.program_name || ""}
-                </AppText>
-                <AppText style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
-                    {item.schedule__dates || ""}
-                </AppText>
+                {isValidData(item.program_name) ? (
+                    <AppText style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
+                        {item.program_name}
+                    </AppText>
+                ) : null}
+                {isValidData(item.schedule__dates) ? (
+                    <AppText style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
+                        {item.schedule__dates}
+                    </AppText>
+                ) : null}
             </View>
         </TouchableOpacity>
     );
@@ -67,11 +70,11 @@ export default function ProgramsScreen() {
             
             
 
-            {programsSettingData?.screen_title ? (
+            {isValidData(programsSettingData?.screen_title) ? (
                 <View style={styles.headerRow}>
                     <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
                     <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {programsSettingData.screen_title}
+                        {programsSettingData?.screen_title}
                     </AppText>
                 </View>
             ) : null}

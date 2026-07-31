@@ -6,15 +6,15 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "../../src/context/ThemeContext";
 import { useAppContent } from "../../src/contexts/AppContentContext";
 import { normalizeHex } from "../../src/utils/colorUtils";
-
-const { width: windowWidth } = Dimensions.get("window");
+import { isValidData } from "../../src/utils/validation";
+import { width as windowWidth } from "../../src/constants/theme";
 
 export default function WaypointDetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -61,21 +61,23 @@ export default function WaypointDetailsScreen() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Title */}
-                <View style={styles.titleContainer}>
-                    <Image
-                        source={require("../../assets/images/pin.png")}
-                        style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                        contentFit="contain"
-                    />
-                    <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '') }]}>
-                        {waypoint.title}
-                    </AppText>
-                </View>
+                {isValidData(waypoint.title) ? (
+                    <View style={styles.titleContainer}>
+                        <Image
+                            source={require("../../assets/images/pin.png")}
+                            style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                            contentFit="contain"
+                        />
+                        <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '') }]}>
+                            {waypoint.title}
+                        </AppText>
+                    </View>
+                ) : null}
 
                 {/* Featured Image / Gallery */}
-                {waypoint.image_gallery && Array.isArray(waypoint.image_gallery) && waypoint.image_gallery.length > 0 ? (
+                {isValidData(waypoint.image_gallery) ? (
                     <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageSliderContainer}>
-                        {waypoint.image_gallery.map((img: Record<string, unknown>, idx: number) => (
+                        {(waypoint.image_gallery as any[]).map((img: Record<string, unknown>, idx: number) => (
                             <CachedImage
                                 key={idx}
                                 uri={typeof img === 'string' ? img : (img as any).url || (img as any).sizes?.large}
@@ -84,7 +86,7 @@ export default function WaypointDetailsScreen() {
                             />
                         ))}
                     </ScrollView>
-                ) : waypoint.featured_image ? (
+                ) : isValidData(waypoint.featured_image) ? (
                     <View style={styles.imageSliderContainer}>
                         <CachedImage
                             uri={typeof waypoint.featured_image === 'string' ? waypoint.featured_image : (waypoint.featured_image as any).url || (waypoint.featured_image as any).sizes?.large}
@@ -96,13 +98,13 @@ export default function WaypointDetailsScreen() {
 
                 {/* Location Address & Get Directions Section */}
                 <View style={styles.locationSection}>
-                    {waypoint.address ? (
+                    {isValidData(waypoint.address) ? (
                         <View style={styles.addressContainer}>
                             <AppText style={[styles.addressText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : '#000' }]}>
                                 {waypoint.address}
                             </AppText>
                         </View>
-                    ) : <View style={styles.addressContainer} />}
+                    ) : null}
                     <TouchableOpacity style={[styles.getDirectionsButton, brandPrimary ? { backgroundColor: brandPrimary } : {}]} onPress={handleGetDirections} activeOpacity={0.8}>
                         <AppText style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }, brandSecondary ? { color: brandSecondary } : {}]}>
                             Get Directions
@@ -111,35 +113,37 @@ export default function WaypointDetailsScreen() {
                 </View>
 
                 {/* Badges Section */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
-                    {waypoint.handicap_accessible ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-                            <Image
-                                source={require("../../assets/images/wheelchair.png")}
-                                style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                contentFit="contain"
-                            />
-                            <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                Handicap Accessible
-                            </AppText>
-                        </View>
-                    ) : null}
-                    {waypoint.open_year_round ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Image
-                                source={require("../../assets/images/calendar-check.png")}
-                                style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                contentFit="contain"
-                            />
-                            <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                Open Year Round
-                            </AppText>
-                        </View>
-                    ) : null}
-                </View>
+                {(waypoint.handicap_accessible || waypoint.open_year_round) ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
+                        {waypoint.handicap_accessible ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                                <Image
+                                    source={require("../../assets/images/wheelchair.png")}
+                                    style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                    contentFit="contain"
+                                />
+                                <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                    Handicap Accessible
+                                </AppText>
+                            </View>
+                        ) : null}
+                        {waypoint.open_year_round ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Image
+                                    source={require("../../assets/images/calendar-check.png")}
+                                    style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                    contentFit="contain"
+                                />
+                                <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                    Open Year Round
+                                </AppText>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : null}
 
                 {/* Description Paragraph */}
-                {(waypoint.full_description || waypoint.description) ? (
+                {isValidData(waypoint.full_description || waypoint.description) ? (
                     <RenderHTML
                         contentWidth={windowWidth - 40}
                         source={{ html: waypoint.full_description || waypoint.description }}
@@ -155,13 +159,13 @@ export default function WaypointDetailsScreen() {
                 ) : null}
 
                 {/* Seasonal Notes */}
-                {waypoint.seasonal_notes ? (
+                {isValidData(waypoint.seasonal_notes) ? (
                     <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                         <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
                         <View style={{ flex: 1 }}>
                             <RenderHTML
                                 contentWidth={windowWidth - 40 - 24 - 28} // padding 20*2 + container padding 12*2 + icon 28
-                                source={{ html: waypoint.seasonal_notes }}
+                                source={{ html: waypoint.seasonal_notes || "" }}
                                 baseStyle={{
                                     fontFamily: fonts.bodyMedium,
                                     fontSize: 12,
@@ -175,17 +179,27 @@ export default function WaypointDetailsScreen() {
                 ) : null}
 
                 {/* External Link */}
-                {waypoint.external_link ? (
-                    <TouchableOpacity
-                        style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
-                        onPress={() => openExternalLink(typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url)}
-                        activeOpacity={0.8}
-                    >
-                        <AppText style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
-                            {typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title || ""}
-                        </AppText>
-                        <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
-                    </TouchableOpacity>
+                {isValidData(waypoint.external_link) ? (
+                    (() => {
+                        const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
+                        const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;
+                        if (!isValidData(linkUrl)) return null;
+
+                        return (
+                            <TouchableOpacity
+                                style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
+                                onPress={() => openExternalLink(linkUrl)}
+                                activeOpacity={0.8}
+                            >
+                                {isValidData(linkTitle) ? (
+                                    <AppText style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
+                                        {linkTitle}
+                                    </AppText>
+                                ) : null}
+                                <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
+                            </TouchableOpacity>
+                        );
+                    })()
                 ) : null}
             </ScrollView>
         </SafeAreaView>

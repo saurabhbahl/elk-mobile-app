@@ -4,10 +4,10 @@ import { useAppContent } from "@/src/contexts/AppContentContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 
 export default function QuickLinks() {
     const { colors, fonts, isDark } = useTheme();
@@ -32,7 +32,7 @@ export default function QuickLinks() {
             const gap = 12;
             const padding = 16;
             const itemX = padding + activeIndex * (itemWidth + gap);
-            const W = Dimensions.get('window').width;
+            const W = width;
             const scrollToX = itemX - (W / 2) + (itemWidth / 2);
 
             const timer = setTimeout(() => {

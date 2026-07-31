@@ -1,5 +1,5 @@
-import { SyncManager } from "../services/SyncManager";
 import { appRepository } from "../repositories/AppRepository";
+import { SyncManager } from "../services/SyncManager";
 
 import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -334,18 +334,49 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     // Load data from local SQLite database into memory
     const loadFromSQLite = () => {
         try {
-            const settingsMap = appRepository.getAllSettings();
+            // Guarantee the database is clean from expired events before loading them into memory
+            SyncManager.cleanupExpiredEvents();
 
-            console.log("[SQLite] Loaded app_branding:", JSON.stringify(settingsMap.app_branding, null, 2));
+            const settingsMap = appRepository.getAllSettings();
 
             if (settingsMap.app_branding && !Array.isArray(settingsMap.app_branding)) {
                 setBrandData(settingsMap.app_branding as AppBranding);
             }
             if (settingsMap.popup_content) setPopupData(settingsMap.popup_content as PopupContent);
             if (settingsMap.home_screen) {
-                console.log("[SQLite] Loaded welcome heading:", (settingsMap.home_screen as any).hero_welcome_heading);
-                console.log("[SQLite] Loaded intro paragraph:", (settingsMap.home_screen as any).hero_intro_paragraph);
-                setHomeData(settingsMap.home_screen as HomeScreenData);
+                const hs = settingsMap.home_screen as HomeScreenData;
+
+                // Dynamically update featured event with latest data from events table
+                // and filter it out if it has expired so the ID is not permanently lost!
+                if (hs.featured_event) {
+                    const isArray = Array.isArray(hs.featured_event);
+                    const eventObj = isArray ? (hs.featured_event as any)[0] : hs.featured_event;
+
+                    if (eventObj && eventObj.id) {
+                        const recordsMap = appRepository.getAllRecords();
+                        const latestEvent = (recordsMap.events as any[])?.find((e: any) => String(e.id) === String(eventObj.id));
+
+
+                        let targetEvent = eventObj;
+                        if (latestEvent) {
+                            targetEvent = { ...eventObj, ...latestEvent };
+                        }
+
+                        const visibility = (settingsMap.event_settings as any)?.past_events_visibility;
+                        const isExpired = SyncManager.isEventExpired(targetEvent, visibility);
+
+
+                        if (isExpired) {
+                            // Hide it in React State if expired
+                            hs.featured_event = [] as any;
+                        } else {
+                            // Update React State with latest future date
+                            hs.featured_event = (isArray ? [targetEvent] : targetEvent) as any;
+                        }
+                    }
+                }
+
+                setHomeData(hs);
             }
             if (settingsMap.plan_your_trip) setPlanTripData(settingsMap.plan_your_trip);
             if (settingsMap.visitors) setVisitorsData(settingsMap.visitors);
@@ -387,12 +418,15 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Performs initial synchronization
     const performInitialSync = async (): Promise<boolean> => {
         setIsSyncing(true);
         setSyncError(null);
         setSyncProgress(0);
         setSyncStatusText("Getting things ready...");
+
+        // FORCE A FULL SYNC ONCE to recover the lost home_screen ID
+        // TODO: Remove this line after testing so it doesn't do a full sync every app boot!
+        appRepository.upsertMetadata('last_full_sync', '');
 
         const success = await SyncManager.fetchAndStoreAll((progress, status) => {
             setSyncProgress(progress);
@@ -403,7 +437,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 if (settingsMap.app_branding) {
                     setBrandData(settingsMap.app_branding as AppBranding);
                 }
-            } catch (_) {}
+            } catch (_) { }
         });
 
         setIsSyncing(false);
@@ -425,6 +459,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const refreshData = async (): Promise<boolean> => {
         const netInfo = await NetInfo.fetch();
         if (!netInfo.isConnected) return false;
+
+        // TODO: Remove this line after testing so it doesn't do a full sync every app boot!
+        appRepository.upsertMetadata('last_full_sync', '');
 
         setIsSyncing(true);
         try {

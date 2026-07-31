@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions, Modal,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -16,7 +16,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAppContent } from '../contexts/AppContentContext';
 import { Waypoint } from '../data/waypoints';
 import { normalizeHex } from '../utils/colorUtils';
-const { height: windowHeight } = Dimensions.get('window');
+import { height as windowHeight } from '../constants/theme';
 
 export interface RoutePlannerProps {
   isVisible: boolean;

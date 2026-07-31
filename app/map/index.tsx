@@ -1,4 +1,3 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
 /**
  * index.tsx — Map Screen
@@ -69,6 +68,7 @@ import { useOfflineMap } from '../../src/hooks/useOfflineMap';
 import { useOfflineRouter } from '../../src/hooks/useOfflineRouter';
 import { useRouteLoader } from '../../src/hooks/useRouteLoader';
 import { preloadRouteIndex } from '../../src/utils/routeLookup';
+import { isValidData } from '../../src/utils/validation';
 import { useMapReset, useNavigationMode } from '../_layout';
 
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -863,18 +863,22 @@ function MapScreen() {
         <View style={styles.cardHeaderRow}>
           <View style={styles.titleContainer}>
             <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-            <AppText style={styles.hotspotTitle} numberOfLines={1}>
-              {item.title.toUpperCase()}
-            </AppText>
+            {isValidData(item.title) ? (
+              <AppText style={styles.hotspotTitle} numberOfLines={1}>
+                {item.title.toUpperCase()}
+              </AppText>
+            ) : null}
           </View>
           <TouchableOpacity onPress={() => setSelectedWaypoint(null)} style={styles.cardCloseButton}>
             <MaterialIcons name="close" size={14} color="white" />
           </TouchableOpacity>
         </View>
 
-        <AppText style={styles.hotspotDescription} numberOfLines={3}>
-          {item.description || ""}
-        </AppText>
+        {isValidData(item.description) ? (
+          <AppText style={styles.hotspotDescription} numberOfLines={3}>
+            {item.description}
+          </AppText>
+        ) : null}
 
         <View style={styles.cardFooterRow}>
           <TouchableOpacity style={styles.viewMoreButton} onPress={handleViewDetails}>
@@ -1146,8 +1150,10 @@ function MapScreen() {
                         <MaterialIcons name="place" size={20} color={brandPrimary || colors.primary} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <AppText style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface }} numberOfLines={1}>{wp.title}</AppText>
-                        {wp.description ? (
+                        {isValidData(wp.title) ? (
+                          <AppText style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface }} numberOfLines={1}>{wp.title}</AppText>
+                        ) : null}
+                        {isValidData(wp.description) ? (
                           <AppText style={{ fontFamily: fonts.body, fontSize: 12, color: colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{wp.description}</AppText>
                         ) : null}
                       </View>
@@ -1188,8 +1194,8 @@ function MapScreen() {
                   )}
                   {isCalculatingRoute ? (
                     <AppText style={styles.floatingTitleText}>Calculating route...</AppText>
-                  ) : mapSettingsData?.screen_title ? (
-                    <AppText style={styles.floatingTitleText}>{mapSettingsData.screen_title}</AppText>
+                  ) : isValidData(mapSettingsData?.screen_title) ? (
+                    <AppText style={styles.floatingTitleText}>{mapSettingsData?.screen_title}</AppText>
                   ) : null}
                 </TouchableOpacity>
               ) : (

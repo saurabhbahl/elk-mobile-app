@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, StyleSheet, View, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import { Modal, StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
 import AppText from './AppText';
 import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
 import { useTheme } from '@/src/context/ThemeContext';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContent } from '@/src/contexts/AppContentContext';
-
-const { width } = Dimensions.get('window');
+import { width } from '@/src/constants/theme';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -134,12 +133,14 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         textAlign: 'center',
         letterSpacing: 0.2,
+        textTransform: 'capitalize',
     },
     message: {
         fontSize: 14,
         lineHeight: 20,
         textAlign: 'center',
         marginBottom: 26,
+        textTransform: 'none',
     },
     buttonContainer: {
         width: '100%',

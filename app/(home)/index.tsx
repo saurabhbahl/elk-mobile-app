@@ -6,7 +6,6 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Dimensions,
     Modal,
     ScrollView,
     StatusBar,
@@ -19,13 +18,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
 
-// Get screen dimensions for dynamic calculations
-const { width, height } = Dimensions.get("window");
-
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, ProgramsData, TrailsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -63,71 +60,73 @@ export default function HomeScreen() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Welcome Message */}
-                {homeData?.hero_welcome_heading ? (
+                {isValidData(homeData?.hero_welcome_heading) ? (
                     <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
-                        {homeData.hero_welcome_heading}
+                        {homeData?.hero_welcome_heading}
                     </AppText>
                 ) : null}
 
                 {/* Welcome Banner Card */}
-                <View style={styles.welcomeBannerContainer}>
-                    <ImageBackground
-                        source={require("../../assets/images/welcome.jpg")}
-                        style={styles.welcomeBannerCard}
-                        imageStyle={{ borderRadius: 10 }}
-                    >
-                        <View style={styles.welcomeBannerOverlay}>
-                            {/* Top Right Pill Badge: About KECA */}
-                            {homeData?.hero_cta_button_label ? (
-                                <TouchableOpacity
-                                    style={styles.aboutKecaBadge}
-                                    activeOpacity={0.8}
-                                    onPress={() => router.push("/visitors")}
-                                >
-                                    <AppText style={styles.aboutKecaText}>
-                                        {homeData.hero_cta_button_label}
-                                    </AppText>
-                                </TouchableOpacity>
-                            ) : null}
+                {(isValidData(homeData?.hero_cta_button_label) || isValidData(homeData?.hero_intro_paragraph)) ? (
+                    <View style={styles.welcomeBannerContainer}>
+                        <ImageBackground
+                            source={require("../../assets/images/welcome.jpg")}
+                            style={styles.welcomeBannerCard}
+                            imageStyle={{ borderRadius: 10 }}
+                        >
+                            <View style={styles.welcomeBannerOverlay}>
+                                {/* Top Right Pill Badge: About KECA */}
+                                {isValidData(homeData?.hero_cta_button_label) ? (
+                                    <TouchableOpacity
+                                        style={styles.aboutKecaBadge}
+                                        activeOpacity={0.8}
+                                        onPress={() => router.push("/visitors")}
+                                    >
+                                        <AppText style={styles.aboutKecaText}>
+                                            {homeData?.hero_cta_button_label}
+                                        </AppText>
+                                    </TouchableOpacity>
+                                ) : null}
 
-                            {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
-                            {homeData?.hero_intro_paragraph ? (
-                                <View style={styles.welcomeIntroContainer}>
-                                    <RenderHTML
-                                        contentWidth={width}
-                                        source={{ html: homeData.hero_intro_paragraph }}
-                                        baseStyle={styles.welcomeIntroText as any}
-                                        tagsStyles={{
-                                            p: { marginVertical: 0, padding: 0 }
-                                        }}
-                                    />
-                                </View>
-                            ) : null}
-                        </View>
-                    </ImageBackground>
-                </View>
+                                {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
+                                {isValidData(homeData?.hero_intro_paragraph) ? (
+                                    <View style={styles.welcomeIntroContainer}>
+                                        <RenderHTML
+                                            contentWidth={width}
+                                            source={{ html: homeData?.hero_intro_paragraph || "" }}
+                                            baseStyle={styles.welcomeIntroText as any}
+                                            tagsStyles={{
+                                                p: { marginVertical: 0, padding: 0 }
+                                            }}
+                                        />
+                                    </View>
+                                ) : null}
+                            </View>
+                        </ImageBackground>
+                    </View>
+                ) : null}
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
-                {homeData?.map_block_heading ? (
+                {isValidData(homeData?.map_block_heading) ? (
                     <View style={styles.subSectionTitleRow}>
                         <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                             <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
                         </View>
-                        <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.map_block_heading}</AppText>
+                        <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.map_block_heading}</AppText>
                     </View>
                 ) : null}
 
                 {/* Map Card */}
-                {homeData?.map_block_heading ? (
+                {isValidData(homeData?.map_block_heading) ? (
                     <View style={styles.mapCardContainer}>
                         <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
-                            {homeData?.map_view_button_label ? (
+                            {isValidData(homeData?.map_view_button_label) ? (
                                 <TouchableOpacity
                                     style={styles.viewMapButton}
                                     activeOpacity={0.9}
                                     onPress={() => router.push("/map")}
                                 >
-                                    <AppText style={styles.viewMapButtonText}>{homeData.map_view_button_label}</AppText>
+                                    <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
                                 </TouchableOpacity>
                             ) : null}
                         </ImageBackground>
@@ -135,14 +134,14 @@ export default function HomeScreen() {
                 ) : null}
 
                 {/* Weekend Programs Section */}
-                {homeData?.programs && Array.isArray(homeData.programs) && homeData.programs.length > 0 ? (
+                {isValidData(homeData?.programs) ? (
                     <>
-                        {homeData?.programs_block_heading ? (
+                        {isValidData(homeData?.programs_block_heading) ? (
                             <View style={styles.subSectionTitleRow}>
                                 <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                                     <Image source={require('../../assets/images/programicon.png')} style={styles.sectionIconImg} contentFit="contain" />
                                 </View>
-                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.programs_block_heading}</AppText>
+                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.programs_block_heading}</AppText>
                             </View>
                         ) : null}
 
@@ -152,7 +151,7 @@ export default function HomeScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.programsHorizontalList}
                         >
-                            {homeData.programs.map((program: ProgramsData, index: number) => {
+                            {(homeData?.programs || []).map((program: ProgramsData, index: number) => {
                                 // Simple date badge parser
                                 let badge = null;
                                 const dateStr = program.schedule__dates;
@@ -194,9 +193,11 @@ export default function HomeScreen() {
                                             contentFit="cover"
                                         >
                                             <View style={styles.programCardTextCol}>
-                                                <AppText style={styles.programCardName} numberOfLines={1}>
-                                                    {program.program_name || ""}
-                                                </AppText>
+                                                {isValidData(program.program_name) ? (
+                                                    <AppText style={styles.programCardName} numberOfLines={1}>
+                                                        {program.program_name}
+                                                    </AppText>
+                                                ) : null}
                                                 <AppText style={styles.cardLocation} numberOfLines={1}>
                                                     Elk Country Visitor Center
                                                 </AppText>
@@ -214,75 +215,86 @@ export default function HomeScreen() {
                 ) : null}
 
                 {/* Featured Event Section */}
-                {homeData?.featured_event && Array.isArray(homeData.featured_event) && homeData.featured_event.length > 0 ? (
+                {isValidData(homeData?.featured_event) ? (
                     <>
-                        {homeData?.event_block_heading ? (
+                        {isValidData(homeData?.event_block_heading) ? (
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
                                     <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                                         <Image source={require('../../assets/images/eventicon.png')} style={styles.sectionIconImgLg} contentFit="contain" />
                                     </View>
-                                    <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_block_heading}</AppText>
+                                    <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.event_block_heading}</AppText>
                                 </View>
-                                {homeData?.event_view_all_label ? (
+                                {isValidData(homeData?.event_view_all_label) ? (
                                     <TouchableOpacity onPress={() => router.push("/events" as any)}>
-                                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.event_view_all_label}</AppText>
+                                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.event_view_all_label}</AppText>
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
                         ) : null}
 
                         {/* Featured Event Card */}
-                        <TouchableOpacity
-                            style={styles.featuredCard}
-                            activeOpacity={0.85}
-                            onPress={() => {
-                                const eventId = (homeData.featured_event as any)[0]?.id || (homeData.featured_event as any)?.id;
-                                const eventIndex = eventsData?.findIndex((e: EventsData) => String(e.id) === String(eventId));
-                                const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
-                                router.push(`/events/${targetId}` as any);
-                            }}
-                        >
-                            <View style={styles.programCardImageContainer}>
-                                <CachedImage
-                                    uri={(homeData.featured_event as any)[0]?.thumbnail_image?.url as string}
-                                    style={StyleSheet.absoluteFill}
-                                    contentFit="cover"
-                                />
-                            </View>
+                        {(() => {
+                            const isEventArray = Array.isArray(homeData?.featured_event);
+                            const eventObj = isEventArray ? (homeData?.featured_event as any)[0] : homeData?.featured_event;
+                            if (!eventObj) return null;
 
-                            <ImageBackground
-                                source={require('../../assets/images/vectors.png')}
-                                style={styles.programCardBottomSection}
-                                imageStyle={{ opacity: 1 }}
-                                contentFit="cover"
-                            >
-                                <View style={styles.programCardTextCol}>
-                                    <AppText style={styles.featuredEventName} numberOfLines={1}>
-                                        {homeData.featured_event[0].event_name || ""}
-                                    </AppText>
-                                    <AppText style={styles.cardLocation} numberOfLines={1}>
-                                        {homeData.featured_event[0].short_description}
-                                    </AppText>
-                                </View>
+                            const eventId = eventObj.id;
+                            const eventIndex = eventsData?.findIndex((e: EventsData) => String(e.id) === String(eventId));
+                            const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
 
-                                <View style={styles.cardViewButton}>
-                                    <AppText style={styles.cardViewButtonText}>View</AppText>
-                                </View>
-                            </ImageBackground>
-                        </TouchableOpacity>
+                            return (
+                                <TouchableOpacity
+                                    style={styles.featuredCard}
+                                    activeOpacity={0.85}
+                                    onPress={() => router.push(`/events/${targetId}` as any)}
+                                >
+                                    <View style={styles.programCardImageContainer}>
+                                        <CachedImage
+                                            uri={eventObj.thumbnail_image?.url as string}
+                                            style={StyleSheet.absoluteFill}
+                                            contentFit="cover"
+                                        />
+                                    </View>
+
+                                    <ImageBackground
+                                        source={require('../../assets/images/vectors.png')}
+                                        style={styles.programCardBottomSection}
+                                        imageStyle={{ opacity: 1 }}
+                                        contentFit="cover"
+                                    >
+                                        <View style={styles.programCardTextCol}>
+                                            {isValidData(eventObj.event_name) ? (
+                                                <AppText style={styles.featuredEventName} numberOfLines={1}>
+                                                    {eventObj.event_name}
+                                                </AppText>
+                                            ) : null}
+                                            {isValidData(eventObj.short_description) ? (
+                                                <AppText style={styles.cardLocation} numberOfLines={1}>
+                                                    {eventObj.short_description}
+                                                </AppText>
+                                            ) : null}
+                                        </View>
+
+                                        <View style={styles.cardViewButton}>
+                                            <AppText style={styles.cardViewButtonText}>View</AppText>
+                                        </View>
+                                    </ImageBackground>
+                                </TouchableOpacity>
+                            );
+                        })()}
                     </>
                 ) : null}
 
                 {/* Hit the Trails Section */}
-                {homeData?.trails_block_heading ? (
+                {(isValidData(homeData?.trails_block_heading) && isValidData(homeData?.trails)) ? (
                     <View style={styles.trailsSectionContainer}>
                         <View style={styles.subSectionTitleRow}>
                             <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                                 <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
                             </View>
                             <TouchableOpacity onPress={() => router.push("/trails")}>
-                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData.trails_block_heading}</AppText>
+                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.trails_block_heading}</AppText>
                             </TouchableOpacity>
                         </View>
                         <ScrollView
@@ -290,21 +302,21 @@ export default function HomeScreen() {
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.trailsHorizontalList}
                         >
-                            {homeData?.trails && Array.isArray(homeData.trails) && homeData.trails.length > 0 ? (
-                                homeData.trails.map((trail: TrailsData, index: number) => (
-                                    <TouchableOpacity
-                                        key={trail.id || index}
-                                        style={styles.trailPill}
-                                        activeOpacity={0.8}
-                                        onPress={() => router.push("/trails")}
-                                    >
-                                        <AppText style={styles.trailName}>{trail.trail_name || ""}</AppText>
-                                        <AppText style={styles.trailDistance}>{trail.distance ? `  |  ${trail.distance}` : ""}</AppText>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <AppText style={{ color: colors.onSurfaceVariant, fontSize: 13, marginLeft: 16 }}>No trails available</AppText>
-                            )}
+                            {(homeData?.trails || []).map((trail: TrailsData, index: number) => (
+                                <TouchableOpacity
+                                    key={trail.id || index}
+                                    style={styles.trailPill}
+                                    activeOpacity={0.8}
+                                    onPress={() => router.push("/trails")}
+                                >
+                                    {isValidData(trail.trail_name) ? (
+                                        <AppText style={styles.trailName}>{trail.trail_name}</AppText>
+                                    ) : null}
+                                    {isValidData(trail.distance) ? (
+                                        <AppText style={styles.trailDistance}>{`  |  ${trail.distance}`}</AppText>
+                                    ) : null}
+                                </TouchableOpacity>
+                            ))}
                         </ScrollView>
                     </View>
                 ) : null}
@@ -337,8 +349,10 @@ export default function HomeScreen() {
                                         </TouchableOpacity>
 
                                         {/* Dynamic content */}
-                                        <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
-                                        {popupData.popup_body_copy ? (
+                                        {isValidData(popupData.popup_title) ? (
+                                            <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
+                                        ) : null}
+                                        {isValidData(popupData.popup_body_copy) ? (
                                             <RenderHTML
                                                 contentWidth={width * 0.95 - 48}
                                                 source={{ html: popupData.popup_body_copy }}
@@ -367,8 +381,10 @@ export default function HomeScreen() {
                                     </TouchableOpacity>
 
                                     {/* Dynamic content */}
-                                    <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
-                                    {popupData.popup_body_copy ? (
+                                    {isValidData(popupData.popup_title) ? (
+                                        <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
+                                    ) : null}
+                                    {isValidData(popupData.popup_body_copy) ? (
                                         <RenderHTML
                                             contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
                                             source={{ html: popupData.popup_body_copy }}

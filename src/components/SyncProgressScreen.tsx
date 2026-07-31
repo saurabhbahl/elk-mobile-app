@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import AppText from './AppText';
 import { useAppContent } from '@/src/contexts/AppContentContext';
 import { StatusBar } from 'expo-status-bar';
 import { Image, ImageBackground } from 'expo-image';
 import { useTheme } from '@/src/context/ThemeContext';
-
-const { width, height } = Dimensions.get('window');
+import { width, height } from '@/src/constants/theme';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
