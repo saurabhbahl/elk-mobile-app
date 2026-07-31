@@ -1,9 +1,9 @@
-import { Image } from 'expo-image';
-import { clearImageCache } from '../utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
-import { db } from '../database/index';
+import { Image } from 'expo-image';
 import { ApiService } from '../api/ApiService';
+import { db } from '../database/index';
 import { appRepository } from '../repositories/AppRepository';
+import { clearImageCache } from '../utils/imageCache';
 
 // Helper to set nested object properties in-place
 function setNestedValue(obj: Record<string, unknown>, path: string[], value: unknown) {
@@ -84,13 +84,13 @@ export class SyncManager {
     try {
       const lastSyncTime = appRepository.getMetadata('last_full_sync');
       const settingsMap = appRepository.getAllSettings();
-      
+
       // If lastSyncTime is missing, or critical settings like app_branding are corrupted (empty array from previous bug), force full sync
       if (!lastSyncTime || !settingsMap.app_branding || (Array.isArray(settingsMap.app_branding) && settingsMap.app_branding.length === 0)) {
-          console.log("[SyncManager] Missing or corrupt local data (empty arrays). Forcing FULL sync.");
-          const res = await this.fetchAndStoreAll();
-          console.log("[SyncManager] Background full sync completed. Result:", res);
-          return res;
+        console.log("[SyncManager] Missing or corrupt local data (empty arrays). Forcing FULL sync.");
+        const res = await this.fetchAndStoreAll();
+        console.log("[SyncManager] Background full sync completed. Result:", res);
+        return res;
       }
 
       const res = await this.fetchAndStoreAll(undefined, true, lastSyncTime);
@@ -127,8 +127,8 @@ export class SyncManager {
     }
 
     try {
-      if (onProgress) onProgress(0.05, 'Fetching content data...');
-      
+      if (onProgress) onProgress(0.05, 'Downloading app content...');
+
       console.log("[SyncManager] Fetching sync data from API...");
       console.log("[SyncManager] Fetching sync data from API...");
       let rootJson = await ApiService.fetchSyncData(isDelta, lastSyncTime);
@@ -149,7 +149,7 @@ export class SyncManager {
         console.warn('Failed to save branding early:', err);
       }
 
-      if (onProgress) onProgress(0.2, 'Preparing image downloads...');
+      if (onProgress) onProgress(0.2, 'Preparing app photos...');
       const imagesToDownload = extractPreCacheUrls(json);
       const totalImages = imagesToDownload.length;
       let downloadedCount = 0;
@@ -157,10 +157,10 @@ export class SyncManager {
       for (let i = 0; i < totalImages; i++) {
         const item = imagesToDownload[i];
         try {
-          // Wrap prefetch in a 3-second timeout to prevent infinite hangs
+          // Wrap prefetch in a 6-second timeout to prevent infinite hangs
           await Promise.race([
             Image.prefetch(item.url),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000))
           ]);
         } catch (err) {
           console.warn(`Failed to pre-cache image (or timed out): ${item.url}`);
@@ -169,11 +169,11 @@ export class SyncManager {
         downloadedCount++;
         if (onProgress) {
           const pct = 0.2 + (downloadedCount / totalImages) * 0.7;
-          onProgress(pct, `Caching images (${downloadedCount}/${totalImages})...`);
+          onProgress(pct, `Downloading app photos`);
         }
       }
 
-      if (onProgress) onProgress(0.95, 'Saving database tables...');
+      if (onProgress) onProgress(0.95, 'Finalizing offline setup...');
 
       db.withTransactionSync(() => {
         if (!isDelta) {
@@ -186,7 +186,7 @@ export class SyncManager {
           'trail_settings', 'rental_settings', 'tips_screen_settings',
           'map_settings', 'navigation'
         ];
-        
+
         for (const key of settingsKeys) {
           const val = json[key];
           // For settings, only upsert if present and not an empty array
@@ -204,7 +204,7 @@ export class SyncManager {
           { type: 'pois', array: json.pois },
           { type: 'cameras', array: json.cameras }
         ];
-        
+
         for (const item of recordTypes) {
           if (item.array && Array.isArray(item.array)) {
             (item.array as Record<string, unknown>[]).forEach((rec: Record<string, unknown>) => {
@@ -247,7 +247,7 @@ export class SyncManager {
       const settings = appRepository.getAllSettings();
       const eventSettings = settings.event_settings as any;
       if (!eventSettings) return;
-      
+
       const visibility = eventSettings.past_events_visibility;
       if (visibility?.toLowerCase() !== 'hide') return;
 
@@ -272,42 +272,42 @@ export class SyncManager {
   static isEventExpired(event: any, pastEventsVisibility: string | undefined | null): boolean {
     if (!event) return true;
     if (pastEventsVisibility?.toLowerCase() !== 'hide') return false;
-    
+
     const dateStr = event['end_date_&_time'] || event['start_date_&_time'];
     if (!dateStr || typeof dateStr !== 'string') return false;
 
     try {
-        let cleanStr = dateStr.replace(' at ', ' ').trim();
-        const match = cleanStr.match(/(\d{2})\/(\d{2})\/(\d{4})(.*)/);
-        if (match) {
-            const day = parseInt(match[1], 10);
-            const month = parseInt(match[2], 10) - 1; // 0-indexed month
-            const year = parseInt(match[3], 10);
-            const timePart = match[4].trim();
-            
-            let hours = 0;
-            let mins = 0;
-            const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
-            if (timeMatch) {
-                let h = parseInt(timeMatch[1], 10);
-                mins = parseInt(timeMatch[2], 10);
-                const isPM = timeMatch[3].toLowerCase() === 'pm';
-                
-                if (isPM && h < 12) h += 12;
-                if (!isPM && h === 12) h = 0;
-                hours = h;
-            }
-            
-            const eventTime = new Date(year, month, day, hours, mins, 0).getTime();
-            
-            if (!isNaN(eventTime)) {
-                return eventTime < Date.now();
-            }
+      let cleanStr = dateStr.replace(' at ', ' ').trim();
+      const match = cleanStr.match(/(\d{2})\/(\d{2})\/(\d{4})(.*)/);
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1; // 0-indexed month
+        const year = parseInt(match[3], 10);
+        const timePart = match[4].trim();
+
+        let hours = 0;
+        let mins = 0;
+        const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+        if (timeMatch) {
+          let h = parseInt(timeMatch[1], 10);
+          mins = parseInt(timeMatch[2], 10);
+          const isPM = timeMatch[3].toLowerCase() === 'pm';
+
+          if (isPM && h < 12) h += 12;
+          if (!isPM && h === 12) h = 0;
+          hours = h;
         }
+
+        const eventTime = new Date(year, month, day, hours, mins, 0).getTime();
+
+        if (!isNaN(eventTime)) {
+          return eventTime < Date.now();
+        }
+      }
     } catch (e) {
-        console.warn("Failed to parse event date for expiration check", e);
+      console.warn("Failed to parse event date for expiration check", e);
     }
-    
+
     return false;
   }
 }

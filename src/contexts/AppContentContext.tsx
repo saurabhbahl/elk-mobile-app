@@ -1,3 +1,4 @@
+import { useOfflineMap } from "../hooks/useOfflineMap";
 import { appRepository } from "../repositories/AppRepository";
 import { SyncManager } from "../services/SyncManager";
 
@@ -302,6 +303,16 @@ interface AppContentContextType {
 const AppContentContext = createContext<AppContentContextType | undefined>(undefined);
 
 export const AppContentProvider = ({ children }: { children: ReactNode }) => {
+    const {
+        isDownloading: isMapDownloading,
+        downloadProgress: mapDownloadProgress,
+        downloadMap,
+        saveConsent,
+        checkMapStatus,
+    } = useOfflineMap();
+
+    const [initialSyncPhase, setInitialSyncPhase] = useState<'idle' | 'content' | 'map' | 'complete'>('idle');
+
     const [brandData, setBrandData] = useState<AppBranding | null>(null);
     const [popupData, setPopupData] = useState<PopupContent | null>(null);
     const [homeData, setHomeData] = useState<HomeScreenData | null>(null);
@@ -330,6 +341,14 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [syncProgress, setSyncProgress] = useState(0);
     const [syncStatusText, setSyncStatusText] = useState('');
     const [syncError, setSyncError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (initialSyncPhase === 'map' && isMapDownloading) {
+            const overallProgress = 0.3 + mapDownloadProgress * 0.7; // Scale 30% - 100%
+            setSyncProgress(overallProgress);
+            setSyncStatusText("Downloading offline map...");
+        }
+    }, [initialSyncPhase, isMapDownloading, mapDownloadProgress]);
 
     // Load data from local SQLite database into memory
     const loadFromSQLite = () => {
@@ -423,34 +442,64 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         setSyncError(null);
         setSyncProgress(0);
         setSyncStatusText("Getting things ready...");
+        setInitialSyncPhase('content');
 
         // FORCE A FULL SYNC ONCE to recover the lost home_screen ID
         // TODO: Remove this line after testing so it doesn't do a full sync every app boot!
         appRepository.upsertMetadata('last_full_sync', '');
 
-        const success = await SyncManager.fetchAndStoreAll((progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatusText('Getting things ready...');
-            // Load branding early if it has been written to the DB
+        try {
+            const success = await SyncManager.fetchAndStoreAll((progress, status) => {
+                setSyncProgress(progress * 0.3); // Scale content sync to 0% - 30%
+                setSyncStatusText(status);
+                // Load branding early if it has been written to the DB
+                try {
+                    const settingsMap = appRepository.getAllSettings();
+                    if (settingsMap.app_branding) {
+                        setBrandData(settingsMap.app_branding as AppBranding);
+                    }
+                } catch (_) { }
+            });
+
+            if (!success) {
+                setSyncError("Please check your internet connection.");
+                setIsSyncing(false);
+                setInitialSyncPhase('idle');
+                return false;
+            }
+
+            // Phase 2: Map sync
+            setInitialSyncPhase('map');
+            setSyncStatusText("Downloading offline map...");
+            setSyncProgress(0.3);
+
             try {
-                const settingsMap = appRepository.getAllSettings();
-                if (settingsMap.app_branding) {
-                    setBrandData(settingsMap.app_branding as AppBranding);
+                await downloadMap();
+                // Check if map downloaded successfully
+                const mapValid = await checkMapStatus();
+                if (mapValid) {
+                    // Save consent as yes on successful download
+                    await saveConsent('yes');
+                } else {
+                    console.warn("[Sync] Map download did not complete successfully, but continuing initial sync.");
                 }
-            } catch (_) { }
-        });
+            } catch (mapErr) {
+                console.warn("[Sync] Error downloading map during initial sync:", mapErr);
+            }
 
-        setIsSyncing(false);
-
-        if (success) {
+            setInitialSyncPhase('complete');
             loadFromSQLite();
             setApiStatus('loading');
             setTimeout(() => {
                 setApiStatus('ready');
             }, 1000);
+            setIsSyncing(false);
             return true;
-        } else {
-            setSyncError("Synchronization failed. Please check your internet connection.");
+        } catch (err) {
+            console.error("Initial sync error:", err);
+            setSyncError("Please check your internet connection.");
+            setIsSyncing(false);
+            setInitialSyncPhase('idle');
             return false;
         }
     };

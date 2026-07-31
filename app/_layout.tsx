@@ -201,75 +201,75 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
       <OfflinePopup />
       <View style={{ flex: 1 }}>
         <Stack>
-        <Stack.Screen
-          name="index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="(home)"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="programs/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="programs/[id]"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="events/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="events/[id]"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="trails/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="rentals/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="plan-trip/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="map/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="map/[id]"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="map/settings"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="visitors/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="cameras/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: "modal",
-            title: "Modal",
-          }}
-        />
-        <Stack.Screen
-          name="tips/index"
-          options={{ headerShown: false, animation: 'none' }}
-        />
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="(home)"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="programs/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="programs/[id]"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="events/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="events/[id]"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="trails/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="rentals/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="plan-trip/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="map/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="map/[id]"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="map/settings"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="visitors/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="cameras/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
+          <Stack.Screen
+            name="modal"
+            options={{
+              presentation: "modal",
+              title: "Modal",
+            }}
+          />
+          <Stack.Screen
+            name="tips/index"
+            options={{ headerShown: false, animation: 'none' }}
+          />
         </Stack>
       </View>
       {shouldShowHeader && (

@@ -1,5 +1,6 @@
 import AppText from "@/src/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +12,6 @@ import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
 import { normalizeHex } from '../../src/utils/colorUtils';
 import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
 import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
-import { router } from 'expo-router';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -23,8 +23,9 @@ export default function SettingsScreen() {
   const [isClearing, setIsClearing] = useState(false);
   const [imageCacheSize, setImageCacheSize] = useState<string>('...');
   const [isClearingImages, setIsClearingImages] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { brandData } = useAppContent();
+  const { brandData, refreshData } = useAppContent();
 
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
   const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
@@ -67,6 +68,22 @@ export default function SettingsScreen() {
     } else {
       Alert.alert('Download Cancelled', `${result.cached} routes were downloaded before cancellation.`);
       await loadCachedCount();
+    }
+  };
+
+  const handleForceRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const success = await refreshData();
+      if (success) {
+        Alert.alert('Refresh Complete', 'Your app is perfectly in sync with the latest data.');
+      } else {
+        Alert.alert('Refresh Failed', 'Unable to reach the server. Please check your internet connection.');
+      }
+    } catch (e) {
+      Alert.alert('Refresh Failed', 'Something went wrong while trying to sync.');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -121,23 +138,23 @@ export default function SettingsScreen() {
         elevation: 3,
         zIndex: 10,
       }}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
+        <TouchableOpacity
+          onPress={() => router.back()}
           style={{ flexDirection: 'row', alignItems: 'center', minWidth: 60 }}
           activeOpacity={0.7}
         >
           <MaterialIcons name="arrow-back-ios" size={18} color="#FFFFFF" />
           <AppText style={{ color: '#FFFFFF', fontSize: 16, fontFamily: fonts.bodyMedium }}>back</AppText>
         </TouchableOpacity>
-        
-        <AppText style={{ 
-          color: '#FFFFFF', 
-          fontSize: 18, 
+
+        <AppText style={{
+          color: '#FFFFFF',
+          fontSize: 18,
           fontFamily: "Lexend_500Medium",
         }}>
           Settings
         </AppText>
-        
+
         <View style={{ minWidth: 60 }} />
       </View>
 
@@ -162,6 +179,29 @@ export default function SettingsScreen() {
               thumbColor={colors.onPrimary}
             />
           </View>
+        </View>
+
+        {/* ── Data Synchronization Section ────────────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <AppText style={styles.sectionTitle}>Refresh Data</AppText>
+          <AppText style={styles.sectionDescription}>
+            Manually force a check for new content updates. Useful if you've been offline and want to make sure you have the latest information.
+          </AppText>
+
+          <TouchableOpacity
+            style={[styles.downloadButton, isRefreshing && { opacity: 0.7 }]}
+            onPress={handleForceRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color={colors.onPrimary} />
+            ) : (
+              <>
+                <MaterialIcons name="sync" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
+                <AppText style={styles.downloadButtonText}>Force Refresh</AppText>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* ── Offline Map Section ────────────────────────────────────────────── */}
