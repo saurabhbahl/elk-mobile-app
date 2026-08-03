@@ -130,9 +130,23 @@ export default function LiveCameraScreen() {
         }
 
         if (streamType === STREAM_TYPES.EMBED) {
-            const htmlContent = streamUrl.includes("<html")
-                ? streamUrl
-                : `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;">${streamUrl}</body></html>`;
+            let processedStreamUrl = streamUrl;
+            if (processedStreamUrl.includes('<iframe')) {
+                processedStreamUrl = processedStreamUrl.replace(/src=["']([^"']+)["']/, (match: string, url: string) => {
+                    let newUrl = url;
+                    if (!newUrl.includes('autoplay=1')) {
+                        newUrl += (newUrl.includes('?') ? '&' : '?') + 'autoplay=1';
+                    }
+                    if (!newUrl.includes('playsinline=1')) {
+                        newUrl += '&playsinline=1';
+                    }
+                    return `src="${newUrl}"`;
+                });
+            }
+
+            const htmlContent = processedStreamUrl.includes("<html")
+                ? processedStreamUrl
+                : `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;">${processedStreamUrl}</body></html>`;
             return (
                 <WebView
                     style={{ flex: 1, backgroundColor: "#000" }}
