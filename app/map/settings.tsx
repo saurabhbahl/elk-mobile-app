@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, Tou
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
 import { useTheme } from '../../src/context/ThemeContext';
-import { useAppContent } from '../../src/contexts/AppContentContext';
+import { useAppContentData, useAppContentSync } from '../../src/contexts/AppContentContext';
 import { useOfflineMap } from '../../src/hooks/useOfflineMap';
 import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
 import { normalizeHex } from '../../src/utils/colorUtils';
@@ -25,7 +25,8 @@ export default function SettingsScreen() {
   const [isClearingImages, setIsClearingImages] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { brandData, refreshData } = useAppContent();
+  const { brandData } = useAppContentData();
+  const { refreshData } = useAppContentSync();
 
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
   const brandSecondary = normalizeHex(brandData?.brand_color__secondary);

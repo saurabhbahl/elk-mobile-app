@@ -15,7 +15,7 @@ import NetInfo from '@react-native-community/netinfo';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleProp, ImageStyle } from 'react-native';
 import WireframePlaceholder from './WireframePlaceholder';
-import { cacheImageIfNeeded, getOriginalUrl } from '@/src/utils/imageCache';
+import { cacheImageIfNeeded, getOriginalUrl, getCachedImageLocalPath } from '@/src/utils/imageCache';
 
 interface CachedImageProps {
   /** The image URI — may be a local file:/// path, http:// URL, or null/undefined */
@@ -27,7 +27,22 @@ interface CachedImageProps {
 }
 
 export default function CachedImage({ uri, style, contentFit = 'cover' }: CachedImageProps) {
-  const [resolvedUri, setResolvedUri] = useState<string | null>(null);
+  // Normalize uri helper to resolve initial values synchronously
+  const getNormalizedUri = (inputUri: any): string | null => {
+    if (inputUri && typeof inputUri === 'object' && inputUri.url) {
+      return inputUri.url;
+    } else if (typeof inputUri === 'string' && inputUri.length > 0) {
+      return inputUri;
+    }
+    return null;
+  };
+
+  const normalized = getNormalizedUri(uri);
+  const initialUri = normalized
+    ? (normalized.startsWith('file://') ? normalized : getCachedImageLocalPath(normalized) || null)
+    : null;
+
+  const [resolvedUri, setResolvedUri] = useState<string | null>(initialUri);
   const [hasError, setHasError] = useState(false);
   const mountedRef = useRef(true);
 
@@ -37,15 +52,9 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
   }, []);
 
   useEffect(() => {
-    // Normalize uri: handle object shape { url: string }, numbers, or other non-strings
-    let normalized: string | null = null;
-    if (uri && typeof uri === 'object' && (uri as any).url) {
-      normalized = (uri as any).url;
-    } else if (typeof uri === 'string' && uri.length > 0) {
-      normalized = uri;
-    }
+    const currentNormalized = getNormalizedUri(uri);
 
-    if (!normalized) {
+    if (!currentNormalized) {
       setResolvedUri(null);
       setHasError(false);
       return;
@@ -53,31 +62,37 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
 
     setHasError(false);
 
-    if (normalized.startsWith('file://')) {
-      // Already a local path — use directly; error handler will fall back if missing
-      setResolvedUri(normalized);
+    if (currentNormalized.startsWith('file://')) {
+      setResolvedUri(currentNormalized);
       return;
     }
 
-    if (normalized.startsWith('http')) {
+    // Try synchronous look-up from in-memory cache first
+    const cachedLocal = getCachedImageLocalPath(currentNormalized);
+    if (cachedLocal) {
+      setResolvedUri(cachedLocal);
+      return;
+    }
+
+    if (currentNormalized.startsWith('http')) {
       // Network URL — try to cache on-view if connected, otherwise use expo-image's
       // own internal cache (cachePolicy: 'disk') which survives our custom cache clear
       NetInfo.fetch().then(({ isConnected }) => {
         if (!mountedRef.current) return;
         if (isConnected) {
-          cacheImageIfNeeded(normalized!)
+          cacheImageIfNeeded(currentNormalized)
             .then(local => { if (mountedRef.current) setResolvedUri(local); })
-            .catch(() => { if (mountedRef.current) setResolvedUri(normalized); });
+            .catch(() => { if (mountedRef.current) setResolvedUri(currentNormalized); });
         } else {
           // Offline — use the http URL; expo-image will serve from its own disk cache
-          setResolvedUri(normalized);
+          setResolvedUri(currentNormalized);
         }
       });
       return;
     }
 
     // Unknown scheme — use as-is
-    setResolvedUri(normalized);
+    setResolvedUri(currentNormalized);
   }, [uri]);
 
   const handleError = async () => {
@@ -122,6 +137,7 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
       contentFit={contentFit}
       cachePolicy="disk"
       onError={handleError}
+      transition={300}
     />
   );
 }

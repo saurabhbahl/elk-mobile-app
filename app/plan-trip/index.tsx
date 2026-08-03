@@ -10,10 +10,11 @@ import {
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -23,7 +24,7 @@ const getValidColor = (color: string | undefined) => {
 
 export default function PlanTripScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { brandData, planTripData, apiStatus } = useAppContent();
+    const { brandData, planTripData, apiStatus } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -79,17 +80,17 @@ export default function PlanTripScreen() {
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {isValidData(heroImageUrl) ? (
-                        <View style={styles.imageContainer}>
+                        <Animated.View entering={FadeInUp.duration(200)} style={styles.imageContainer}>
                             <Image
                                 source={{ uri: heroImageUrl }}
                                 style={styles.bannerImage}
                                 contentFit="cover"
                             />
-                        </View>
+                        </Animated.View>
                     ) : null}
 
                     {isValidData(intro) ? (
-                        <View style={styles.introContainer}>
+                        <Animated.View entering={FadeInUp.duration(200).delay(40)} style={styles.introContainer}>
                             <RenderHTML
                                 contentWidth={width - 32}
                                 source={{ html: intro || "" }}
@@ -101,7 +102,7 @@ export default function PlanTripScreen() {
                                 }}
                                 tagsStyles={{ p: { marginVertical: 4 } }}
                             />
-                        </View>
+                        </Animated.View>
                     ) : null}
 
                     {isValidData(activeSections) ? (
@@ -109,30 +110,32 @@ export default function PlanTripScreen() {
                             if (!isValidData(sec.section_heading) && !isValidData(sec.section_body)) return null;
                             const iconUrl = sec.section_icon?.url;
                             return (
-                                <View key={index} style={styles.sectionCard}>
-                                    {(isValidData(sec.section_heading) || isValidData(iconUrl)) ? (
-                                        <View style={styles.sectionHeader}>
-                                            {isValidData(iconUrl) ? (
-                                                <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
-                                            ) : null}
-                                            {isValidData(sec.section_heading) ? (
-                                                <AppText style={styles.sectionHeading}>{sec.section_heading}</AppText>
-                                            ) : null}
-                                        </View>
-                                    ) : null}
-                                    {isValidData(sec.section_body) ? (
-                                        <RenderHTML
-                                            contentWidth={width - 32 - 32} // padding inside section card
-                                            source={{ html: sec.section_body as string }}
-                                            baseStyle={{
-                                                fontSize: 13,
-                                                color: colors.onSurface,
-                                                lineHeight: 18,
-                                            }}
-                                            tagsStyles={{ p: { marginVertical: 4 } }}
-                                        />
-                                    ) : null}
-                                </View>
+                                <Animated.View key={index} entering={FadeInUp.duration(200).delay(Math.min(index * 15 + 80, 160))}>
+                                    <View style={styles.sectionCard}>
+                                        {(isValidData(sec.section_heading) || isValidData(iconUrl)) ? (
+                                            <View style={styles.sectionHeader}>
+                                                {isValidData(iconUrl) ? (
+                                                    <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
+                                                ) : null}
+                                                {isValidData(sec.section_heading) ? (
+                                                    <AppText style={styles.sectionHeading}>{sec.section_heading}</AppText>
+                                                ) : null}
+                                            </View>
+                                        ) : null}
+                                        {isValidData(sec.section_body) ? (
+                                            <RenderHTML
+                                                contentWidth={width - 32 - 32} // padding inside section card
+                                                source={{ html: sec.section_body as string }}
+                                                baseStyle={{
+                                                    fontSize: 13,
+                                                    color: colors.onSurface,
+                                                    lineHeight: 18,
+                                                }}
+                                                tagsStyles={{ p: { marginVertical: 4 } }}
+                                            />
+                                        ) : null}
+                                    </View>
+                                </Animated.View>
                             );
                         })
                     ) : (

@@ -15,13 +15,14 @@ import {
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { EventsData, ProgramsData, TrailsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { EventsData, ProgramsData, TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -39,7 +40,7 @@ export default function HomeScreen() {
     const { colors, fonts, isDark } = useTheme();
     const isFocused = useIsFocused();
 
-    const { popupData, homeData, brandData, eventsData } = useAppContent();
+    const { popupData, homeData, brandData, eventsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -61,81 +62,83 @@ export default function HomeScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
-                    <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
-                        {homeData?.hero_welcome_heading}
-                    </AppText>
+                    <Animated.View entering={FadeInUp.duration(200)}>
+                        <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
+                            {homeData?.hero_welcome_heading}
+                        </AppText>
+                    </Animated.View>
                 ) : null}
 
                 {/* Welcome Banner Card */}
                 {(isValidData(homeData?.hero_cta_button_label) || isValidData(homeData?.hero_intro_paragraph)) ? (
-                    <View style={styles.welcomeBannerContainer}>
-                        <ImageBackground
-                            source={require("../../assets/images/welcome.jpg")}
-                            style={styles.welcomeBannerCard}
-                            imageStyle={{ borderRadius: 10 }}
-                        >
-                            <View style={styles.welcomeBannerOverlay}>
-                                {/* Top Right Pill Badge: About KECA */}
-                                {isValidData(homeData?.hero_cta_button_label) ? (
-                                    <TouchableOpacity
-                                        style={styles.aboutKecaBadge}
-                                        activeOpacity={0.8}
-                                        onPress={() => router.push("/visitors")}
-                                    >
-                                        <AppText style={styles.aboutKecaText}>
-                                            {homeData?.hero_cta_button_label}
-                                        </AppText>
-                                    </TouchableOpacity>
-                                ) : null}
+                    <Animated.View entering={FadeInUp.duration(200).delay(30)}>
+                        <View style={styles.welcomeBannerContainer}>
+                            <ImageBackground
+                                source={require("../../assets/images/welcome.jpg")}
+                                style={styles.welcomeBannerCard}
+                                imageStyle={{ borderRadius: 10 }}
+                            >
+                                <View style={styles.welcomeBannerOverlay}>
+                                    {/* Top Right Pill Badge: About KECA */}
+                                    {isValidData(homeData?.hero_cta_button_label) ? (
+                                        <TouchableOpacity
+                                            style={styles.aboutKecaBadge}
+                                            activeOpacity={0.8}
+                                            onPress={() => router.push("/visitors")}
+                                        >
+                                            <AppText style={styles.aboutKecaText}>
+                                                {homeData?.hero_cta_button_label}
+                                            </AppText>
+                                        </TouchableOpacity>
+                                    ) : null}
 
-                                {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
-                                {isValidData(homeData?.hero_intro_paragraph) ? (
-                                    <View style={styles.welcomeIntroContainer}>
-                                        <RenderHTML
-                                            contentWidth={width}
-                                            source={{ html: homeData?.hero_intro_paragraph || "" }}
-                                            baseStyle={styles.welcomeIntroText as any}
-                                            tagsStyles={{
-                                                p: { marginVertical: 0, padding: 0 }
-                                            }}
-                                        />
-                                    </View>
-                                ) : null}
-                            </View>
-                        </ImageBackground>
-                    </View>
+                                    {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
+                                    {isValidData(homeData?.hero_intro_paragraph) ? (
+                                        <View style={styles.welcomeIntroContainer}>
+                                            <RenderHTML
+                                                contentWidth={width}
+                                                source={{ html: homeData?.hero_intro_paragraph || "" }}
+                                                baseStyle={styles.welcomeIntroText as any}
+                                                tagsStyles={{
+                                                    p: { marginVertical: 0, padding: 0 }
+                                                }}
+                                            />
+                                        </View>
+                                    ) : null}
+                                </View>
+                            </ImageBackground>
+                        </View>
+                    </Animated.View>
                 ) : null}
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {isValidData(homeData?.map_block_heading) ? (
-                    <View style={styles.subSectionTitleRow}>
-                        <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                            <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                    <Animated.View entering={FadeInUp.duration(200).delay(60)}>
+                        <View style={styles.subSectionTitleRow}>
+                            <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                                <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                            </View>
+                            <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.map_block_heading}</AppText>
                         </View>
-                        <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.map_block_heading}</AppText>
-                    </View>
-                ) : null}
-
-                {/* Map Card */}
-                {isValidData(homeData?.map_block_heading) ? (
-                    <View style={styles.mapCardContainer}>
-                        <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
-                            {isValidData(homeData?.map_view_button_label) ? (
-                                <TouchableOpacity
-                                    style={styles.viewMapButton}
-                                    activeOpacity={0.9}
-                                    onPress={() => router.push("/map")}
-                                >
-                                    <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
-                                </TouchableOpacity>
-                            ) : null}
-                        </ImageBackground>
-                    </View>
+                        <View style={styles.mapCardContainer}>
+                            <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
+                                {isValidData(homeData?.map_view_button_label) ? (
+                                    <TouchableOpacity
+                                        style={styles.viewMapButton}
+                                        activeOpacity={0.9}
+                                        onPress={() => router.push("/map")}
+                                    >
+                                        <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </ImageBackground>
+                        </View>
+                    </Animated.View>
                 ) : null}
 
                 {/* Weekend Programs Section */}
                 {isValidData(homeData?.programs) ? (
-                    <>
+                    <Animated.View entering={FadeInUp.duration(200).delay(90)}>
                         {isValidData(homeData?.programs_block_heading) ? (
                             <View style={styles.subSectionTitleRow}>
                                 <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
@@ -211,12 +214,12 @@ export default function HomeScreen() {
                                 );
                             })}
                         </ScrollView>
-                    </>
+                    </Animated.View>
                 ) : null}
 
                 {/* Featured Event Section */}
                 {isValidData(homeData?.featured_event) ? (
-                    <>
+                    <Animated.View entering={FadeInUp.duration(200).delay(120)}>
                         {isValidData(homeData?.event_block_heading) ? (
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
@@ -283,42 +286,44 @@ export default function HomeScreen() {
                                 </TouchableOpacity>
                             );
                         })()}
-                    </>
+                    </Animated.View>
                 ) : null}
 
                 {/* Hit the Trails Section */}
                 {(isValidData(homeData?.trails_block_heading) && isValidData(homeData?.trails)) ? (
-                    <View style={styles.trailsSectionContainer}>
-                        <View style={styles.subSectionTitleRow}>
-                            <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                                <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
-                            </View>
-                            <TouchableOpacity onPress={() => router.push("/trails")}>
-                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.trails_block_heading}</AppText>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.trailsHorizontalList}
-                        >
-                            {(homeData?.trails || []).map((trail: TrailsData, index: number) => (
-                                <TouchableOpacity
-                                    key={trail.id || index}
-                                    style={styles.trailPill}
-                                    activeOpacity={0.8}
-                                    onPress={() => router.push("/trails")}
-                                >
-                                    {isValidData(trail.trail_name) ? (
-                                        <AppText style={styles.trailName}>{trail.trail_name}</AppText>
-                                    ) : null}
-                                    {isValidData(trail.distance) ? (
-                                        <AppText style={styles.trailDistance}>{`  |  ${trail.distance}`}</AppText>
-                                    ) : null}
+                    <Animated.View entering={FadeInUp.duration(200).delay(150)}>
+                        <View style={styles.trailsSectionContainer}>
+                            <View style={styles.subSectionTitleRow}>
+                                <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
+                                    <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
+                                </View>
+                                <TouchableOpacity onPress={() => router.push("/trails")}>
+                                    <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.trails_block_heading}</AppText>
                                 </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
+                            </View>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.trailsHorizontalList}
+                            >
+                                {(homeData?.trails || []).map((trail: TrailsData, index: number) => (
+                                    <TouchableOpacity
+                                        key={trail.id || index}
+                                        style={styles.trailPill}
+                                        activeOpacity={0.8}
+                                        onPress={() => router.push("/trails")}
+                                    >
+                                        {isValidData(trail.trail_name) ? (
+                                            <AppText style={styles.trailName}>{trail.trail_name}</AppText>
+                                        ) : null}
+                                        {isValidData(trail.distance) ? (
+                                            <AppText style={styles.trailDistance}>{`  |  ${trail.distance}`}</AppText>
+                                        ) : null}
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </Animated.View>
                 ) : null}
             </ScrollView>
 

@@ -7,15 +7,17 @@ import {
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View
+    View,
+    Platform
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { RentalsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { RentalsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { openExternalLink } from "@/src/utils/openLink";
 import { isValidData } from "@/src/utils/validation";
 
@@ -24,30 +26,24 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function RentalsScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { brandData, rentalsData, apiStatus, rentalSettingsData } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+const RentalCard = React.memo(({ item, index, styles, primaryColor, secondaryColor, isDark, colors, handlePressLink }: {
+    item: RentalsData;
+    index: number;
+    styles: any;
+    primaryColor: string | undefined;
+    secondaryColor: string | undefined;
+    isDark: boolean;
+    colors: any;
+    handlePressLink: (url: string | undefined) => void;
+}) => {
+    // Find main image from additional_images (acf gallery) if available
+    let imageUrl = null;
+    if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
+        imageUrl = item.additional_images[0]?.url;
+    }
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-
-    const rentals = rentalsData || [];
-
-    const handlePressLink = (url: string | undefined) => {
-        if (url) {
-            openExternalLink(url);
-        }
-    };
-
-    const renderRentalItem = ({ item }: { item: RentalsData }) => {
-        // Find main image from additional_images (acf gallery) if available
-        let imageUrl = null;
-        if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
-            imageUrl = item.additional_images[0]?.url;
-        }
-
-        return (
+    return (
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
             <View style={styles.rentalCard}>
                 {isValidData(imageUrl) ? (
                     <CachedImage
@@ -134,8 +130,38 @@ export default function RentalsScreen() {
                     ) : null}
                 </View>
             </View>
-        );
-    };
+        </Animated.View>
+    );
+});
+
+export default function RentalsScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const { brandData, rentalsData, apiStatus, rentalSettingsData } = useAppContentData();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const rentals = rentalsData || [];
+
+    const handlePressLink = React.useCallback((url: string | undefined) => {
+        if (url) {
+            openExternalLink(url);
+        }
+    }, []);
+
+    const renderRentalItem = React.useCallback(({ item, index }: { item: RentalsData; index: number }) => (
+        <RentalCard
+            item={item}
+            index={index}
+            styles={styles}
+            primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
+            isDark={isDark}
+            colors={colors}
+            handlePressLink={handlePressLink}
+        />
+    ), [styles, primaryColor, secondaryColor, isDark, colors, handlePressLink]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -177,6 +203,10 @@ export default function RentalsScreen() {
                     renderItem={renderRentalItem}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={4}
+                    maxToRenderPerBatch={6}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No rentals available at the moment.</AppText>
                     }

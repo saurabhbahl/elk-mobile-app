@@ -31,7 +31,7 @@ export default function Navbar() {
             { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
         ]}>
             <View style={styles.leftActions}>
-                <TouchableOpacity onPress={() => router.push("/")} activeOpacity={0.8}>
+                <TouchableOpacity onPress={() => router.push("/(home)")} activeOpacity={0.8}>
                     {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
                         <Image
                             source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { ApiService } from '../api/ApiService';
 import { db } from '../database/index';
 import { appRepository } from '../repositories/AppRepository';
-import { clearImageCache } from '../utils/imageCache';
+import { clearImageCache, cacheImageIfNeeded } from '../utils/imageCache';
 
 // Helper to set nested object properties in-place
 function setNestedValue(obj: Record<string, unknown>, path: string[], value: unknown) {
@@ -154,23 +154,37 @@ export class SyncManager {
       const totalImages = imagesToDownload.length;
       let downloadedCount = 0;
 
-      for (let i = 0; i < totalImages; i++) {
-        const item = imagesToDownload[i];
-        try {
-          // Wrap prefetch in a 6-second timeout to prevent infinite hangs
-          await Promise.race([
-            Image.prefetch(item.url),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 6000))
-          ]);
-        } catch (err) {
-          console.warn(`Failed to pre-cache image (or timed out): ${item.url}`);
-        }
+      if (totalImages > 0) {
+        const CONCURRENCY = 4;
+        let index = 0;
 
-        downloadedCount++;
-        if (onProgress) {
-          const pct = 0.2 + (downloadedCount / totalImages) * 0.7;
-          onProgress(pct, `Downloading app photos`);
-        }
+        const downloadWorker = async () => {
+          while (true) {
+            const currentIndex = index++;
+            if (currentIndex >= totalImages) break;
+            const item = imagesToDownload[currentIndex];
+            try {
+              // Call cacheImageIfNeeded with a 15-second timeout
+              await Promise.race([
+                cacheImageIfNeeded(item.url),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+              ]);
+            } catch (err) {
+              console.warn(`Failed to pre-cache image (or timed out): ${item.url}`);
+            }
+
+            downloadedCount++;
+            if (onProgress) {
+              const pct = 0.2 + (downloadedCount / totalImages) * 0.7;
+              onProgress(pct, `Downloading app photos`);
+            }
+          }
+        };
+
+        const workers = Array(Math.min(CONCURRENCY, totalImages))
+          .fill(null)
+          .map(() => downloadWorker());
+        await Promise.all(workers);
       }
 
       if (onProgress) onProgress(0.95, 'Finalizing offline setup...');

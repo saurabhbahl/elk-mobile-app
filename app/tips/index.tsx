@@ -5,15 +5,17 @@ import {
     FlatList,
     StatusBar,
     StyleSheet,
-    View
+    View,
+    Platform
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { TipsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { TipsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -21,22 +23,20 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function TipsScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { brandData, tipsData, apiStatus, tipsScreenSettingsData } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+const TipCard = React.memo(({ item, index, styles, primaryColor, isDark, colors }: {
+    item: TipsData;
+    index: number;
+    styles: any;
+    primaryColor: string | undefined;
+    isDark: boolean;
+    colors: any;
+}) => {
+    const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+    if (!isValidData(item.tip_title) && !isValidData(item.tip_body)) return null;
 
-    const tips = tipsData || [];
-
-    const renderTipItem = ({ item }: { item: TipsData }) => {
-        const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
-
-        if (!isValidData(item.tip_title) && !isValidData(item.tip_body)) return null;
-
-        return (
+    return (
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
             <View style={styles.tipCard}>
                 <View style={styles.tipContent}>
                     {(isValidData(item.tip_title) || isValidData(item.category__tag)) ? (
@@ -77,8 +77,30 @@ export default function TipsScreen() {
                     ) : null}
                 </View>
             </View>
-        );
-    };
+        </Animated.View>
+    );
+});
+
+export default function TipsScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const { brandData, tipsData, apiStatus, tipsScreenSettingsData } = useAppContentData();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const tips = tipsData || [];
+
+    const renderTipItem = React.useCallback(({ item, index }: { item: TipsData; index: number }) => (
+        <TipCard
+            item={item}
+            index={index}
+            styles={styles}
+            primaryColor={primaryColor}
+            isDark={isDark}
+            colors={colors}
+        />
+    ), [styles, primaryColor, isDark, colors]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -133,6 +155,10 @@ export default function TipsScreen() {
                     renderItem={renderTipItem}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={5}
+                    maxToRenderPerBatch={8}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No viewing tips available at the moment.</AppText>
                     }

@@ -6,14 +6,16 @@ import {
     FlatList,
     StatusBar,
     StyleSheet,
-    View
+    View,
+    Platform
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { TrailsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -21,20 +23,15 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function TrailsScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { homeData, brandData, trailsData, apiStatus, trailSettingsData } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+const TrailCard = React.memo(({ item, index, styles }: {
+    item: TrailsData;
+    index: number;
+    styles: any;
+}) => {
+    if (!isValidData(item.trail_name) && !isValidData(item.description)) return null;
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-
-    const trails = trailsData || [];
-
-    const renderTrailItem = ({ item, index }: { item: TrailsData; index: number }) => {
-        if (!isValidData(item.trail_name) && !isValidData(item.description)) return null;
-
-        return (
+    return (
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
             <View style={styles.trailItemContainer}>
                 {(isValidData(item.trail_name) || isValidData(item.distance)) ? (
                     <View style={styles.trailHeaderRow}>
@@ -61,8 +58,27 @@ export default function TrailsScreen() {
                     <AppText style={styles.trailDescription}>No description available.</AppText>
                 }
             </View>
-        );
-    };
+        </Animated.View>
+    );
+});
+
+export default function TrailsScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const { brandData, trailsData, apiStatus, trailSettingsData } = useAppContentData();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const trails = trailsData || [];
+
+    const renderTrailItem = React.useCallback(({ item, index }: { item: TrailsData; index: number }) => (
+        <TrailCard
+            item={item}
+            index={index}
+            styles={styles}
+        />
+    ), [styles]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -91,6 +107,10 @@ export default function TrailsScreen() {
                     renderItem={renderTrailItem}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={8}
+                    maxToRenderPerBatch={12}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No trails available</AppText>
                     }

@@ -1,5 +1,5 @@
 import { useTheme } from '@/src/context/ThemeContext';
-import { useAppContent } from '@/src/contexts/AppContentContext';
+import { useAppContentData } from '@/src/contexts/AppContentContext';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
 import React from 'react';
@@ -18,7 +18,7 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function BottomNavbar() {
-    const { brandData } = useAppContent();
+    const { brandData } = useAppContentData();
     const { colors, isDark } = useTheme();
     const pathname = usePathname();
     const insets = useSafeAreaInsets();

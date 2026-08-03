@@ -33,18 +33,44 @@ type CacheManifest = Record<string, ManifestEntry>; // keyed by url
 
 // ─── Manifest I/O ────────────────────────────────────────────────────────────
 
-async function readManifest(): Promise<CacheManifest> {
+let manifestCache: CacheManifest | null = null;
+
+// ─── Manifest I/O ────────────────────────────────────────────────────────────
+
+export async function preloadManifestCache(): Promise<void> {
+  if (manifestCache) return;
   try {
     const info = await FileSystem.getInfoAsync(MANIFEST_PATH);
-    if (!info.exists) return {};
+    if (!info.exists) {
+      manifestCache = {};
+      return;
+    }
     const raw = await FileSystem.readAsStringAsync(MANIFEST_PATH);
-    return JSON.parse(raw) as CacheManifest;
+    manifestCache = JSON.parse(raw) as CacheManifest;
   } catch {
+    manifestCache = {};
+  }
+}
+
+async function readManifest(): Promise<CacheManifest> {
+  if (manifestCache) return manifestCache;
+  try {
+    const info = await FileSystem.getInfoAsync(MANIFEST_PATH);
+    if (!info.exists) {
+      manifestCache = {};
+      return {};
+    }
+    const raw = await FileSystem.readAsStringAsync(MANIFEST_PATH);
+    manifestCache = JSON.parse(raw) as CacheManifest;
+    return manifestCache;
+  } catch {
+    manifestCache = {};
     return {};
   }
 }
 
 async function writeManifest(manifest: CacheManifest): Promise<void> {
+  manifestCache = manifest;
   try {
     await FileSystem.writeAsStringAsync(MANIFEST_PATH, JSON.stringify(manifest));
   } catch (e) {
@@ -106,6 +132,16 @@ async function evictLRU(manifest: CacheManifest): Promise<CacheManifest> {
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
+
+/**
+ * Synchronously checks the manifest cache for a local file:/// path.
+ * Returns the path if it exists, or null.
+ */
+export function getCachedImageLocalPath(url: string | null | undefined): string | null {
+  if (!url || !manifestCache) return null;
+  const entry = manifestCache[url];
+  return entry ? entry.localPath : null;
+}
 
 /**
  * Download and cache an image if not already cached.
@@ -214,6 +250,7 @@ export async function clearImageCache(): Promise<void> {
     if (manifestInfo.exists) {
       await FileSystem.deleteAsync(MANIFEST_PATH, { idempotent: true });
     }
+    manifestCache = null; // Clear in-memory cache as well
     console.log('[ImageCache] Cache cleared.');
   } catch (e) {
     console.warn('[ImageCache] Failed to clear cache:', e);

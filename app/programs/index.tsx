@@ -8,10 +8,12 @@ import { ActivityIndicator,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View } from "react-native";
+    View,
+    Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
-import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
+import { useAppContentData, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { Image } from "expo-image";
@@ -24,20 +26,13 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function ProgramsScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { brandData, programsData, apiStatus, programsSettingData } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-
-    const programs = programsData || [];
-    
-    // ACF select fields sometimes return an object { value: 'list', label: 'List' }
-    const layoutValue = typeof programsSettingData?.layout === 'object' ? (programsSettingData.layout as any).value : programsSettingData?.layout;
-    const isGrid = (layoutValue || "").toLowerCase() !== "list";
-
-    const renderProgramCard = ({ item, index }: { item: ProgramsData; index: number }) => (
+const ProgramCard = React.memo(({ item, index, isGrid, styles }: {
+    item: ProgramsData;
+    index: number;
+    isGrid: boolean;
+    styles: any;
+}) => (
+    <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
         <TouchableOpacity
             style={isGrid ? styles.programCard : styles.programListCard}
             activeOpacity={0.8}
@@ -61,7 +56,30 @@ export default function ProgramsScreen() {
                 ) : null}
             </View>
         </TouchableOpacity>
-    );
+    </Animated.View>
+));
+
+export default function ProgramsScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const { brandData, programsData, apiStatus, programsSettingData } = useAppContentData();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const programs = programsData || [];
+    
+    // ACF select fields sometimes return an object { value: 'list', label: 'List' }
+    const layoutValue = typeof programsSettingData?.layout === 'object' ? (programsSettingData.layout as any).value : programsSettingData?.layout;
+    const isGrid = (layoutValue || "").toLowerCase() !== "list";
+
+    const renderProgramCard = React.useCallback(({ item, index }: { item: ProgramsData; index: number }) => (
+        <ProgramCard
+            item={item}
+            index={index}
+            isGrid={isGrid}
+            styles={styles}
+        />
+    ), [isGrid, styles]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -93,6 +111,10 @@ export default function ProgramsScreen() {
                     contentContainerStyle={styles.gridContainer}
                     columnWrapperStyle={isGrid ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No programs available</AppText>
                     }

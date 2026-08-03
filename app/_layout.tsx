@@ -11,7 +11,7 @@ import Navbar from "@/src/components/Navbar";
 import OfflinePopup from "@/src/components/OfflinePopup";
 import QuickLinks from "@/src/components/QuickLinks";
 import SyncProgressScreen from "@/src/components/SyncProgressScreen";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContentData, useAppContentSync } from "@/src/contexts/AppContentContext";
 
 import {
   EBGaramond_500Medium,
@@ -148,7 +148,8 @@ import BottomNavbar from "@/src/components/BottomNavbar";
 
 function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string | null | undefined, isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
-  const { brandData, apiStatus, refreshData } = useAppContent();
+  const { brandData, apiStatus } = useAppContentData();
+  const { refreshData } = useAppContentSync();
   const pathname = usePathname();
   const segments = useSegments();
   const primaryColor = brandData?.brand_color_primary || "";

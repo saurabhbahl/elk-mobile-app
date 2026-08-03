@@ -14,12 +14,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { CamerasData, useAppContent } from "@/src/contexts/AppContentContext";
+import { CamerasData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 import { useNetInfo } from "@react-native-community/netinfo";
 
@@ -48,7 +49,7 @@ function NativeVideoPlayer({ source }: { source: string }) {
 export default function LiveCameraScreen() {
     const { colors, fonts, isDark } = useTheme();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-    const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContent();
+    const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -176,112 +177,114 @@ export default function LiveCameraScreen() {
                     <ActivityIndicator size="large" color={bgColor} />
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    {/* Header Row */}
-                    {isValidData(liveCamSettingsData?.screen_title) ? (
-                        <View style={styles.headerRow}>
-                            <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
-                            <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
-                                {liveCamSettingsData?.screen_title}
-                            </AppText>
-                        </View>
-                    ) : null}
+                <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
+                    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                        {/* Header Row */}
+                        {isValidData(liveCamSettingsData?.screen_title) ? (
+                            <View style={styles.headerRow}>
+                                <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
+                                <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
+                                    {liveCamSettingsData?.screen_title}
+                                </AppText>
+                            </View>
+                        ) : null}
 
-                    {/* Camera Tabs */}
-                    {cameras.length > 0 ? (
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.tabsScroll}
-                        >
-                            {cameras.map((cam: CamerasData, index: number) => {
-                                const isActive = index === activeCamIndex;
-                                return (
-                                    <TouchableOpacity
-                                        key={cam.id || index}
-                                        style={[
-                                            styles.tabButton,
-                                            isActive && { backgroundColor: bgColor, borderColor: bgColor },
-                                        ]}
-                                        onPress={() => handleTabChange(index)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <AppText
+                        {/* Camera Tabs */}
+                        {cameras.length > 0 ? (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.tabsScroll}
+                            >
+                                {cameras.map((cam: CamerasData, index: number) => {
+                                    const isActive = index === activeCamIndex;
+                                    return (
+                                        <TouchableOpacity
+                                            key={cam.id || index}
                                             style={[
-                                                styles.tabButtonText,
-                                                isActive && { color: isDark ? "#FFFFFF" : secColor },
+                                                styles.tabButton,
+                                                isActive && { backgroundColor: bgColor, borderColor: bgColor },
                                             ]}
+                                            onPress={() => handleTabChange(index)}
+                                            activeOpacity={0.8}
                                         >
-                                            {cam.camera_name}
-                                        </AppText>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    ) : null}
+                                            <AppText
+                                                style={[
+                                                    styles.tabButtonText,
+                                                    isActive && { color: isDark ? "#FFFFFF" : secColor },
+                                                ]}
+                                            >
+                                                {cam.camera_name}
+                                            </AppText>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        ) : null}
 
-                    {/* Active Camera Video Preview Box */}
-                    <View style={styles.playerContainer}>
-                        {activeCamera ? (
-                            isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
-                                <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
-                                    <CachedImage
-                                        uri={activeCamera.thumbnail__poster?.url as string}
-                                        style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
-                                        contentFit="cover"
-                                    />
-                                    <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
-                                    <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
-                                        {liveCamSettingsData?.offline_message}
-                                    </AppText>
-                                </View>
-                            ) : isPlaying ? (
-                                renderPlayer()
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.playerTouchable}
-                                    activeOpacity={0.9}
-                                    onPress={handlePlayStream}
-                                >
-                                    <View style={styles.playerImage}>
+                        {/* Active Camera Video Preview Box */}
+                        <View style={styles.playerContainer}>
+                            {activeCamera ? (
+                                isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
+                                    <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
                                         <CachedImage
                                             uri={activeCamera.thumbnail__poster?.url as string}
-                                            style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                                            style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
                                             contentFit="cover"
                                         />
-                                        <View style={[StyleSheet.absoluteFill, styles.playerOverlay]}>
-                                            <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
-                                        </View>
+                                        <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
+                                        <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
+                                            {liveCamSettingsData?.offline_message}
+                                        </AppText>
                                     </View>
-                                </TouchableOpacity>
-                            )
-                        ) : (
-                            <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
-                                <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
-                                <AppText style={styles.noCameraText}>No active live cameras available.</AppText>
-                            </View>
-                        )}
-                    </View>
-
-                    {/* Stream Notes and Quality details */}
-                    {(isValidData(activeCamera?.description) ||
-                        (isConnected === false && isValidData(liveCamSettingsData?.offline_message)) ||
-                        isValidData(liveCamSettingsData?.quality_note)) ? (
-                        <View style={styles.detailsContainer}>
-                            {isValidData(activeCamera?.description) ? (
-                                <AppText style={styles.cameraDescription}>
-                                    {(activeCamera.description || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                                </AppText>
-                            ) : null}
-
-                            {isValidData(liveCamSettingsData?.quality_note) ? (
-                                <AppText style={styles.noteText}>
-                                    {(liveCamSettingsData?.quality_note || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                                </AppText>
-                            ) : null}
+                                ) : isPlaying ? (
+                                    renderPlayer()
+                                ) : (
+                                    <TouchableOpacity
+                                        style={styles.playerTouchable}
+                                        activeOpacity={0.9}
+                                        onPress={handlePlayStream}
+                                    >
+                                        <View style={styles.playerImage}>
+                                            <CachedImage
+                                                uri={activeCamera.thumbnail__poster?.url as string}
+                                                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                                                contentFit="cover"
+                                            />
+                                            <View style={[StyleSheet.absoluteFill, styles.playerOverlay]}>
+                                                <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                )
+                            ) : (
+                                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
+                                    <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
+                                    <AppText style={styles.noCameraText}>No active live cameras available.</AppText>
+                                </View>
+                            )}
                         </View>
-                    ) : null}
-                </ScrollView>
+
+                        {/* Stream Notes and Quality details */}
+                        {(isValidData(activeCamera?.description) ||
+                            (isConnected === false && isValidData(liveCamSettingsData?.offline_message)) ||
+                            isValidData(liveCamSettingsData?.quality_note)) ? (
+                            <View style={styles.detailsContainer}>
+                                {isValidData(activeCamera?.description) ? (
+                                    <AppText style={styles.cameraDescription}>
+                                        {(activeCamera.description || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                    </AppText>
+                                ) : null}
+
+                                {isValidData(liveCamSettingsData?.quality_note) ? (
+                                    <AppText style={styles.noteText}>
+                                        {(liveCamSettingsData?.quality_note || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                    </AppText>
+                                ) : null}
+                            </View>
+                        ) : null}
+                    </ScrollView>
+                </Animated.View>
             )}
         </SafeAreaView>
     );

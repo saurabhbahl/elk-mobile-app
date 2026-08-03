@@ -12,10 +12,11 @@ import { ActivityIndicator,
     View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RenderHTML from 'react-native-render-html';
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 import { openExternalLink } from "@/src/utils/openLink";
@@ -30,7 +31,7 @@ const getValidColor = (color: string | undefined) => {
 export default function VisitorsCenterScreen() {
     const { colors, fonts, isDark } = useTheme();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-    const { brandData, visitorsData, apiStatus } = useAppContent();
+    const { brandData, visitorsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
 
@@ -67,9 +68,9 @@ export default function VisitorsCenterScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
-            
+
             <View style={{ backgroundColor: bgColor }}>
-                
+
             </View>
 
             {apiStatus === "fetching" ? (
@@ -77,130 +78,132 @@ export default function VisitorsCenterScreen() {
                     <ActivityIndicator size="large" color={bgColor} />
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    {/* Header Row */}
-                    {isValidData(visitorsData?.screen_title) ? (
-                        <View style={styles.headerRow}>
-                            <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
-                            <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
-                                {visitorsData?.screen_title}
-                            </AppText>
-                        </View>
-                    ) : null}
+                <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
+                    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                        {/* Header Row */}
+                        {isValidData(visitorsData?.screen_title) ? (
+                            <View style={styles.headerRow}>
+                                <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
+                                <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
+                                    {visitorsData?.screen_title}
+                                </AppText>
+                            </View>
+                        ) : null}
 
-                    {/* Image Gallery Slider */}
-                    {isValidData(images) ? (
-                        <View style={styles.carouselContainer}>
-                            <FlatList
-                                ref={flatListRef}
-                                data={images}
-                                keyExtractor={(item, index) => index.toString()}
-                                horizontal
-                                pagingEnabled
-                                showsHorizontalScrollIndicator={false}
-                                onMomentumScrollEnd={(e) => {
-                                    const nextIndex = Math.round(
-                                        e.nativeEvent.contentOffset.x / CAROUSEL_WIDTH
-                                    );
-                                    setActiveIndex(nextIndex);
-                                }}
-                                renderItem={({ item }) => (
-                                    <Image
-                                        source={{ uri: item }}
-                                        style={styles.carouselImage}
-                                        contentFit="cover"
-                                    />
+                        {/* Image Gallery Slider */}
+                        {isValidData(images) ? (
+                            <View style={styles.carouselContainer}>
+                                <FlatList
+                                    ref={flatListRef}
+                                    data={images}
+                                    keyExtractor={(item, index) => index.toString()}
+                                    horizontal
+                                    pagingEnabled
+                                    showsHorizontalScrollIndicator={false}
+                                    onMomentumScrollEnd={(e) => {
+                                        const nextIndex = Math.round(
+                                            e.nativeEvent.contentOffset.x / CAROUSEL_WIDTH
+                                        );
+                                        setActiveIndex(nextIndex);
+                                    }}
+                                    renderItem={({ item }) => (
+                                        <Image
+                                            source={{ uri: item }}
+                                            style={styles.carouselImage}
+                                            contentFit="cover"
+                                        />
+                                    )}
+                                />
+                                {images.length > 1 && (
+                                    <>
+                                        <TouchableOpacity
+                                            style={[styles.arrowButton, { left: 10 }]}
+                                            onPress={handlePrevSlide}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Ionicons name="arrow-back" size={16} color="#333333" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.arrowButton, { right: 10 }]}
+                                            onPress={handleNextSlide}
+                                            activeOpacity={0.8}
+                                        >
+                                            <Ionicons name="arrow-forward" size={16} color="#333333" />
+                                        </TouchableOpacity>
+                                    </>
                                 )}
-                            />
-                            {images.length > 1 && (
-                                <>
+                            </View>
+                        ) : null}
+
+                        {/* Call to Actions (CTA) Cards */}
+                        {(isValidData(visitorsData?.cta_1_label) || isValidData(visitorsData?.cta_2_label)) ? (
+                            <View style={styles.ctaContainer}>
+                                {/* CTA 1: Get Directions / Address */}
+                                {isValidData(visitorsData?.cta_1_label) ? (
                                     <TouchableOpacity
-                                        style={[styles.arrowButton, { left: 10 }]}
-                                        onPress={handlePrevSlide}
-                                        activeOpacity={0.8}
+                                        style={styles.ctaCard}
+                                        activeOpacity={0.9}
+                                        onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
                                     >
-                                        <Ionicons name="arrow-back" size={16} color="#333333" />
+                                        <View style={styles.ctaImagePlaceholder}>
+                                            <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
+                                        </View>
+                                        <View style={styles.ctaContent}>
+                                            <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                                {visitorsData?.cta_1_label}
+                                            </AppText>
+                                            {isValidData(visitorsData?.address) ? (
+                                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                    {visitorsData?.address}
+                                                </AppText>
+                                            ) : null}
+                                        </View>
                                     </TouchableOpacity>
+                                ) : null}
+
+                                {/* CTA 2: Call Us / Contact */}
+                                {isValidData(visitorsData?.cta_2_label) ? (
                                     <TouchableOpacity
-                                        style={[styles.arrowButton, { right: 10 }]}
-                                        onPress={handleNextSlide}
-                                        activeOpacity={0.8}
+                                        style={styles.ctaCard}
+                                        activeOpacity={0.9}
+                                        onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
                                     >
-                                        <Ionicons name="arrow-forward" size={16} color="#333333" />
+                                        <View style={styles.ctaImagePlaceholder}>
+                                            <Ionicons name="call-outline" size={30} color={bgColor} />
+                                        </View>
+                                        <View style={styles.ctaContent}>
+                                            <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                                {visitorsData?.cta_2_label}
+                                            </AppText>
+                                            {isValidData(visitorsData?.phone_number) ? (
+                                                <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                    {visitorsData?.phone_number}
+                                                </AppText>
+                                            ) : null}
+                                        </View>
                                     </TouchableOpacity>
-                                </>
-                            )}
-                        </View>
-                    ) : null}
+                                ) : null}
+                            </View>
+                        ) : null}
 
-                    {/* Call to Actions (CTA) Cards */}
-                    {(isValidData(visitorsData?.cta_1_label) || isValidData(visitorsData?.cta_2_label)) ? (
-                        <View style={styles.ctaContainer}>
-                            {/* CTA 1: Get Directions / Address */}
-                            {isValidData(visitorsData?.cta_1_label) ? (
-                                <TouchableOpacity
-                                    style={styles.ctaCard}
-                                    activeOpacity={0.9}
-                                    onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
-                                >
-                                    <View style={styles.ctaImagePlaceholder}>
-                                        <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
-                                    </View>
-                                    <View style={styles.ctaContent}>
-                                        <AppText style={styles.ctaTitle} numberOfLines={1}>
-                                            {visitorsData?.cta_1_label}
-                                        </AppText>
-                                        {isValidData(visitorsData?.address) ? (
-                                            <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                                {visitorsData?.address}
-                                            </AppText>
-                                        ) : null}
-                                    </View>
-                                </TouchableOpacity>
-                            ) : null}
-
-                            {/* CTA 2: Call Us / Contact */}
-                            {isValidData(visitorsData?.cta_2_label) ? (
-                                <TouchableOpacity
-                                    style={styles.ctaCard}
-                                    activeOpacity={0.9}
-                                    onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
-                                >
-                                    <View style={styles.ctaImagePlaceholder}>
-                                        <Ionicons name="call-outline" size={30} color={bgColor} />
-                                    </View>
-                                    <View style={styles.ctaContent}>
-                                        <AppText style={styles.ctaTitle} numberOfLines={1}>
-                                            {visitorsData?.cta_2_label}
-                                        </AppText>
-                                        {isValidData(visitorsData?.phone_number) ? (
-                                            <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                                {visitorsData?.phone_number}
-                                            </AppText>
-                                        ) : null}
-                                    </View>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
-                    ) : null}
-
-                    {/* Body Copy Section */}
-                    {isValidData(visitorsData?.body_copy) ? (
-                        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
-                            <RenderHTML
-                                contentWidth={width - 32}
-                                source={{ html: visitorsData?.body_copy || "" }}
-                                baseStyle={{
-                                    fontSize: 13,
-                                    color: colors.onSurface,
-                                    lineHeight: 18,
-                                    textAlign: "justify",
-                                }}
-                                tagsStyles={{ p: { textAlign: "justify", marginVertical: 4 } }}
-                            />
-                        </View>
-                    ) : null}
-                </ScrollView>
+                        {/* Body Copy Section */}
+                        {isValidData(visitorsData?.body_copy) ? (
+                            <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                                <RenderHTML
+                                    contentWidth={width - 32}
+                                    source={{ html: visitorsData?.body_copy || "" }}
+                                    baseStyle={{
+                                        fontSize: 13,
+                                        color: colors.onSurface,
+                                        lineHeight: 18,
+                                        textAlign: "justify",
+                                    }}
+                                    tagsStyles={{ p: { textAlign: "justify", marginVertical: 4 } }}
+                                />
+                            </View>
+                        ) : null}
+                    </ScrollView>
+                </Animated.View>
             )}
         </SafeAreaView>
     );

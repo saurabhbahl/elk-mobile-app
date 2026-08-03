@@ -1,6 +1,7 @@
 import { useOfflineMap } from "../hooks/useOfflineMap";
 import { appRepository } from "../repositories/AppRepository";
 import { SyncManager } from "../services/SyncManager";
+import { preloadManifestCache } from "../utils/imageCache";
 
 import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
@@ -270,7 +271,7 @@ export interface AppContentData {
     pois?: PoisData[];
 }
 
-interface AppContentContextType {
+export interface AppContentDataContextType {
     brandData: AppBranding | null;
     popupData: PopupContent | null;
     homeData: HomeScreenData | null;
@@ -292,6 +293,9 @@ interface AppContentContextType {
     navigationData: NavigationData[] | null;
     poisData: MappedPoisData[] | null;
     apiStatus: 'fetching' | 'loading' | 'ready';
+}
+
+export interface AppContentSyncContextType {
     isSyncing: boolean;
     syncProgress: number;
     syncStatusText: string;
@@ -300,7 +304,10 @@ interface AppContentContextType {
     performInitialSync: () => Promise<boolean>;
 }
 
-const AppContentContext = createContext<AppContentContextType | undefined>(undefined);
+export interface AppContentContextType extends AppContentDataContextType, AppContentSyncContextType {}
+
+const AppContentDataContext = createContext<AppContentDataContextType | undefined>(undefined);
+const AppContentSyncContext = createContext<AppContentSyncContextType | undefined>(undefined);
 
 export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const {
@@ -489,10 +496,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
             setInitialSyncPhase('complete');
             loadFromSQLite();
-            setApiStatus('loading');
-            setTimeout(() => {
-                setApiStatus('ready');
-            }, 1000);
+            setApiStatus('ready');
             setIsSyncing(false);
             return true;
         } catch (err) {
@@ -529,13 +533,11 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Boot Logic
     useEffect(() => {
+        preloadManifestCache().catch(e => console.warn('[AppContent] Failed to preload manifest:', e));
         const isComplete = SyncManager.isSyncComplete();
         if (isComplete) {
             loadFromSQLite();
-            setApiStatus('loading');
-            setTimeout(() => {
-                setApiStatus('ready');
-            }, 1000);
+            setApiStatus('ready');
 
             // Trigger background delta checks on boot
             refreshData();
@@ -544,7 +546,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    const contextValue = React.useMemo(() => ({
+    const dataContextValue = React.useMemo(() => ({
         brandData,
         popupData,
         homeData,
@@ -565,13 +567,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         mapSettingsData,
         navigationData,
         poisData,
-        apiStatus,
-        isSyncing,
-        syncProgress,
-        syncStatusText,
-        syncError,
-        refreshData,
-        performInitialSync
+        apiStatus
     }), [
         brandData,
         popupData,
@@ -593,24 +589,55 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         mapSettingsData,
         navigationData,
         poisData,
-        apiStatus,
+        apiStatus
+    ]);
+
+    const syncContextValue = React.useMemo(() => ({
         isSyncing,
         syncProgress,
         syncStatusText,
-        syncError
+        syncError,
+        refreshData,
+        performInitialSync
+    }), [
+        isSyncing,
+        syncProgress,
+        syncStatusText,
+        syncError,
+        refreshData,
+        performInitialSync
     ]);
 
     return (
-        <AppContentContext.Provider value={contextValue}>
-            {children}
-        </AppContentContext.Provider>
+        <AppContentDataContext.Provider value={dataContextValue}>
+            <AppContentSyncContext.Provider value={syncContextValue}>
+                {children}
+            </AppContentSyncContext.Provider>
+        </AppContentDataContext.Provider>
     );
 };
 
 export const useAppContent = () => {
-    const context = useContext(AppContentContext);
-    if (context === undefined) {
+    const data = useContext(AppContentDataContext);
+    const sync = useContext(AppContentSyncContext);
+    if (data === undefined || sync === undefined) {
         throw new Error('useAppContent must be used within an AppContentProvider');
+    }
+    return { ...data, ...sync };
+};
+
+export const useAppContentData = () => {
+    const context = useContext(AppContentDataContext);
+    if (context === undefined) {
+        throw new Error('useAppContentData must be used within an AppContentProvider');
+    }
+    return context;
+};
+
+export const useAppContentSync = () => {
+    const context = useContext(AppContentSyncContext);
+    if (context === undefined) {
+        throw new Error('useAppContentSync must be used within an AppContentProvider');
     }
     return context;
 };

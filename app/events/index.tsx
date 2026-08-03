@@ -8,14 +8,16 @@ import {
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View
+    View,
+    Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { EventsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { EventsData, useAppContentData } from "@/src/contexts/AppContentContext";
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -24,16 +26,12 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-export default function EventsScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { homeData, brandData, eventsData, apiStatus, eventSettingsData } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-
-    const events = eventsData || [];
-
-    const renderEventCard = ({ item, index }: { item: EventsData; index: number }) => (
+const EventCard = React.memo(({ item, index, styles }: {
+    item: EventsData;
+    index: number;
+    styles: any;
+}) => (
+    <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
         <TouchableOpacity
             style={styles.eventCard}
             activeOpacity={0.8}
@@ -53,7 +51,25 @@ export default function EventsScreen() {
                 </AppText>
             </View>
         </TouchableOpacity>
-    );
+    </Animated.View>
+));
+
+export default function EventsScreen() {
+    const { colors, fonts, isDark } = useTheme();
+    const { brandData, eventsData, apiStatus, eventSettingsData } = useAppContentData();
+    const primaryColor = getValidColor(brandData?.brand_color_primary);
+
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    const events = eventsData || [];
+
+    const renderEventCard = React.useCallback(({ item, index }: { item: EventsData; index: number }) => (
+        <EventCard
+            item={item}
+            index={index}
+            styles={styles}
+        />
+    ), [styles]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -84,6 +100,10 @@ export default function EventsScreen() {
                     contentContainerStyle={styles.gridContainer}
                     columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No events available</AppText>
                     }

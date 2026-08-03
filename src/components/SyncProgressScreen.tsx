@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import AppText from './AppText';
-import { useAppContent } from '@/src/contexts/AppContentContext';
+import { useAppContentData, useAppContentSync } from '@/src/contexts/AppContentContext';
 import { StatusBar } from 'expo-status-bar';
 import { Image, ImageBackground } from 'expo-image';
 import { useTheme } from '@/src/context/ThemeContext';
@@ -13,14 +13,14 @@ const getValidColor = (color: string | undefined) => {
 };
 
 export default function SyncProgressScreen() {
+    const { brandData } = useAppContentData();
     const { 
-        brandData,
         isSyncing, 
         syncProgress, 
         syncStatusText, 
         syncError, 
         performInitialSync 
-    } = useAppContent();
+    } = useAppContentSync();
     const { colors, isDark } = useTheme();
 
     useEffect(() => {
