@@ -216,7 +216,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
           />
           <Stack.Screen
             name="programs/[id]"
-            options={{ headerShown: false }}
+            options={{ headerShown: false, animation: 'none' }}
           />
           <Stack.Screen
             name="events/index"
@@ -224,7 +224,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
           />
           <Stack.Screen
             name="events/[id]"
-            options={{ headerShown: false }}
+            options={{ headerShown: false, animation: 'none' }}
           />
           <Stack.Screen
             name="trails/index"
@@ -244,7 +244,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
           />
           <Stack.Screen
             name="map/[id]"
-            options={{ headerShown: false }}
+            options={{ headerShown: false, animation: 'none' }}
           />
           <Stack.Screen
             name="map/settings"

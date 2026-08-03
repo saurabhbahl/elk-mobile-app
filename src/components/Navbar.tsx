@@ -7,6 +7,9 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const scale = width / 600;
 const r = (size: number) => Math.min(size * scale, size * 1.5);
@@ -31,21 +34,26 @@ export default function Navbar() {
             { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
         ]}>
             <View style={styles.leftActions}>
-                <TouchableOpacity onPress={() => router.push("/(home)")} activeOpacity={0.8}>
+                <TouchableOpacity 
+                    onPress={() => router.navigate("/(home)")} 
+                    activeOpacity={0.8}
+                >
                     {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
-                        <Image
+                        <AnimatedImage
                             source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                             style={styles.headerLogo}
                             contentFit="contain"
+                            entering={FadeIn.duration(800)}
                         />
                     ) : null}
                 </TouchableOpacity>
 
                 {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
-                    <Image
+                    <AnimatedImage
                         source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                         style={styles.headerExplorer}
                         contentFit="contain"
+                        entering={FadeIn.duration(800).delay(200)}
                     />
                 ) : null}
             </View>

@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
+    InteractionManager,
     Linking,
     ScrollView,
     StatusBar,
@@ -47,7 +48,16 @@ export default function EventDetailScreen() {
         }
     };
 
-    if (apiStatus === "fetching") {
+    const [isTransitioning, setIsTransitioning] = React.useState(true);
+
+    React.useEffect(() => {
+        const interaction = InteractionManager.runAfterInteractions(() => {
+            setIsTransitioning(false);
+        });
+        return () => interaction.cancel();
+    }, []);
+
+    if (apiStatus === "fetching" || isTransitioning) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />

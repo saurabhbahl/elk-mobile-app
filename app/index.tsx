@@ -1,14 +1,17 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
 import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAppContent } from "@/src/contexts/AppContentContext";
+import { height, LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS, width, height } from "@/src/constants/theme";
+import { useAppContent } from "@/src/contexts/AppContentContext";
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
 
 const diagonal = Math.sqrt(width * width + height * height);
 const angle = Math.atan2(height, width) * (180 / Math.PI);
@@ -33,18 +36,20 @@ export default function LandingScreen() {
                 {apiStatus !== 'fetching' && (
                     <>
                         {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
-                            <Image
+                            <AnimatedImage
                                 source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                                 style={styles.logo}
                                 contentFit="contain"
+                                entering={FadeIn.duration(1000)}
                             />
                         ) : null}
 
                         {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
-                            <Image
+                            <AnimatedImage
                                 source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                                 style={styles.explorer}
                                 contentFit="contain"
+                                entering={FadeIn.duration(1500).delay(100)}
                             />
                         ) : null}
 
@@ -57,7 +62,7 @@ export default function LandingScreen() {
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
-                                onPress={() => router.push("/(home)" as any)}
+                                onPress={() => router.replace("/(home)" as any)}
                             >
                                 <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
                                     {brandData?.app_tagline}
@@ -74,13 +79,14 @@ export default function LandingScreen() {
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
             {bgImageUri ? (
-                <ImageBackground
+                <AnimatedImageBackground
                     source={{ uri: bgImageUri }}
                     style={StyleSheet.absoluteFill}
                     contentFit="cover"
+                    entering={FadeIn.duration(2000)}
                 >
                     <View style={styles.darkOverlay}>{Inner}</View>
-                </ImageBackground>
+                </AnimatedImageBackground>
             ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: bgColor || '#2E3B2F' }]}>
                     <View style={styles.darkOverlay}>{Inner}</View>

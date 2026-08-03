@@ -514,8 +514,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         const netInfo = await NetInfo.fetch();
         if (!netInfo.isConnected) return false;
 
-        // TODO: Remove this line after testing so it doesn't do a full sync every app boot!
-        appRepository.upsertMetadata('last_full_sync', '');
+        // Removed last_full_sync override so the app performs delta checks on boot rather than full syncs, preventing SQLite write lockups and CPU spikes.
 
         setIsSyncing(true);
         try {

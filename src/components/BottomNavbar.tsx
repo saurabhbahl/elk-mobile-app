@@ -1,3 +1,4 @@
+import { SCREEN_HEIGHT } from '@/src/constants/theme';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useAppContentData } from '@/src/contexts/AppContentContext';
 import { Image } from 'expo-image';
@@ -6,7 +7,6 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from './AppText';
-import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/src/constants/theme';
 
 const isSmallDevice = SCREEN_HEIGHT < 700;
 const isMediumDevice = SCREEN_HEIGHT >= 700 && SCREEN_HEIGHT < 850;
@@ -58,11 +58,13 @@ export default function BottomNavbar() {
 
         if (isActive) return;
 
-        if (route === '/(home)') {
-            router.replace('/(home)');
-        } else {
-            router.replace(route as any);
-        }
+        requestAnimationFrame(() => {
+            if (route === '/(home)') {
+                router.replace('/(home)');
+            } else {
+                router.replace(route as any);
+            }
+        });
     };
 
     return (

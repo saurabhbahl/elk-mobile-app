@@ -68,7 +68,11 @@ export default function QuickLinks() {
                             }
                         ]}
                         activeOpacity={0.8}
-                        onPress={() => router.push((item.nav_link as any)?.url as any)}
+                        onPress={() => {
+                            requestAnimationFrame(() => {
+                                router.push((item.nav_link as any)?.url as any);
+                            });
+                        }}
                     >
                         {item.nav_image ? (
                             <Image

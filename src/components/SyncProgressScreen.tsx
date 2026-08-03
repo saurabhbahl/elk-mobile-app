@@ -6,6 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import { Image, ImageBackground } from 'expo-image';
 import { useTheme } from '@/src/context/ThemeContext';
 import { width, height } from '@/src/constants/theme';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -42,18 +46,20 @@ export default function SyncProgressScreen() {
         <View style={styles.overlay}>
             <View style={styles.brandingContainer}>
                 {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
-                    <Image
+                    <AnimatedImage
                         source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                         style={styles.logo}
                         contentFit="contain"
+                        entering={FadeIn.duration(800)}
                     />
                 ) : null}
 
                 {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
-                    <Image
+                    <AnimatedImage
                         source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                         style={styles.explorer}
                         contentFit="contain"
+                        entering={FadeIn.duration(800).delay(200)}
                     />
                 ) : null}
             </View>
@@ -101,13 +107,14 @@ export default function SyncProgressScreen() {
         <View style={styles.container}>
             <StatusBar style="light" />
             {bgImageUri ? (
-                <ImageBackground 
+                <AnimatedImageBackground 
                     source={{ uri: bgImageUri }} 
                     style={StyleSheet.absoluteFill} 
                     contentFit="cover"
+                    entering={FadeIn.duration(1000)}
                 >
                     {Content}
-                </ImageBackground>
+                </AnimatedImageBackground>
             ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: primaryColor || '#2E3B2F' }]}>
                     {Content}

@@ -13,9 +13,9 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
 
@@ -62,7 +62,7 @@ export default function HomeScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
-                    <Animated.View entering={FadeInUp.duration(200)}>
+                    <Animated.View entering={FadeInUp.duration(300)}>
                         <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
                             {homeData?.hero_welcome_heading}
                         </AppText>
@@ -71,7 +71,7 @@ export default function HomeScreen() {
 
                 {/* Welcome Banner Card */}
                 {(isValidData(homeData?.hero_cta_button_label) || isValidData(homeData?.hero_intro_paragraph)) ? (
-                    <Animated.View entering={FadeInUp.duration(200).delay(30)}>
+                    <Animated.View entering={FadeInUp.duration(300).delay(30)}>
                         <View style={styles.welcomeBannerContainer}>
                             <ImageBackground
                                 source={require("../../assets/images/welcome.jpg")}
@@ -113,7 +113,7 @@ export default function HomeScreen() {
 
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {isValidData(homeData?.map_block_heading) ? (
-                    <Animated.View entering={FadeInUp.duration(200).delay(60)}>
+                    <Animated.View entering={FadeInUp.duration(300).delay(60)}>
                         <View style={styles.subSectionTitleRow}>
                             <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
                                 <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
@@ -138,7 +138,7 @@ export default function HomeScreen() {
 
                 {/* Weekend Programs Section */}
                 {isValidData(homeData?.programs) ? (
-                    <Animated.View entering={FadeInUp.duration(200).delay(90)}>
+                    <Animated.View entering={FadeInUp.duration(300).delay(90)}>
                         {isValidData(homeData?.programs_block_heading) ? (
                             <View style={styles.subSectionTitleRow}>
                                 <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
@@ -219,7 +219,7 @@ export default function HomeScreen() {
 
                 {/* Featured Event Section */}
                 {isValidData(homeData?.featured_event) ? (
-                    <Animated.View entering={FadeInUp.duration(200).delay(120)}>
+                    <Animated.View entering={FadeInUp.duration(300).delay(120)}>
                         {isValidData(homeData?.event_block_heading) ? (
                             <View style={styles.featuredEventHeaderRow}>
                                 <View style={styles.featuredTitleContainer}>
@@ -291,7 +291,7 @@ export default function HomeScreen() {
 
                 {/* Hit the Trails Section */}
                 {(isValidData(homeData?.trails_block_heading) && isValidData(homeData?.trails)) ? (
-                    <Animated.View entering={FadeInUp.duration(200).delay(150)}>
+                    <Animated.View entering={FadeInUp.duration(300).delay(150)}>
                         <View style={styles.trailsSectionContainer}>
                             <View style={styles.subSectionTitleRow}>
                                 <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>

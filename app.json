@@ -7,6 +7,10 @@
     "icon": "./assets/images/logo.png",
     "scheme": "elkapp",
     "userInterfaceStyle": "automatic",
+    "androidNavigationBar": {
+      "backgroundColor": "#0F0F0F",
+      "barStyle": "light-content"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
