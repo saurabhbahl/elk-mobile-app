@@ -314,6 +314,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         isDownloading: isMapDownloading,
         downloadProgress: mapDownloadProgress,
         downloadMap,
+        silentUpdateMap,
         saveConsent,
         checkMapStatus,
     } = useOfflineMap();
@@ -522,6 +523,10 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (hasUpdates) {
                 loadFromSQLite();
             }
+            
+            // Fire and forget silent map updates based on timestamp
+            silentUpdateMap().catch(e => console.warn("[AppContent] Silent map update failed:", e));
+
             setIsSyncing(false);
             return true;
         } catch (e) {

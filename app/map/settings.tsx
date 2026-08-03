@@ -16,7 +16,7 @@ import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabas
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
-  const { hasMap, isDownloading, downloadProgress, downloadMap, cancelDownload, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
+  const { hasMap, isDownloading, isPaused, downloadProgress, downloadMap, pauseDownload, cancelDownload, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
   const { theme, setTheme, colors, fonts, isDark } = useTheme();
   const { preloadAll, progress, isPreloading, cancelPreload } = useRoutePreloader();
   const [cachedCount, setCachedCount] = useState<number>(0);
@@ -216,15 +216,37 @@ export default function SettingsScreen() {
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
           ) : isDownloading ? (
             <View style={[styles.progressContainer, { justifyContent: 'space-between' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <AppText style={styles.progressText}>
                   Downloading... {downloadProgress < 0 ? '' : `${Math.round(downloadProgress * 100)}%`}
                 </AppText>
               </View>
-              <TouchableOpacity style={styles.cancelButton} onPress={cancelDownload}>
-                <AppText style={styles.cancelButtonText}>Cancel</AppText>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity style={styles.pauseButton} onPress={pauseDownload}>
+                  <AppText style={styles.pauseButtonText}>Pause</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelButton} onPress={cancelDownload}>
+                  <AppText style={styles.cancelButtonText}>Cancel</AppText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : isPaused ? (
+            <View style={styles.statusContainer}>
+              <View style={styles.statusRow}>
+                <MaterialIcons name="pause-circle-outline" size={20} color={colors.onSurfaceVariant} />
+                <AppText style={styles.statusText}>
+                  Download paused... {downloadProgress > 0 ? `${Math.round(downloadProgress * 100)}%` : ''}
+                </AppText>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity style={[styles.downloadButton, { flex: 1 }]} onPress={downloadMap}>
+                  <AppText style={styles.downloadButtonText}>Resume Download</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteButton} onPress={deleteMap}>
+                  <AppText style={styles.deleteButtonText}>Cancel</AppText>
+                </TouchableOpacity>
+              </View>
             </View>
           ) : hasMap ? (
             <View style={styles.statusContainer}>
@@ -518,6 +540,18 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     cancelButtonText: {
       color: colors.error,
+      fontFamily: fonts.bodyBold,
+      fontSize: 13,
+    },
+    pauseButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    pauseButtonText: {
+      color: colors.primary,
       fontFamily: fonts.bodyBold,
       fontSize: 13,
     },
