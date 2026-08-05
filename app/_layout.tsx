@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native
 import { Stack, usePathname, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from "expo-status-bar";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -162,7 +162,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
     const timer = setInterval(() => {
       console.log("[Sync] Triggering scheduled 30m delta check.");
       refreshData();
-    }, 30 * 1000);
+    }, 30 * 60 * 1000);
 
     // Foreground listener
     const handleAppStateChange = (nextAppState: AppStateStatus) => {

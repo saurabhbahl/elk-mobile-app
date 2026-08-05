@@ -1,9 +1,8 @@
 import NetInfo from '@react-native-community/netinfo';
-import { Image } from 'expo-image';
 import { ApiService } from '../api/ApiService';
 import { db } from '../database/index';
 import { appRepository } from '../repositories/AppRepository';
-import { clearImageCache, cacheImageIfNeeded } from '../utils/imageCache';
+import { cacheImageIfNeeded, clearImageCache } from '../utils/imageCache';
 
 // Helper to set nested object properties in-place
 function setNestedValue(obj: Record<string, unknown>, path: string[], value: unknown) {
@@ -70,6 +69,21 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
     if (d[key] && Array.isArray(d[key])) {
       (d[key] as Record<string, unknown>[]).forEach((item: Record<string, unknown>, idx: number) => {
         addImage(item.thumbnail_image || item.featured_image || item.nav_image, [key, String(idx), item.thumbnail_image ? 'thumbnail_image' : item.featured_image ? 'featured_image' : 'nav_image']);
+        
+        // Rentals use the first image in 'additional_images' as their listing featured image
+        if (key === 'rentals' && item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
+          addImage(item.additional_images[0], [key, String(idx), 'additional_images', '0']);
+        }
+
+        // Tips use 'tip_icon__image' for their listing screen icon
+        if (key === 'tips' && item.tip_icon__image) {
+          addImage(item.tip_icon__image, [key, String(idx), 'tip_icon__image']);
+        }
+        
+        // POIs custom map pin icons
+        if (key === 'pois' && item.pin_icon_override) {
+          addImage(item.pin_icon_override, [key, String(idx), 'pin_icon_override']);
+        }
       });
     }
   };

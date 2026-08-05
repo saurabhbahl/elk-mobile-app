@@ -34,8 +34,8 @@ export default function Navbar() {
             { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
         ]}>
             <View style={styles.leftActions}>
-                <TouchableOpacity 
-                    onPress={() => router.navigate("/(home)")} 
+                <TouchableOpacity
+                    onPress={() => router.navigate("/(home)")}
                     activeOpacity={0.8}
                 >
                     {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
@@ -53,7 +53,7 @@ export default function Navbar() {
                         source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                         style={styles.headerExplorer}
                         contentFit="contain"
-                        entering={FadeIn.duration(800).delay(200)}
+                        entering={FadeIn.duration(800)}
                     />
                 ) : null}
             </View>
