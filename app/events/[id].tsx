@@ -60,7 +60,7 @@ export default function EventDetailScreen() {
     if (apiStatus === "fetching" || isTransitioning) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -71,7 +71,7 @@ export default function EventDetailScreen() {
     if (!event) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Event not found.</AppText>
                     <TouchableOpacity
@@ -87,7 +87,7 @@ export default function EventDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}

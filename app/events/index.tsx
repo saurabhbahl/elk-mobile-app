@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
 import CachedImage from "@/src/components/CachedImage";
+import UniversalCard from "@/src/components/UniversalCard";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, useAppContentData } from "@/src/contexts/AppContentContext";
@@ -26,33 +27,7 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-const EventCard = React.memo(({ item, index, styles }: {
-    item: EventsData;
-    index: number;
-    styles: any;
-}) => (
-    <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
-        <TouchableOpacity
-            style={styles.eventCard}
-            activeOpacity={0.8}
-            onPress={() => router.push(`/events/${item.id || index}` as Href)}
-        >
-            <CachedImage
-                uri={item.thumbnail_image?.url as string}
-                style={styles.eventCardImage}
-                contentFit="cover"
-            />
-            <View style={styles.eventCardContent}>
-                <AppText style={styles.eventCardName} numberOfLines={2}>
-                    {item.event_name || ""}
-                </AppText>
-                <AppText style={styles.eventCardDate} numberOfLines={1}>
-                    {item["start_date_&_time"] || ""}
-                </AppText>
-            </View>
-        </TouchableOpacity>
-    </Animated.View>
-));
+
 
 export default function EventsScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -64,16 +39,19 @@ export default function EventsScreen() {
     const events = eventsData || [];
 
     const renderEventCard = React.useCallback(({ item, index }: { item: EventsData; index: number }) => (
-        <EventCard
-            item={item}
-            index={index}
-            styles={styles}
-        />
-    ), [styles]);
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
+            <UniversalCard
+                type="event"
+                item={item}
+                variant="grid"
+                primaryColor={primaryColor || "#000000"}
+            />
+        </Animated.View>
+    ), [primaryColor]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
 

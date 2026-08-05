@@ -48,7 +48,7 @@ export default function ProgramDetailScreen() {
     if (apiStatus === "fetching" || isTransitioning) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
                 
                 
                 <View style={styles.loadingContainer}>
@@ -61,7 +61,7 @@ export default function ProgramDetailScreen() {
     if (!program) {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
                 
                 
                 <View style={styles.errorContainer}>
@@ -81,7 +81,7 @@ export default function ProgramDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             
             

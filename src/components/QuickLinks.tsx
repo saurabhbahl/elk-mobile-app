@@ -1,13 +1,12 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
-import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 
 export default function QuickLinks() {
     const { colors, fonts, isDark } = useTheme();
@@ -16,6 +15,7 @@ export default function QuickLinks() {
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();
     const primaryColor = brandData?.brand_color_primary || "";
+    const secondaryColor = brandData?.brand_color__secondary || "";
     const scrollViewRef = useRef<ScrollView>(null);
 
     // Find the currently active index
@@ -56,15 +56,7 @@ export default function QuickLinks() {
                         style={[
                             styles.menuCard,
                             isActive && {
-                                borderColor: primaryColor,
-                                borderWidth: 3,
-                                transform: [{ scale: 1.2 }],
-                                zIndex: 10,
-                                shadowColor: "#000",
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: 0.15,
-                                shadowRadius: 6,
-                                elevation: 5
+                                borderBottomColor: secondaryColor,
                             }
                         ]}
                         activeOpacity={0.8}
@@ -121,14 +113,21 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     menuCard: {
         width: 120,
         height: 90,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: colors.outline,
-        overflow: "hidden",
+        borderRadius: 12,
+        borderBottomWidth: 4,
+        borderBottomColor: 'transparent',
         backgroundColor: colors.surface,
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 1.24 },
+        shadowOpacity: 0.25,
+        shadowRadius: 2.47,
+        elevation: 2,
     },
     menuCardImage: {
         flex: 2,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        overflow: 'hidden',
     },
     menuCardTitleContainer: {
         flex: 1,
@@ -138,10 +137,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         borderTopWidth: 1,
         borderTopColor: colors.outlineVariant,
         paddingHorizontal: 4,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        overflow: 'hidden',
     },
     menuCardTitle: {
         fontSize: 11,
-        fontWeight: "600",
+        fontFamily: 'OpenSans-SemiBold',
         color: colors.onSurface,
     },
 });

@@ -1,7 +1,9 @@
 import AppText from "@/src/components/AppText";
+import SectionHeader from "@/src/components/SectionHeader";
+import UniversalCard from "@/src/components/UniversalCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
-import { Image, ImageBackground } from "expo-image";
+import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -16,8 +18,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import CachedImage from "@/src/components/CachedImage";
 
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
@@ -41,10 +41,10 @@ export default function HomeScreen() {
     const isFocused = useIsFocused();
 
     const { popupData, homeData, brandData, eventsData } = useAppContentData();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor, secondaryColor), [colors, fonts, isDark, primaryColor, secondaryColor]);
 
     useEffect(() => {
         if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
@@ -55,15 +55,13 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
-
-
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
                     <Animated.View entering={FadeInUp.duration(300)}>
-                        <AppText style={[styles.welcomeTitle, { color: colors.onSurface }]}>
+                        <AppText style={[styles.welcomeTitle, { color: primaryColor }]}>
                             {homeData?.hero_welcome_heading}
                         </AppText>
                     </Animated.View>
@@ -114,12 +112,13 @@ export default function HomeScreen() {
                 {/* Elk Viewing & Scenic Map Sub-section */}
                 {isValidData(homeData?.map_block_heading) ? (
                     <Animated.View entering={FadeInUp.duration(300).delay(60)}>
-                        <View style={styles.subSectionTitleRow}>
-                            <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                                <Image source={require('../../assets/images/mapicon.png')} style={styles.sectionIconImg} contentFit="contain" />
-                            </View>
-                            <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.map_block_heading}</AppText>
-                        </View>
+                        <SectionHeader
+                            title={homeData?.map_block_heading as string}
+                            iconSource={require('../../assets/images/mapicon.png')}
+                            primaryColor={primaryColor}
+                            secondaryColor={secondaryColor || "#ea0b0b"}
+                            isDark={isDark}
+                        />
                         <View style={styles.mapCardContainer}>
                             <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
                                 {isValidData(homeData?.map_view_button_label) ? (
@@ -140,12 +139,13 @@ export default function HomeScreen() {
                 {isValidData(homeData?.programs) ? (
                     <Animated.View entering={FadeInUp.duration(300).delay(90)}>
                         {isValidData(homeData?.programs_block_heading) ? (
-                            <View style={styles.subSectionTitleRow}>
-                                <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                                    <Image source={require('../../assets/images/programicon.png')} style={styles.sectionIconImg} contentFit="contain" />
-                                </View>
-                                <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.programs_block_heading}</AppText>
-                            </View>
+                            <SectionHeader
+                                title={homeData?.programs_block_heading as string}
+                                iconSource={require('../../assets/images/programicon.png')}
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                            />
                         ) : null}
 
                         {/* Horizontal Weekend Programs List */}
@@ -169,48 +169,13 @@ export default function HomeScreen() {
                                 }
 
                                 return (
-                                    <TouchableOpacity
+                                    <UniversalCard
                                         key={program.id || index}
-                                        style={styles.programCard}
-                                        activeOpacity={0.85}
-                                        onPress={() => router.push(`/programs/${program.id}`)}
-                                    >
-                                        <View style={styles.programCardImageContainer}>
-                                            <CachedImage
-                                                uri={program.thumbnail_image?.url as string}
-                                                style={StyleSheet.absoluteFill}
-                                                contentFit="cover"
-                                            />
-                                            {badge && (
-                                                <View style={styles.cardBadge}>
-                                                    <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
-                                                    <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <ImageBackground
-                                            source={require('../../assets/images/vectors.png')}
-                                            style={styles.programCardBottomSection}
-                                            imageStyle={{ tintColor: '#FFFFFF', opacity: 1 }}
-                                            contentFit="cover"
-                                        >
-                                            <View style={styles.programCardTextCol}>
-                                                {isValidData(program.program_name) ? (
-                                                    <AppText style={styles.programCardName} numberOfLines={1}>
-                                                        {program.program_name}
-                                                    </AppText>
-                                                ) : null}
-                                                <AppText style={styles.cardLocation} numberOfLines={1}>
-                                                    Elk Country Visitor Center
-                                                </AppText>
-                                            </View>
-
-                                            <View style={styles.cardViewButton}>
-                                                <AppText style={styles.cardViewButtonText}>View</AppText>
-                                            </View>
-                                        </ImageBackground>
-                                    </TouchableOpacity>
+                                        type="program"
+                                        item={program}
+                                        variant="horizontal"
+                                        primaryColor={primaryColor}
+                                    />
                                 );
                             })}
                         </ScrollView>
@@ -221,19 +186,16 @@ export default function HomeScreen() {
                 {isValidData(homeData?.featured_event) ? (
                     <Animated.View entering={FadeInUp.duration(300).delay(120)}>
                         {isValidData(homeData?.event_block_heading) ? (
-                            <View style={styles.featuredEventHeaderRow}>
-                                <View style={styles.featuredTitleContainer}>
-                                    <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                                        <Image source={require('../../assets/images/eventicon.png')} style={styles.sectionIconImgLg} contentFit="contain" />
-                                    </View>
-                                    <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.event_block_heading}</AppText>
-                                </View>
-                                {isValidData(homeData?.event_view_all_label) ? (
-                                    <TouchableOpacity onPress={() => router.push("/events" as any)}>
-                                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.event_view_all_label}</AppText>
-                                    </TouchableOpacity>
-                                ) : null}
-                            </View>
+                            <SectionHeader
+                                title={homeData?.event_block_heading as string}
+                                iconSource={require('../../assets/images/eventicon.png')}
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                isFeatured={true}
+                                actionLabel={homeData?.event_view_all_label}
+                                onActionPress={() => router.push("/events" as any)}
+                            />
                         ) : null}
 
                         {/* Featured Event Card */}
@@ -247,43 +209,13 @@ export default function HomeScreen() {
                             const targetId = eventId || (eventIndex !== undefined && eventIndex !== -1 ? eventIndex : 0);
 
                             return (
-                                <TouchableOpacity
-                                    style={styles.featuredCard}
-                                    activeOpacity={0.85}
+                                <UniversalCard
+                                    type="event"
+                                    item={eventObj}
+                                    variant="featured"
+                                    primaryColor={primaryColor}
                                     onPress={() => router.push(`/events/${targetId}` as any)}
-                                >
-                                    <View style={styles.programCardImageContainer}>
-                                        <CachedImage
-                                            uri={eventObj.thumbnail_image?.url as string}
-                                            style={StyleSheet.absoluteFill}
-                                            contentFit="cover"
-                                        />
-                                    </View>
-
-                                    <ImageBackground
-                                        source={require('../../assets/images/vectors.png')}
-                                        style={styles.programCardBottomSection}
-                                        imageStyle={{ opacity: 1 }}
-                                        contentFit="cover"
-                                    >
-                                        <View style={styles.programCardTextCol}>
-                                            {isValidData(eventObj.event_name) ? (
-                                                <AppText style={styles.featuredEventName} numberOfLines={1}>
-                                                    {eventObj.event_name}
-                                                </AppText>
-                                            ) : null}
-                                            {isValidData(eventObj.short_description) ? (
-                                                <AppText style={styles.cardLocation} numberOfLines={1}>
-                                                    {eventObj.short_description}
-                                                </AppText>
-                                            ) : null}
-                                        </View>
-
-                                        <View style={styles.cardViewButton}>
-                                            <AppText style={styles.cardViewButtonText}>View</AppText>
-                                        </View>
-                                    </ImageBackground>
-                                </TouchableOpacity>
+                                />
                             );
                         })()}
                     </Animated.View>
@@ -293,14 +225,14 @@ export default function HomeScreen() {
                 {(isValidData(homeData?.trails_block_heading) && isValidData(homeData?.trails)) ? (
                     <Animated.View entering={FadeInUp.duration(300).delay(150)}>
                         <View style={styles.trailsSectionContainer}>
-                            <View style={styles.subSectionTitleRow}>
-                                <View style={[styles.sectionIconCircle, { backgroundColor: primaryColor || "#8B1E1E" }]}>
-                                    <Image source={require('../../assets/images/trailsicon.png')} style={styles.sectionIconImg} contentFit="contain" />
-                                </View>
-                                <TouchableOpacity onPress={() => router.push("/trails")}>
-                                    <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>{homeData?.trails_block_heading}</AppText>
-                                </TouchableOpacity>
-                            </View>
+                            <SectionHeader
+                                title={homeData?.trails_block_heading as string}
+                                iconSource={require('../../assets/images/trailsicon.png')}
+                                primaryColor={primaryColor}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                onPress={() => router.push("/trails")}
+                            />
                             <ScrollView
                                 horizontal
                                 showsHorizontalScrollIndicator={false}
@@ -317,7 +249,7 @@ export default function HomeScreen() {
                                             <AppText style={styles.trailName}>{trail.trail_name}</AppText>
                                         ) : null}
                                         {isValidData(trail.distance) ? (
-                                            <AppText style={styles.trailDistance}>{`  |  ${trail.distance}`}</AppText>
+                                            <AppText style={styles.trailName}>{`    ${trail.distance}mi`}</AppText>
                                         ) : null}
                                     </TouchableOpacity>
                                 ))}
@@ -418,7 +350,7 @@ export default function HomeScreen() {
     );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, primaryColor: string, secondaryColor: string) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.surface,
@@ -518,8 +450,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     welcomeTitle: {
-        fontSize: width < 380 ? 20 : 22,
-        fontWeight: '400',
+        fontSize: width < 380 ? 18 : 20,
+        fontFamily: 'Roboto-Regular',
         textAlign: "left",
         color: colors.onSurface,
         marginVertical: 14,
@@ -555,10 +487,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     aboutKecaBadge: {
         alignSelf: 'flex-end',
-        backgroundColor: '#000000', // Black badge matching reference
+        backgroundColor: secondaryColor, // Secondary color
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 14,
+        borderRadius: 22,
     },
 
     aboutKecaText: {
@@ -579,7 +511,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         textShadowColor: 'rgba(0, 0, 0, 0.5)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 3,
-        textDecorationLine: 'underline', // Match design lines under parts
     },
 
     sectionHeader: {
@@ -623,10 +554,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         position: "absolute",
         bottom: 12,
         right: 12,
-        backgroundColor: "#0F0F0F", // Black pill matching reference
+        backgroundColor: secondaryColor, // Secondary color
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 16,
+        borderRadius: 22,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
@@ -832,7 +763,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     trailPill: {
         flexDirection: "row",
-        backgroundColor: '#0F0F0F',
+        backgroundColor: primaryColor,
         borderRadius: 20,
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -850,13 +781,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontWeight: '400',
         fontFamily: 'Lexend_500Medium',
         color: "#FFFFFF",
-    },
-
-    trailDistance: {
-        fontSize: 14,
-        color: "#AAAAAA",
-        fontWeight: '400',
-        fontFamily: 'Lexend_500Medium',
     },
 
     // Modal styles

@@ -1,8 +1,6 @@
-import AppText from "@/src/components/AppText";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
@@ -24,8 +22,8 @@ export default function Navbar() {
     const { brandData } = useAppContent();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#FFFFFF";
+    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
 
     return (
         <View style={[
@@ -58,9 +56,9 @@ export default function Navbar() {
                 ) : null}
             </View>
 
-            <View style={styles.rightActions}>
-                {/* SETTINGS Button */}
-                <TouchableOpacity
+            {/* <View style={styles.rightActions}> */}
+            {/* SETTINGS Button */}
+            {/* <TouchableOpacity
                     style={styles.tipsContainer}
                     activeOpacity={0.7}
                     onPress={() => router.push("/map/settings" as any)}
@@ -71,8 +69,8 @@ export default function Navbar() {
                     <View style={[styles.tipsBadge, { backgroundColor: secondaryColor }]}>
                         <AppText style={[styles.tipsBadgeText, { color: primaryColor || '#8B1E1E' }]}>SETTINGS</AppText>
                     </View>
-                </TouchableOpacity>
-            </View>
+                </TouchableOpacity> */}
+            {/* </View> */}
         </View>
     );
 }
@@ -85,7 +83,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "space-between",
         paddingHorizontal: r(16),
         borderBottomWidth: 1,
-        backgroundColor: "#8B1E1E", // Fallback to premium red
     },
 
     headerLogo: {

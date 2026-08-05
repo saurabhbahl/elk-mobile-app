@@ -1,4 +1,14 @@
 import { Lexend_500Medium } from '@expo-google-fonts/lexend';
+import {
+  OpenSans_400Regular,
+  OpenSans_600SemiBold,
+  OpenSans_700Bold,
+} from '@expo-google-fonts/open-sans';
+import {
+  Roboto_400Regular,
+  Roboto_500Medium,
+  Roboto_700Bold,
+} from '@expo-google-fonts/roboto';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, usePathname, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
@@ -81,6 +91,12 @@ export default function RootLayout() {
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
     'Lexend_500Medium': Lexend_500Medium,
+    'OpenSans-Regular': OpenSans_400Regular,
+    'OpenSans-SemiBold': OpenSans_600SemiBold,
+    'OpenSans-Bold': OpenSans_700Bold,
+    'Roboto-Regular': Roboto_400Regular,
+    'Roboto-Medium': Roboto_500Medium,
+    'Roboto-Bold': Roboto_700Bold,
   });
 
   const resetMap = useCallback(() => {
@@ -135,7 +151,7 @@ export default function RootLayout() {
                 colorScheme={colorScheme}
                 isNavigating={isNavigating}
               />
-              <StatusBar style="auto" />
+              <StatusBar style="light" backgroundColor="#0F0F0F" />
             </ThemeProvider>
           </NavigationModeContext.Provider>
         </MapResetContext.Provider>
@@ -152,7 +168,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   const { refreshData } = useAppContentSync();
   const pathname = usePathname();
   const segments = useSegments();
-  const primaryColor = brandData?.brand_color_primary || "";
+  const primaryColor = brandData?.brand_color_primary || "#000000";
 
   // Delta check on app resume or active timers
   useEffect(() => {
@@ -162,7 +178,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
     const timer = setInterval(() => {
       console.log("[Sync] Triggering scheduled 30m delta check.");
       refreshData();
-    }, 30 * 60 * 1000);
+    }, 30 * 1000);
 
     // Foreground listener
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -192,7 +208,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
       {shouldShowHeader && (
-        <SafeAreaView style={{ backgroundColor: isDark ? colors.surface : primaryColor }} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={{ backgroundColor: primaryColor }} edges={['top', 'left', 'right']}>
           <Navbar />
           <View style={{ backgroundColor: colors.background }}>
             <QuickLinks />

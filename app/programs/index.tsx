@@ -18,6 +18,7 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { Image } from "expo-image";
 import { isValidData } from "@/src/utils/validation";
+import UniversalCard from "@/src/components/UniversalCard";
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -26,38 +27,7 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-const ProgramCard = React.memo(({ item, index, isGrid, styles }: {
-    item: ProgramsData;
-    index: number;
-    isGrid: boolean;
-    styles: any;
-}) => (
-    <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
-        <TouchableOpacity
-            style={isGrid ? styles.programCard : styles.programListCard}
-            activeOpacity={0.8}
-            onPress={() => router.push(`/programs/${item.id || index}` as Href)}
-        >
-            <CachedImage
-                uri={item.thumbnail_image?.url as string}
-                style={isGrid ? styles.programCardImage : styles.programListCardImage}
-                contentFit="cover"
-            />
-            <View style={isGrid ? styles.programCardContent : styles.programListCardContent}>
-                {isValidData(item.program_name) ? (
-                    <AppText style={isGrid ? styles.programCardName : styles.programListCardName} numberOfLines={2}>
-                        {item.program_name}
-                    </AppText>
-                ) : null}
-                {isValidData(item.schedule__dates) ? (
-                    <AppText style={isGrid ? styles.programCardDate : styles.programListCardDate} numberOfLines={1}>
-                        {item.schedule__dates}
-                    </AppText>
-                ) : null}
-            </View>
-        </TouchableOpacity>
-    </Animated.View>
-));
+
 
 export default function ProgramsScreen() {
     const { colors, fonts, isDark } = useTheme();
@@ -73,17 +43,19 @@ export default function ProgramsScreen() {
     const isGrid = (layoutValue || "").toLowerCase() !== "list";
 
     const renderProgramCard = React.useCallback(({ item, index }: { item: ProgramsData; index: number }) => (
-        <ProgramCard
-            item={item}
-            index={index}
-            isGrid={isGrid}
-            styles={styles}
-        />
-    ), [isGrid, styles]);
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
+            <UniversalCard
+                type="program"
+                item={item}
+                variant={isGrid ? 'grid' : 'list'}
+                primaryColor={primaryColor || "#000000"}
+            />
+        </Animated.View>
+    ), [isGrid, primaryColor]);
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             
             

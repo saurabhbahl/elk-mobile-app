@@ -3,7 +3,6 @@ import { useTheme } from '@/src/context/ThemeContext';
 import { useAppContentData } from '@/src/contexts/AppContentContext';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
-import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from './AppText';
@@ -23,8 +22,8 @@ export default function BottomNavbar() {
     const pathname = usePathname();
     const insets = useSafeAreaInsets();
 
-    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#8B1E1E";
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#FFFFFF";
+    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
 
     // Navigation items
     const navItems = [
@@ -71,7 +70,7 @@ export default function BottomNavbar() {
         <View style={[
             styles.container,
             {
-                backgroundColor: '#0F0F0F', // Solid dark premium background matching wireframe
+                backgroundColor: primaryColor, // Solid dark premium background matching wireframe
                 paddingBottom: Math.max(insets.bottom, isSmallDevice ? 6 : 10),
                 borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'
             }
@@ -91,12 +90,12 @@ export default function BottomNavbar() {
                         >
                             <Image
                                 source={item.icon}
-                                style={[styles.navIcon, { tintColor: isActive ? secondaryColor : '#8E8E93' }]}
+                                style={[styles.navIcon, { tintColor: isActive ? '#ffffff' : '#ffffff' }]}
                                 contentFit="contain"
                             />
                             <AppText style={[
                                 styles.label,
-                                { color: isActive ? secondaryColor : '#8E8E93', fontWeight: isActive ? '700' : '500' }
+                                { color: isActive ? '#ffffff' : '#ffffff', fontWeight: isActive ? '700' : '500' }
                             ]}>
                                 {item.name}
                             </AppText>
@@ -145,6 +144,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: isSmallDevice ? 9 : 10,
+        fontFamily: 'Roboto-Medium',
         letterSpacing: 0.2,
     },
     activeIndicator: {

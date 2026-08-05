@@ -19,8 +19,8 @@ const angle = Math.atan2(height, width) * (180 / Math.PI);
 export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, apiStatus } = useAppContent();
-    const bgColor = brandData?.brand_color_primary;
-    const secColor = brandData?.brand_color__secondary;
+    const bgColor = brandData?.brand_color_primary || "#000000";
+    const secColor = brandData?.brand_color__secondary || "#ea0b0b";
 
     const bgImageUri = brandData?.splash_loading_screen_background
         ? (typeof brandData.splash_loading_screen_background === 'string'
@@ -61,10 +61,10 @@ export default function LandingScreen() {
                         ) : (
                             <TouchableOpacity
                                 activeOpacity={0.8}
-                                style={[styles.button, bgColor ? { backgroundColor: bgColor } : {}]}
+                                style={[styles.button, secColor ? { backgroundColor: secColor } : {}]}
                                 onPress={() => router.replace("/(home)" as any)}
                             >
-                                <AppText style={[styles.buttonText, secColor ? { color: secColor } : {}]}>
+                                <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>
                                     {brandData?.app_tagline}
                                 </AppText>
                             </TouchableOpacity>
@@ -153,7 +153,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         backgroundColor: colors.onSurface, // Charcoal grey button
         paddingHorizontal: 35,
         height: 52,
-        borderRadius: 12,
+        borderRadius: 20,
         justifyContent: "center",
         alignItems: "center",
         shadowColor: "#000",

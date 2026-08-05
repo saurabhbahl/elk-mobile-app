@@ -66,7 +66,7 @@ export default function VisitorsCenterScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
             <View style={{ backgroundColor: bgColor }}>

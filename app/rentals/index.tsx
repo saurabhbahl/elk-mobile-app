@@ -165,7 +165,7 @@ export default function RentalsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             {isValidData(rentalSettingsData?.screen_title) ? (
                 <View style={styles.headerRow}>
