@@ -5,12 +5,16 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, interpolate, useAnimatedStyle } from 'react-native-reanimated';
+import { useNavigationMode } from '../../app/_layout';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const scale = width / 600;
 const r = (size: number) => Math.min(size * scale, size * 1.5);
+
+// Pre-computed constant — safe to use inside Reanimated worklets
+const NAVBAR_HEIGHT = r(144);
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -20,16 +24,31 @@ const getValidColor = (color: string | undefined) => {
 export default function Navbar() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData } = useAppContent();
+    const { navbarVisibility } = useNavigationMode();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    // Directly derive animated styles from the shared value — zero React re-renders
+    const animatedStyle = useAnimatedStyle(() => {
+        const height = interpolate(navbarVisibility.value, [0, 1], [NAVBAR_HEIGHT, 0]);
+        return {
+            height,
+            opacity: interpolate(navbarVisibility.value, [0, 0.8, 1], [1, 1, 0]),
+            overflow: 'hidden',
+        };
+    });
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
     const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
 
     return (
-        <View style={[
+        <Animated.View style={[
             styles.header,
+            animatedStyle,
             primaryColor ? { backgroundColor: primaryColor } : {},
-            { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)' }
+            {
+                borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
+                overflow: 'hidden'
+            }
         ]}>
             <View style={styles.leftActions}>
                 <TouchableOpacity
@@ -71,7 +90,7 @@ export default function Navbar() {
                     </View>
                 </TouchableOpacity> */}
             {/* </View> */}
-        </View>
+        </Animated.View>
     );
 }
 

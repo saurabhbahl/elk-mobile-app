@@ -23,6 +23,8 @@ import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, ProgramsData, TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
+import { normalizeHex } from "../../src/utils/colorUtils";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -53,11 +55,23 @@ export default function HomeScreen() {
         }
     }, [isFocused, popupData]);
 
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
+
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+            >
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
                     <Animated.View entering={FadeInUp.duration(300)}>
@@ -257,7 +271,7 @@ export default function HomeScreen() {
                         </View>
                     </Animated.View>
                 ) : null}
-            </ScrollView>
+            </Animated.ScrollView>
 
             {/* Elk Smart Modal Popup */}
             <Modal

@@ -1,25 +1,39 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
 import CachedImage from "@/src/components/CachedImage";
+import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import PrimaryButton from "@/src/components/PrimaryButton";
+import SectionHeader from "@/src/components/SectionHeader";
 import { openExternalLink } from "@/src/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
+import { useFocusEffect } from "expo-router";
+import Animated, { FadeInUp, withTiming } from "react-native-reanimated";
+import { useNavigationMode } from "../../app/_layout";
+import { width as windowWidth } from "../../src/constants/theme";
 import { useTheme } from "../../src/context/ThemeContext";
 import { useAppContent } from "../../src/contexts/AppContentContext";
 import { normalizeHex } from "../../src/utils/colorUtils";
 import { isValidData } from "../../src/utils/validation";
-import { width as windowWidth } from "../../src/constants/theme";
 
 export default function WaypointDetailsScreen() {
     const { id } = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
     const { poisData, brandData } = useAppContent();
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
+    const { navbarVisibility, setIsBottomNavbarHidden } = useNavigationMode();
+    useFocusEffect(
+        React.useCallback(() => {
+            navbarVisibility.value = withTiming(0, { duration: 250 });
+            setIsBottomNavbarHidden(false);
+        }, [navbarVisibility, setIsBottomNavbarHidden])
+    );
     const brandPrimary = normalizeHex(brandData?.brand_color_primary);
     const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
 
@@ -55,153 +69,178 @@ export default function WaypointDetailsScreen() {
 
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
-
-
-
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Title */}
-                {isValidData(waypoint.title) ? (
-                    <View style={styles.titleContainer}>
-                        <Image
-                            source={require("../../assets/images/pin.png")}
-                            style={{ width: 24, height: 24, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                            contentFit="contain"
+        <SafeAreaView
+            style={[styles.container, { backgroundColor: colors.surface }]}
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
+            <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
+                <Animated.ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
+                >
+                    {/* Title */}
+                    {isValidData(waypoint.title) ? (
+                        <SectionHeader
+                            title={waypoint.title as string}
+                            iconSource={require("../../assets/images/mapicon.png")}
+                            primaryColor={brandPrimary || "#000000"}
+                            secondaryColor={brandSecondary || "#ea0b0b"}
+                            isDark={isDark}
+                            style={{ marginHorizontal: 0, marginBottom: 16 }}
                         />
-                        <AppText style={[styles.titleText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : (brandPrimary || '') }]}>
-                            {waypoint.title}
-                        </AppText>
-                    </View>
-                ) : null}
-
-                {/* Featured Image / Gallery */}
-                {isValidData(waypoint.image_gallery) ? (
-                    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.imageSliderContainer}>
-                        {(waypoint.image_gallery as any[]).map((img: Record<string, unknown>, idx: number) => (
-                            <CachedImage
-                                key={idx}
-                                uri={typeof img === 'string' ? img : (img as any).url || (img as any).sizes?.large}
-                                style={{ width: windowWidth - 40, height: 220 }}
-                                contentFit="cover"
-                            />
-                        ))}
-                    </ScrollView>
-                ) : isValidData(waypoint.featured_image) ? (
-                    <View style={styles.imageSliderContainer}>
-                        <CachedImage
-                            uri={typeof waypoint.featured_image === 'string' ? waypoint.featured_image : (waypoint.featured_image as any).url || (waypoint.featured_image as any).sizes?.large}
-                            style={{ width: "100%", height: "100%" }}
-                            contentFit="cover"
-                        />
-                    </View>
-                ) : null}
-
-                {/* Location Address & Get Directions Section */}
-                <View style={styles.locationSection}>
-                    {isValidData(waypoint.address) ? (
-                        <View style={styles.addressContainer}>
-                            <AppText style={[styles.addressText, { fontFamily: fonts.bodyBold, color: isDark ? '#fff' : '#000' }]}>
-                                {waypoint.address}
-                            </AppText>
-                        </View>
                     ) : null}
-                    <TouchableOpacity style={[styles.getDirectionsButton, brandPrimary ? { backgroundColor: brandPrimary } : {}]} onPress={handleGetDirections} activeOpacity={0.8}>
-                        <AppText style={[styles.getDirectionsButtonText, { fontFamily: fonts.bodyBold }, brandSecondary ? { color: brandSecondary } : {}]}>
-                            Get Directions
-                        </AppText>
-                    </TouchableOpacity>
-                </View>
 
-                {/* Badges Section */}
-                {(waypoint.handicap_accessible || waypoint.open_year_round) ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
-                        {waypoint.handicap_accessible ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-                                <Image
-                                    source={require("../../assets/images/wheelchair.png")}
-                                    style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                    contentFit="contain"
-                                />
-                                <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                    Handicap Accessible
-                                </AppText>
-                            </View>
-                        ) : null}
-                        {waypoint.open_year_round ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Image
-                                    source={require("../../assets/images/calendar-check.png")}
-                                    style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                    contentFit="contain"
-                                />
-                                <AppText style={[styles.badgeText, { fontFamily: fonts.bodyMedium, fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                    Open Year Round
-                                </AppText>
-                            </View>
-                        ) : null}
-                    </View>
-                ) : null}
+                    {/* Featured Image / Gallery */}
+                    {(() => {
+                        const sliderImages: string[] = [];
 
-                {/* Description Paragraph */}
-                {isValidData(waypoint.full_description || waypoint.description) ? (
-                    <RenderHTML
-                        contentWidth={windowWidth - 40}
-                        source={{ html: waypoint.full_description || waypoint.description }}
-                        baseStyle={{
-                            fontFamily: fonts.body,
-                            fontSize: 13,
-                            lineHeight: 20,
-                            color: isDark ? colors.onSurfaceVariant : "#000000",
-                            marginBottom: 16
-                        }}
-                        tagsStyles={{ p: { marginVertical: 8 } }}
-                    />
-                ) : null}
+                        if (isValidData(waypoint.featured_image)) {
+                            const featuredUrl = typeof waypoint.featured_image === 'string' ? waypoint.featured_image : (waypoint.featured_image as any).url || (waypoint.featured_image as any).sizes?.large;
+                            if (featuredUrl) sliderImages.push(featuredUrl);
+                        }
 
-                {/* Seasonal Notes */}
-                {isValidData(waypoint.seasonal_notes) ? (
-                    <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
-                        <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
-                        <View style={{ flex: 1 }}>
-                            <RenderHTML
-                                contentWidth={windowWidth - 40 - 24 - 28} // padding 20*2 + container padding 12*2 + icon 28
-                                source={{ html: waypoint.seasonal_notes || "" }}
-                                baseStyle={{
-                                    fontFamily: fonts.bodyMedium,
-                                    fontSize: 12,
-                                    color: isDark ? colors.onSurface : '#000',
-                                    lineHeight: 18
-                                }}
-                                tagsStyles={{ p: { margin: 0, padding: 0 } }}
-                            />
-                        </View>
-                    </View>
-                ) : null}
+                        if (isValidData(waypoint.image_gallery) && Array.isArray(waypoint.image_gallery)) {
+                            waypoint.image_gallery.forEach((img: any) => {
+                                const url = typeof img === 'string' ? img : img.url || img.sizes?.large;
+                                if (url && !sliderImages.includes(url)) sliderImages.push(url);
+                            });
+                        }
 
-                {/* External Link */}
-                {isValidData(waypoint.external_link) ? (
-                    (() => {
-                        const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
-                        const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;
-                        if (!isValidData(linkUrl)) return null;
+                        if (sliderImages.length === 0) return null;
+
+                        if (sliderImages.length === 1) {
+                            return (
+                                <View style={styles.imageSliderContainer}>
+                                    <CachedImage
+                                        uri={sliderImages[0]}
+                                        style={{ width: "100%", height: "100%" }}
+                                        contentFit="cover"
+                                    />
+                                </View>
+                            );
+                        }
 
                         return (
-                            <TouchableOpacity
-                                style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
-                                onPress={() => openExternalLink(linkUrl)}
-                                activeOpacity={0.8}
-                            >
-                                {isValidData(linkTitle) ? (
-                                    <AppText style={[styles.externalLinkText, { fontFamily: fonts.bodyBold, color: isDark ? colors.onSurface : '#000' }]}>
-                                        {linkTitle}
-                                    </AppText>
-                                ) : null}
-                                <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
-                            </TouchableOpacity>
+                            <View style={{ marginBottom: 20 }}>
+                                <ImageGallerySlider
+                                    images={sliderImages}
+                                    width={windowWidth - 40}
+                                    height={220}
+                                />
+                            </View>
                         );
-                    })()
-                ) : null}
-            </ScrollView>
+                    })()}
+
+                    {/* Location Address & Get Directions Section */}
+                    <View style={styles.locationSection}>
+                        {isValidData(waypoint.address) ? (
+                            <View style={styles.addressContainer}>
+                                <AppText style={[styles.addressText, { fontFamily: 'OpenSans-Bold', color: isDark ? '#fff' : '#000' }]}>
+                                    {waypoint.address}
+                                </AppText>
+                            </View>
+                        ) : null}
+                        <PrimaryButton
+                            title="Get Directions"
+                            onPress={handleGetDirections}
+                        />
+                    </View>
+
+                    {/* Badges Section */}
+                    {(waypoint.handicap_accessible || waypoint.open_year_round) ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
+                            {waypoint.handicap_accessible ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                                    <Image
+                                        source={require("../../assets/images/wheelchair.png")}
+                                        style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                        contentFit="contain"
+                                    />
+                                    <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                        Handicap Accessible
+                                    </AppText>
+                                </View>
+                            ) : null}
+                            {waypoint.open_year_round ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Image
+                                        source={require("../../assets/images/calendar-check.png")}
+                                        style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                        contentFit="contain"
+                                    />
+                                    <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                        Open Year Round
+                                    </AppText>
+                                </View>
+                            ) : null}
+                        </View>
+                    ) : null}
+
+                    {/* Description Paragraph */}
+                    {isValidData(waypoint.full_description || waypoint.description) ? (
+                        <RenderHTML
+                            contentWidth={windowWidth - 40}
+                            source={{ html: waypoint.full_description || waypoint.description }}
+                            baseStyle={{
+                                fontFamily: 'OpenSans-Regular',
+                                fontSize: 13,
+                                lineHeight: 20,
+                                color: isDark ? colors.onSurfaceVariant : "#000000",
+                                marginBottom: 16
+                            }}
+                            tagsStyles={{ p: { marginVertical: 8 } }}
+                        />
+                    ) : null}
+
+                    {/* Seasonal Notes */}
+                    {isValidData(waypoint.seasonal_notes) ? (
+                        <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
+                            <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
+                            <View style={{ flex: 1 }}>
+                                <RenderHTML
+                                    contentWidth={windowWidth - 40 - 24 - 28} // padding 20*2 + container padding 12*2 + icon 28
+                                    source={{ html: waypoint.seasonal_notes || "" }}
+                                    baseStyle={{
+                                        fontFamily: 'OpenSans-SemiBold',
+                                        fontSize: 12,
+                                        color: isDark ? colors.onSurface : '#000',
+                                        lineHeight: 18
+                                    }}
+                                    tagsStyles={{ p: { margin: 0, padding: 0 } }}
+                                />
+                            </View>
+                        </View>
+                    ) : null}
+
+                    {/* External Link */}
+                    {isValidData(waypoint.external_link) ? (
+                        (() => {
+                            const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
+                            const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;
+                            if (!isValidData(linkUrl)) return null;
+
+                            return (
+                                <TouchableOpacity
+                                    style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
+                                    onPress={() => openExternalLink(linkUrl)}
+                                    activeOpacity={0.8}
+                                >
+                                    {isValidData(linkTitle) ? (
+                                        <AppText style={[styles.externalLinkText, { fontFamily: 'OpenSans-Bold', color: isDark ? colors.onSurface : '#000' }]}>
+                                            {linkTitle}
+                                        </AppText>
+                                    ) : null}
+                                    <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
+                                </TouchableOpacity>
+                            );
+                        })()
+                    ) : null}
+                </Animated.ScrollView>
+            </Animated.View>
         </SafeAreaView>
     );
 }
@@ -303,21 +342,7 @@ const styles = StyleSheet.create({
         color: "#000000",
         lineHeight: 18,
     },
-    getDirectionsButton: {
-        backgroundColor: "#ECEEED",
-        borderRadius: 99,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    getDirectionsButtonText: {
-        fontSize: 13,
-        color: "#000000",
-    },
+
     badgesSection: {
         flexDirection: "row",
         flexWrap: "wrap",

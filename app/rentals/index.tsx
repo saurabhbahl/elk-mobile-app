@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import React from "react";
 import {
     ActivityIndicator,
-    FlatList,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -14,12 +13,14 @@ import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
+
 import CachedImage from "@/src/components/CachedImage";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { RentalsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { openExternalLink } from "@/src/utils/openLink";
 import { isValidData } from "@/src/utils/validation";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -140,6 +141,8 @@ export default function RentalsScreen() {
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
+
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const rentals = rentalsData || [];
@@ -164,7 +167,12 @@ export default function RentalsScreen() {
     ), [styles, primaryColor, secondaryColor, isDark, colors, handlePressLink]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             {isValidData(rentalSettingsData?.screen_title) ? (
@@ -197,13 +205,15 @@ export default function RentalsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList<RentalsData>
+                <Animated.FlatList
                     data={rentals}
-                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderRentalItem}
+                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                    renderItem={renderRentalItem as any}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
-                    initialNumToRender={4}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
+                    initialNumToRender={5}
                     maxToRenderPerBatch={6}
                     windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}

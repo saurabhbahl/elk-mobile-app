@@ -11,6 +11,7 @@ import {
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -27,6 +28,7 @@ export default function PlanTripScreen() {
     const { brandData, planTripData, apiStatus } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -58,7 +60,12 @@ export default function PlanTripScreen() {
     });
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
@@ -78,7 +85,12 @@ export default function PlanTripScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <Animated.ScrollView 
+                    contentContainerStyle={styles.scrollContent} 
+                    showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
+                >
                     {isValidData(heroImageUrl) ? (
                         <Animated.View entering={FadeInUp.duration(200)} style={styles.imageContainer}>
                             <Image
@@ -141,7 +153,7 @@ export default function PlanTripScreen() {
                     ) : (
                         <AppText style={styles.emptyText}>Trip planning info coming soon.</AppText>
                     )}
-                </ScrollView>
+                </Animated.ScrollView>
             )}
         </SafeAreaView>
     );

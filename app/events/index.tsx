@@ -4,7 +4,6 @@ import { Href, router } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
-    FlatList,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -14,11 +13,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
+
 import CachedImage from "@/src/components/CachedImage";
 import UniversalCard from "@/src/components/UniversalCard";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, useAppContentData } from "@/src/contexts/AppContentContext";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -33,6 +34,8 @@ export default function EventsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, eventsData, apiStatus, eventSettingsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
+
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -50,7 +53,12 @@ export default function EventsScreen() {
     ), [primaryColor]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
@@ -70,14 +78,16 @@ export default function EventsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList
+                <Animated.FlatList
                     data={events}
-                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderEventCard}
+                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                    renderItem={renderEventCard as any}
                     numColumns={2}
                     contentContainerStyle={styles.gridContainer}
                     columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
                     initialNumToRender={6}
                     maxToRenderPerBatch={10}
                     windowSize={5}

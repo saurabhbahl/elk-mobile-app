@@ -49,7 +49,6 @@ export default function QuickLinks() {
 
                 const url = item.nav_link.url as string;
                 const isActive = pathname === url || (url !== '/' && pathname.startsWith(url));
-
                 return (
                     <TouchableOpacity
                         key={index}
@@ -103,7 +102,7 @@ export default function QuickLinks() {
 
 const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     container: {
-        backgroundColor: "transparent",
+        backgroundColor: colors.surface,
     },
     horizontalMenu: {
         paddingHorizontal: 16,

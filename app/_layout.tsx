@@ -37,6 +37,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import "react-native-reanimated";
+import { SharedValue, useSharedValue } from 'react-native-reanimated';
 
 import { ThemeProvider as CustomThemeProvider, useTheme } from "@/src/context/ThemeContext";
 import { AppContentProvider } from "@/src/contexts/AppContentContext";
@@ -59,9 +60,16 @@ export function useMapReset() {
 export const NavigationModeContext = createContext<{
   isNavigating: boolean;
   setIsNavigating: (v: boolean) => void;
+  isBottomNavbarHidden: boolean;
+  setIsBottomNavbarHidden: (v: boolean) => void;
+  // Shared value: 0 = visible, 1 = hidden. Lives on UI thread, no React re-renders.
+  navbarVisibility: SharedValue<number>;
 }>({
   isNavigating: false,
   setIsNavigating: () => { },
+  isBottomNavbarHidden: false,
+  setIsBottomNavbarHidden: () => { },
+  navbarVisibility: { value: 0 } as SharedValue<number>,
 });
 
 export function useNavigationMode() {
@@ -81,6 +89,9 @@ export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
   const [mapKey, setMapKey] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isBottomNavbarHidden, setIsBottomNavbarHidden] = useState(false);
+  // Shared value: 0 = navbar visible, 1 = navbar hidden
+  const navbarVisibility = useSharedValue(0);
 
   const [fontsLoaded] = useFonts({
     'EBGaramond-Medium': EBGaramond_500Medium,
@@ -143,7 +154,7 @@ export default function RootLayout() {
     <AppContentProvider>
       <CustomThemeProvider>
         <MapResetContext.Provider value={{ mapKey, resetMap }}>
-          <NavigationModeContext.Provider value={{ isNavigating, setIsNavigating }}>
+          <NavigationModeContext.Provider value={{ isNavigating, setIsNavigating, isBottomNavbarHidden, setIsBottomNavbarHidden, navbarVisibility }}>
             <ThemeProvider
               value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
             >
@@ -260,7 +271,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
           />
           <Stack.Screen
             name="map/[id]"
-            options={{ headerShown: false, animation: 'none' }}
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
             name="map/settings"

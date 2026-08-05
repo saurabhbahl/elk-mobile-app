@@ -34,7 +34,7 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
-import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Reanimated, { FadeInDown, FadeOutDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addOpacity, normalizeHex } from '../../src/utils/colorUtils';
 
@@ -48,6 +48,7 @@ import { MapRouteLayers } from '../../src/components/MapRouteLayers';
 import { NavigationHeader } from '../../src/components/NavigationHeader';
 import { NavigationOverlay } from '../../src/components/NavigationOverlay';
 import { RoutePlanner } from '../../src/components/RoutePlanner';
+import SectionHeader from '../../src/components/SectionHeader';
 
 // Data & utils
 import { territoryLabelFeature } from '../../src/data/territoryLabels';
@@ -214,13 +215,17 @@ function MapScreen() {
   }, []);
 
   // Sync navigation mode to layout context so tab bar hides/shows
-  const { setIsNavigating: setLayoutNavigating } = useNavigationMode();
-  useEffect(() => {
-    setLayoutNavigating(isNavigating || isCalculatingRoute);
-    return () => {
-      setLayoutNavigating(false);
-    };
-  }, [isNavigating, isCalculatingRoute, setLayoutNavigating]);
+  const { setIsNavigating: setLayoutNavigating, setIsBottomNavbarHidden } = useNavigationMode();
+  useFocusEffect(
+    useCallback(() => {
+      setLayoutNavigating(isNavigating || isCalculatingRoute);
+      setIsBottomNavbarHidden(!!selectedWaypoint || isNavigating || isCalculatingRoute);
+      return () => {
+        setLayoutNavigating(false);
+        setIsBottomNavbarHidden(false);
+      };
+    }, [isNavigating, isCalculatingRoute, selectedWaypoint, setLayoutNavigating, setIsBottomNavbarHidden])
+  );
 
   // Handle Android hardware back button in navigation mode
   // (Moved BackHandler below handleExitNavigation)
@@ -1177,29 +1182,31 @@ function MapScreen() {
           </View>
         )}
 
-        {/* Floating Title & Search bar capsule + Side Controls */}
+        {/* Full-width Title & Search bar + Side Controls */}
         {!isNavigating && !showPointPicker && !isSelectingPin && (
           <>
-            <View style={[styles.searchBarContainer, { top: 16 }]}>
+            <View style={styles.fullWidthHeaderContainer}>
               {!isSearching ? (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => setIsSearching(true)}
-                  style={styles.floatingTitleCapsule}
-                >
-                  {isCalculatingRoute ? (
-                    <ActivityIndicator size="small" color={brandPrimary || colors.primary} style={{ marginRight: 6 }} />
-                  ) : (
-                    <MaterialIcons name="map" size={18} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-                  )}
-                  {isCalculatingRoute ? (
-                    <AppText style={styles.floatingTitleText}>Calculating route...</AppText>
-                  ) : isValidData(mapSettingsData?.screen_title) ? (
-                    <AppText style={styles.floatingTitleText}>{mapSettingsData?.screen_title}</AppText>
-                  ) : null}
-                </TouchableOpacity>
+                <View style={styles.fullWidthHeaderRow}>
+                  <View style={{ flex: 1, marginTop: -8 }}>
+                    <SectionHeader
+                      title={isValidData(mapSettingsData?.screen_title) ? (mapSettingsData?.screen_title ?? "") : ""}
+                      iconSource={require('../../assets/images/mapicon.png')}
+                      primaryColor={brandPrimary || "#000000"}
+                      secondaryColor={brandSecondary || "#ea0b0b"}
+                      isDark={isDark}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => setIsSearching(true)}
+                    style={styles.searchIconButton}
+                  >
+                    <MaterialIcons name="search" size={24} color={isDark ? "#FFFFFF" : brandPrimary} />
+                  </TouchableOpacity>
+                </View>
               ) : (
-                <View style={styles.searchBar}>
+                <View style={[styles.searchBar, { marginHorizontal: 16, marginBottom: 12 }]}>
                   <MaterialIcons name="search" size={22} color={colors.onSurfaceVariant} style={styles.searchIcon} />
                   <TextInput
                     style={styles.searchInput}
@@ -1237,7 +1244,7 @@ function MapScreen() {
 
               {/* Search results dropdown */}
               {isSearching && showSearchResults && searchResults.length > 0 && (
-                <View style={[styles.searchResultsDropdown, { top: 56 }]}>
+                <View style={[styles.searchResultsDropdown, { top: 60 }]}>
                   {searchResults.slice(0, 5).map((wp) => (
                     <TouchableOpacity
                       key={wp.id}
@@ -1247,7 +1254,7 @@ function MapScreen() {
                         setIsSearching(false);
                       }}
                     >
-                      <MaterialIcons name="place" size={18} color={colors.primary} />
+                      <MaterialIcons name="place" size={18} color={brandPrimary || colors.primary} />
                       <View style={styles.searchResultText}>
                         <AppText style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</AppText>
                         <AppText style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</AppText>
@@ -1258,7 +1265,7 @@ function MapScreen() {
               )}
             </View>
 
-            <View style={[styles.sideControls, { bottom: insets.bottom + (selectedWaypoint ? 245 : 0) }]}>
+            <View style={[styles.sideControls, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}>
               <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate()}>
                 <MaterialIcons name="navigation" size={24} color={colors.error} style={{ transform: [{ rotate: '45deg' }] }} />
               </TouchableOpacity>
@@ -1271,7 +1278,11 @@ function MapScreen() {
 
         {/* ── Waypoint carousel (hidden during navigation and pin selection) ── */}
         {selectedWaypoint && !isNavigating && !showPointPicker && !isSelectingPin && (
-          <View style={[styles.hotspotCardContainer, { bottom: 0 }]}>
+          <Reanimated.View 
+            entering={FadeInDown.duration(300).delay(150)} 
+            exiting={FadeOutDown.duration(200)}
+            style={[styles.hotspotCardContainer, { bottom: 0 }]}
+          >
             <FlatList
               ref={flatListRef}
               data={waypoints}
@@ -1289,7 +1300,7 @@ function MapScreen() {
               }}
               renderItem={renderWaypointCard}
             />
-          </View>
+          </Reanimated.View>
         )}
 
         {/* ── Route planner (full-screen picker) ── */}
@@ -1551,23 +1562,34 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     // Search bar
-    searchBarContainer: {
-      position: 'absolute', left: 24, right: 24, zIndex: 10, alignItems: 'center',
+    fullWidthHeaderContainer: {
+      position: 'absolute', left: 0, right: 0, top: 0, zIndex: 10,
+      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
+      borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '40',
+    },
+    fullWidthHeaderRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    },
+    searchIconButton: {
+      width: 44, height: 44, borderRadius: 22,
+      justifyContent: 'center', alignItems: 'center',
+      marginRight: 16, marginBottom: 12,
+      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
     },
     searchBar: {
       flexDirection: 'row', alignItems: 'center',
-      backgroundColor: colors.surface + 'cc', // 80% opacity
+      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
       borderRadius: 99, paddingHorizontal: 16, height: 52,
-      width: '100%', maxWidth: 400,
+      width: 'auto',
       borderWidth: 1, borderColor: colors.outlineVariant + '1a', // 10% opacity
-      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 12, elevation: 4,
     },
     searchIcon: { marginRight: 12 },
     searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.onSurface, padding: 0 },
     searchResultsDropdown: {
-      position: 'absolute', left: 0, right: 0, top: 56,
-      backgroundColor: colors.surface + 'f7',
+      position: 'absolute', left: 16, right: 16,
+      backgroundColor: colors.surface,
       borderRadius: 16,
       borderWidth: 1, borderColor: colors.outlineVariant + '33',
       shadowColor: '#000', shadowOffset: { width: 0, height: 8 },

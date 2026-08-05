@@ -4,7 +4,6 @@ import CachedImage from "@/src/components/CachedImage";
 import { router } from "expo-router";
 import React from "react";
 import { ActivityIndicator,
-    FlatList,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -13,12 +12,14 @@ import { ActivityIndicator,
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
+
 import { useAppContentData, ProgramsData } from "@/src/contexts/AppContentContext";
 import { useTheme } from "@/src/context/ThemeContext";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { Image } from "expo-image";
 import { isValidData } from "@/src/utils/validation";
 import UniversalCard from "@/src/components/UniversalCard";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -33,6 +34,8 @@ export default function ProgramsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, programsData, apiStatus, programsSettingData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
+
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -54,7 +57,12 @@ export default function ProgramsScreen() {
     ), [isGrid, primaryColor]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             
@@ -74,15 +82,17 @@ export default function ProgramsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList
+                <Animated.FlatList
                     key={isGrid ? "grid" : "list"}
                     data={programs}
-                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderProgramCard}
+                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                    renderItem={renderProgramCard as any}
                     numColumns={isGrid ? 2 : 1}
-                    contentContainerStyle={styles.gridContainer}
+                    contentContainerStyle={isGrid ? styles.gridContainer : styles.gridContainer}
                     columnWrapperStyle={isGrid ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
                     initialNumToRender={6}
                     maxToRenderPerBatch={10}
                     windowSize={5}

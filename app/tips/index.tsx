@@ -2,7 +2,6 @@ import AppText from "@/src/components/AppText";
 import React from "react";
 import {
     ActivityIndicator,
-    FlatList,
     StatusBar,
     StyleSheet,
     View,
@@ -12,11 +11,13 @@ import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
+
 import CachedImage from "@/src/components/CachedImage";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TipsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -87,6 +88,8 @@ export default function TipsScreen() {
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
+
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const tips = tipsData || [];
@@ -103,7 +106,12 @@ export default function TipsScreen() {
     ), [styles, primaryColor, isDark, colors]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             {isValidData(tipsScreenSettingsData?.screen_title) ? (
@@ -149,12 +157,14 @@ export default function TipsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList
+                <Animated.FlatList
                     data={tips}
-                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderTipItem}
+                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                    renderItem={renderTipItem as any}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
                     initialNumToRender={5}
                     maxToRenderPerBatch={8}
                     windowSize={5}

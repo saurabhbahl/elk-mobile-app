@@ -14,6 +14,7 @@ type SectionHeaderProps = {
     isFeatured?: boolean;
     actionLabel?: string;
     onActionPress?: () => void;
+    style?: any;
 };
 
 export default function SectionHeader({
@@ -25,14 +26,15 @@ export default function SectionHeader({
     onPress,
     isFeatured,
     actionLabel,
-    onActionPress
+    onActionPress,
+    style
 }: SectionHeaderProps) {
 
     const TitleComponent = onPress ? TouchableOpacity : View;
 
     if (isFeatured) {
         return (
-            <View style={styles.featuredEventHeaderRow}>
+            <View style={[styles.featuredEventHeaderRow, style]}>
                 <View style={styles.featuredTitleContainer}>
                     <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                         <Image source={iconSource} style={styles.sectionIconImgLg} contentFit="contain" />
@@ -55,7 +57,7 @@ export default function SectionHeader({
     }
 
     return (
-        <View style={styles.subSectionTitleRow}>
+        <View style={[styles.subSectionTitleRow, style]}>
             <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                 <Image source={iconSource} style={styles.sectionIconImg} contentFit="contain" />
             </View>

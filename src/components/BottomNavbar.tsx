@@ -3,8 +3,11 @@ import { useTheme } from '@/src/context/ThemeContext';
 import { useAppContentData } from '@/src/contexts/AppContentContext';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigationMode } from '../../app/_layout';
 import AppText from './AppText';
 
 const isSmallDevice = SCREEN_HEIGHT < 700;
@@ -21,6 +24,25 @@ export default function BottomNavbar() {
     const { colors, isDark } = useTheme();
     const pathname = usePathname();
     const insets = useSafeAreaInsets();
+    const { isBottomNavbarHidden } = useNavigationMode();
+
+    const isMapScreen = pathname === '/map' || pathname.startsWith('/map/');
+
+    const translateY = useSharedValue(0);
+
+    useEffect(() => {
+        if (isBottomNavbarHidden) {
+            translateY.value = withTiming(150, { duration: 300 }); // slide down completely out of view
+        } else {
+            translateY.value = withTiming(0, { duration: 300 });
+        }
+    }, [isBottomNavbarHidden]);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value }],
+        };
+    });
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
     const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
@@ -67,13 +89,15 @@ export default function BottomNavbar() {
     };
 
     return (
-        <View style={[
+        <Animated.View style={[
             styles.container,
+            animatedStyle,
             {
                 backgroundColor: primaryColor, // Solid dark premium background matching wireframe
                 paddingBottom: Math.max(insets.bottom, isSmallDevice ? 6 : 10),
                 borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'
-            }
+            },
+            isMapScreen && { position: 'absolute', bottom: 0, left: 0, right: 0 }
         ]}>
             <View style={styles.navRow}>
                 {navItems.map((item, index) => {
@@ -106,7 +130,7 @@ export default function BottomNavbar() {
                     );
                 })}
             </View>
-        </View>
+        </Animated.View>
     );
 }
 
@@ -120,6 +144,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 10,
+        zIndex: 9999,
     },
     navRow: {
         flexDirection: 'row',

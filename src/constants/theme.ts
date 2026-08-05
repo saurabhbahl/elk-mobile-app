@@ -3,7 +3,7 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import { Platform, Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
 export const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export const width = SCREEN_WIDTH;
@@ -62,16 +62,16 @@ export const LIGHT_COLORS = {
   primaryContainer: '#1b3022',
   onPrimaryContainer: '#819986',
   inversePrimary: '#b4cdb8',
-  
+
   secondary: '#6f5a4f',
   secondaryContainer: '#f7dacc',
   onSecondaryContainer: '#745e53',
-  
+
   tertiary: '#735c00',
   tertiaryContainer: '#cba72f',
   onTertiaryContainer: '#4e3d00',
-  
-  surface: '#f8faf9',
+
+  surface: '#ffffff',
   onSurface: '#191c1c',
   surfaceVariant: '#e1e3e2',
   onSurfaceVariant: '#434843',
@@ -79,7 +79,7 @@ export const LIGHT_COLORS = {
   surfaceContainerHigh: '#e6e9e8',
   surfaceContainerLow: '#f2f4f3',
   surfaceContainerLowest: '#ffffff',
-  
+
   outline: '#737973',
   outlineVariant: '#c3c8c1',
   background: '#f8faf9',
@@ -93,15 +93,15 @@ export const DARK_COLORS = {
   primaryContainer: '#2d3a2e',
   onPrimaryContainer: '#95a494',
   inversePrimary: '#546254',
-  
+
   secondary: '#e9c176',
   secondaryContainer: '#604403',
   onSecondaryContainer: '#dab36a',
-  
+
   tertiary: '#e9c176',
   tertiaryContainer: '#604403',
   onTertiaryContainer: '#dab36a',
-  
+
   surface: '#111413',
   onSurface: '#e1e3e0',
   surfaceVariant: '#323534',
@@ -110,7 +110,7 @@ export const DARK_COLORS = {
   surfaceContainerHigh: '#272b29',
   surfaceContainerLow: '#191c1b',
   surfaceContainerLowest: '#0c0f0d',
-  
+
   outline: '#8e928b',
   outlineVariant: '#434843',
   background: '#111413',

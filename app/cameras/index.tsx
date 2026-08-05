@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
@@ -48,6 +49,7 @@ function NativeVideoPlayer({ source }: { source: string }) {
 
 export default function LiveCameraScreen() {
     const { colors, fonts, isDark } = useTheme();
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
@@ -70,11 +72,9 @@ export default function LiveCameraScreen() {
     };
 
     const handleWebViewNavigation = (event: any) => {
-        // If it's a YouTube embed and the user clicks a link (like the video title or YouTube logo),
-        // it tries to navigate away from the /embed/ player. We intercept this and open it natively.
         if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
             Linking.openURL(event.url).catch(err => console.error("Couldn't open YouTube link", err));
-            return false; // Stop WebView from navigating
+            return false; 
         }
         return true;
     };
@@ -167,7 +167,6 @@ export default function LiveCameraScreen() {
             return <NativeVideoPlayer source={streamUrl} />;
         }
 
-        // Fallback for unknown type
         return (
             <WebView
                 style={{ flex: 1, backgroundColor: "#000" }}
@@ -178,7 +177,12 @@ export default function LiveCameraScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
@@ -191,8 +195,13 @@ export default function LiveCameraScreen() {
                     <ActivityIndicator size="large" color={bgColor} />
                 </View>
             ) : (
-                <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
-                    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <Animated.ScrollView 
+                    contentContainerStyle={styles.scrollContent} 
+                    showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
+                    entering={FadeInUp.duration(200)} 
+                >
                         {/* Header Row */}
                         {isValidData(liveCamSettingsData?.screen_title) ? (
                             <View style={styles.headerRow}>
@@ -297,8 +306,7 @@ export default function LiveCameraScreen() {
                                 ) : null}
                             </View>
                         ) : null}
-                    </ScrollView>
-                </Animated.View>
+                </Animated.ScrollView>
             )}
         </SafeAreaView>
     );

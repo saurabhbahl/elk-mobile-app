@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import React from "react";
 import {
     ActivityIndicator,
-    FlatList,
     StatusBar,
     StyleSheet,
     View,
@@ -13,10 +12,12 @@ import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
+
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
+import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -68,6 +69,8 @@ export default function TrailsScreen() {
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
+
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const trails = trailsData || [];
@@ -81,7 +84,12 @@ export default function TrailsScreen() {
     ), [styles]);
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
@@ -101,12 +109,14 @@ export default function TrailsScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <FlatList
+                <Animated.FlatList
                     data={trails}
-                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                    renderItem={renderTrailItem}
+                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                    renderItem={renderTrailItem as any}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
+                    onScroll={scrollHandler}
+                    scrollEventThrottle={16}
                     initialNumToRender={8}
                     maxToRenderPerBatch={12}
                     windowSize={5}
