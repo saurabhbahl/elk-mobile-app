@@ -59,35 +59,13 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
 
     const getCardStyle = () => {
         if (isGrid) return styles.gridCard;
-        if (isList) return styles.listCardWrapper;
+        if (isList) return styles.listCard;
         if (isHorizontal) return styles.horizontalCard;
         if (isFeatured) return styles.featuredCard;
         return styles.horizontalCard;
     };
 
-    if (isList) {
-        return (
-            <TouchableOpacity style={styles.listCardWrapper} activeOpacity={0.85} onPress={handlePress}>
-                <View style={styles.listImageContainer}>
-                    <CachedImage uri={imageUrl} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    {badge && (
-                        <View style={[styles.cardBadge, { backgroundColor: primaryColor }]}>
-                            <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
-                            <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
-                        </View>
-                    )}
-                </View>
-                <View style={styles.listContent}>
-                    {isValidData(title) && (
-                        <AppText style={styles.listTitle} numberOfLines={2}>{title}</AppText>
-                    )}
-                    {isValidData(subtitle) && (
-                        <AppText style={styles.listSubtitle} numberOfLines={1}>{subtitle}</AppText>
-                    )}
-                </View>
-            </TouchableOpacity>
-        );
-    }
+
 
     return (
         <TouchableOpacity style={getCardStyle()} activeOpacity={0.85} onPress={handlePress}>
@@ -177,54 +155,34 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.1)',
         flexDirection: 'column',
     },
-    listCardWrapper: {
+    listCard: {
         width: "100%",
-        flexDirection: "row",
-        borderRadius: 12,
+        height: 269.33,
+        borderRadius: 10,
+        overflow: "hidden",
+        backgroundColor: primaryColor,
+        marginBottom: 24,
+        flexDirection: 'column',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
-        overflow: "hidden",
-        backgroundColor: '#1C1C1E',
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 2,
     },
-    listImageContainer: {
-        width: 110,
-        height: 110,
-        overflow: 'hidden',
-    },
-    listContent: {
-        flex: 1,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        justifyContent: "center",
-    },
-    listTitle: {
-        fontSize: 15,
-        fontFamily: 'OpenSans-Bold',
-        color: '#FFFFFF',
-        marginBottom: 6,
-    },
-    listSubtitle: {
-        fontSize: 12,
-        fontFamily: 'OpenSans-Regular',
-        color: '#AAAAAA',
-    },
+
     imageContainer: {
         flex: 1,
         width: '100%',
         position: 'relative',
     },
     bottomSection: {
-        height: 76,
         width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
+        paddingVertical: 20,
         justifyContent: 'space-between',
         backgroundColor: primaryColor,
         borderRadius: 10,

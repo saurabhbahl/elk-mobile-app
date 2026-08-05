@@ -1,24 +1,22 @@
-import { Href } from "expo-router";
 import AppText from "@/src/components/AppText";
-import CachedImage from "@/src/components/CachedImage";
-import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
+import {
+    ActivityIndicator,
+    Platform,
     StatusBar,
     StyleSheet,
-    TouchableOpacity,
-    View,
-    Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
-import { useAppContentData, ProgramsData } from "@/src/contexts/AppContentContext";
-import { useTheme } from "@/src/context/ThemeContext";
-import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
-import { Image } from "expo-image";
-import { isValidData } from "@/src/utils/validation";
+import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { ProgramsData, useAppContentData } from "@/src/contexts/AppContentContext";
+import { isValidData } from "@/src/utils/validation";
 import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
@@ -34,13 +32,14 @@ export default function ProgramsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, programsData, apiStatus, programsSettingData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
     const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
     const programs = programsData || [];
-    
+
     // ACF select fields sometimes return an object { value: 'list', label: 'List' }
     const layoutValue = typeof programsSettingData?.layout === 'object' ? (programsSettingData.layout as any).value : programsSettingData?.layout;
     const isGrid = (layoutValue || "").toLowerCase() !== "list";
@@ -57,23 +56,27 @@ export default function ProgramsScreen() {
     ), [isGrid, primaryColor]);
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            
-            
+
+
 
             {isValidData(programsSettingData?.screen_title) ? (
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {programsSettingData?.screen_title}
-                    </AppText>
+                <View style={{ paddingHorizontal: 16 }}>
+                    <SectionHeader
+                        title={programsSettingData?.screen_title as string}
+                        iconSource={require("../../assets/images/programicon.png")}
+                        primaryColor={primaryColor || "#000000"}
+                        secondaryColor={secondaryColor || "#ea0b0b"}
+                        isDark={isDark}
+                        style={{ marginLeft: 0 }}
+                    />
                 </View>
             ) : null}
 

@@ -1,21 +1,24 @@
 import AppText from "@/src/components/AppText";
-import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ActivityIndicator,
+import {
+    ActivityIndicator,
     InteractionManager,
     ScrollView,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
-    View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+    View
+} from "react-native";
 import RenderHTML from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
-import { useAppContent, ProgramsData } from "@/src/contexts/AppContentContext";
-import { useTheme } from "@/src/context/ThemeContext";
+import PrimaryButton from "@/src/components/PrimaryButton";
+import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { useTheme } from "@/src/context/ThemeContext";
+import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -49,8 +52,8 @@ export default function ProgramDetailScreen() {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                
-                
+
+
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -62,8 +65,8 @@ export default function ProgramDetailScreen() {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                
-                
+
+
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Program not found.</AppText>
                     <TouchableOpacity
@@ -83,28 +86,35 @@ export default function ProgramDetailScreen() {
         <SafeAreaView style={styles.container} edges={["left", "right"]}>
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            
-            
+
+
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Heading Row */}
                 {isValidData(program.program_name) ? (
-                    <View style={styles.headerRow}>
-                        <Image source={require("../../assets/images/Primary.png")} style={styles.headerIcon} />
-                        <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]} numberOfLines={1}>
-                            {program.program_name}
-                        </AppText>
+                    <View style={{ paddingHorizontal: 16 }}>
+                        <SectionHeader
+                            title={program.program_name as string}
+                            iconSource={require("../../assets/images/programicon.png")}
+                            primaryColor={primaryColor || "#000000"}
+                            secondaryColor={secondaryColor || "#ea0b0b"}
+                            isDark={isDark}
+                            style={{ marginLeft: 0 }}
+                        />
                     </View>
                 ) : null}
 
                 {/* Banner Image */}
                 {isValidData(program.thumbnail_image) ? (
-                    <View style={styles.bannerContainer}>
+                    <View style={[styles.bannerContainer, { position: 'relative' }]}>
                         <CachedImage
                             uri={program.thumbnail_image?.url as string}
-                            style={styles.bannerImage}
+                            style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
                             contentFit="cover"
                         />
+                        <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
+                            <PrimaryButton title="Get Directions" onPress={() => { }} />
+                        </View>
                     </View>
                 ) : null}
 
@@ -112,10 +122,14 @@ export default function ProgramDetailScreen() {
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
                     {isValidData(program.schedule__dates) ? (
-                        <AppText style={styles.scheduleText}>
+                        <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
                             {program.schedule__dates}
                         </AppText>
                     ) : null}
+                    {/* Short Description */}
+                    <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 14, fontWeight: '700', color: colors.onSurface, marginBottom: 12 }}>
+                        {isValidData(program.short_description) ? program.short_description : "Elk Country Visitor Center"}
+                    </AppText>
 
                     {/* Description Paragraph */}
                     {rawDescription ? (
@@ -123,9 +137,10 @@ export default function ProgramDetailScreen() {
                             contentWidth={width - 32} // paddingHorizontal is 16 on each side
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{
-                                fontSize: 14,
+                                fontFamily: 'OpenSans-Regular',
+                                fontSize: 13,
                                 color: colors.onSurface,
-                                lineHeight: 22,
+                                lineHeight: 20,
                             }}
                             tagsStyles={{
                                 p: { marginVertical: 8 }

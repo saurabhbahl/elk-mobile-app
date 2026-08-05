@@ -1,20 +1,17 @@
 import AppText from "@/src/components/AppText";
-import { Image } from "expo-image";
-import { Href, router } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
+    Platform,
     StatusBar,
     StyleSheet,
-    TouchableOpacity,
-    View,
-    Platform
+    View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 
-import CachedImage from "@/src/components/CachedImage";
+import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -34,6 +31,8 @@ export default function EventsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, eventsData, apiStatus, eventSettingsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+
 
     const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
@@ -46,15 +45,15 @@ export default function EventsScreen() {
             <UniversalCard
                 type="event"
                 item={item}
-                variant="grid"
+                variant="list"
                 primaryColor={primaryColor || "#000000"}
             />
         </Animated.View>
     ), [primaryColor]);
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -65,11 +64,15 @@ export default function EventsScreen() {
 
 
             {eventSettingsData?.screen_title ? (
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {eventSettingsData.screen_title}
-                    </AppText>
+                <View style={{ paddingHorizontal: 16 }}>
+                    <SectionHeader
+                        title={eventSettingsData.screen_title as string}
+                        iconSource={require("../../assets/images/eventicon.png")}
+                        primaryColor={primaryColor || "#000000"}
+                        secondaryColor={secondaryColor || "#ea0b0b"}
+                        isDark={isDark}
+                        style={{ marginLeft: 0 }}
+                    />
                 </View>
             ) : null}
 
@@ -79,12 +82,12 @@ export default function EventsScreen() {
                 </View>
             ) : (
                 <Animated.FlatList
+                    key="list-variant"
                     data={events}
                     keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
                     renderItem={renderEventCard as any}
-                    numColumns={2}
+                    numColumns={1}
                     contentContainerStyle={styles.gridContainer}
-                    columnWrapperStyle={styles.columnWrapper}
                     showsVerticalScrollIndicator={false}
                     onScroll={scrollHandler}
                     scrollEventThrottle={16}
