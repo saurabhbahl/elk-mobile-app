@@ -1,16 +1,18 @@
 import AppText from "@/src/components/AppText";
+import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import SectionHeader from "@/src/components/SectionHeader";
+import { FontAwesome5 } from '@expo/vector-icons';
 import { Image } from "expo-image";
 import React from "react";
 import {
     ActivityIndicator,
-    ScrollView,
     StatusBar,
     StyleSheet,
     View
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
@@ -21,6 +23,21 @@ import { isValidData } from "@/src/utils/validation";
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith("#") ? color : `#${color}`;
+};
+
+const getDashiconMapping = (dashicon: string) => {
+    switch (dashicon) {
+        case 'dashicons-yes': return 'check';
+        case 'dashicons-yes-alt': return 'check-circle';
+        case 'dashicons-info': return 'info-circle';
+        case 'dashicons-warning': return 'exclamation-triangle';
+        case 'dashicons-location': return 'map-marker-alt';
+        case 'dashicons-calendar-alt': return 'calendar-alt';
+        case 'dashicons-camera': return 'camera';
+        case 'dashicons-images-alt2': return 'images';
+        case 'dashicons-sos': return 'life-ring';
+        default: return 'circle';
+    }
 };
 
 export default function PlanTripScreen() {
@@ -45,6 +62,12 @@ export default function PlanTripScreen() {
         }
     }
 
+    const galleryImages = React.useMemo(() => {
+        const gallery = planTripData?.image_gallery;
+        if (!gallery || !Array.isArray(gallery)) return [];
+        return gallery.map((img: any) => img?.url).filter(Boolean);
+    }, [planTripData?.image_gallery]);
+
     const sections = planTripData?.content_sections || [];
     const activeSections = sections.filter((sec: Record<string, unknown>) => {
         // Handle active flag checking flexibly (could be string "1", boolean true, etc.)
@@ -60,23 +83,24 @@ export default function PlanTripScreen() {
     });
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-
-
-
             {isValidData(title) ? (
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/calendar-days.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {title}
-                    </AppText>
+                <View >
+                    <SectionHeader
+                        title={title as string}
+                        iconSource={require("../../assets/images/mapicon.png")}
+                        primaryColor={primaryColor || "#000000"}
+                        secondaryColor={secondaryColor || "#ea0b0b"}
+                        isDark={isDark}
+                        isFeatured={true}
+                    />
                 </View>
             ) : null}
 
@@ -85,8 +109,8 @@ export default function PlanTripScreen() {
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
             ) : (
-                <Animated.ScrollView 
-                    contentContainerStyle={styles.scrollContent} 
+                <Animated.ScrollView
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     onScroll={scrollHandler}
                     scrollEventThrottle={16}
@@ -117,17 +141,32 @@ export default function PlanTripScreen() {
                         </Animated.View>
                     ) : null}
 
+                    {galleryImages.length > 0 ? (
+                        <Animated.View entering={FadeInUp.duration(200).delay(60)} style={{ marginHorizontal: 16, marginBottom: 24, alignItems: 'center' }}>
+                            <ImageGallerySlider images={galleryImages} width={width - 32} height={190} />
+                        </Animated.View>
+                    ) : null}
+
                     {isValidData(activeSections) ? (
                         activeSections.map((sec: any, index: number) => {
                             if (!isValidData(sec.section_heading) && !isValidData(sec.section_body)) return null;
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <Animated.View key={index} entering={FadeInUp.duration(200).delay(Math.min(index * 15 + 80, 160))}>
-                                    <View style={styles.sectionCard}>
+                                     <View style={[styles.sectionCard, { borderBottomColor: secondaryColor || "#ea0b0b", borderBottomWidth: index === activeSections.length - 1 ? 0 : 1 }]}>
                                         {(isValidData(sec.section_heading) || isValidData(iconUrl)) ? (
                                             <View style={styles.sectionHeader}>
                                                 {isValidData(iconUrl) ? (
-                                                    <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
+                                                    iconUrl.startsWith('dashicons-') ? (
+                                                        <FontAwesome5 
+                                                            name={getDashiconMapping(iconUrl)} 
+                                                            size={20} 
+                                                            color={primaryColor || colors.onSurface} 
+                                                            style={styles.sectionIconImg} 
+                                                        />
+                                                    ) : (
+                                                        <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
+                                                    )
                                                 ) : null}
                                                 {isValidData(sec.section_heading) ? (
                                                     <AppText style={styles.sectionHeading}>{sec.section_heading}</AppText>
@@ -136,12 +175,16 @@ export default function PlanTripScreen() {
                                         ) : null}
                                         {isValidData(sec.section_body) ? (
                                             <RenderHTML
-                                                contentWidth={width - 32 - 32} // padding inside section card
+                                                contentWidth={width - 32}
                                                 source={{ html: sec.section_body as string }}
                                                 baseStyle={{
+                                                    fontFamily: 'OpenSans-Regular',
+                                                    fontWeight: '400',
+                                                    fontStyle: 'normal',
                                                     fontSize: 13,
                                                     color: colors.onSurface,
-                                                    lineHeight: 18,
+                                                    lineHeight: 20,
+                                                    letterSpacing: 0,
                                                 }}
                                                 tagsStyles={{ p: { marginVertical: 4 } }}
                                             />
@@ -168,14 +211,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-    },
-    headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 16,
     },
     headerIcon: {
         width: 18,
@@ -210,13 +245,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontWeight: "500",
     },
     sectionCard: {
+        borderBottomWidth: 1,
         marginHorizontal: 16,
-        backgroundColor: colors.surface,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: "#E8E8E8",
-        padding: 16,
         marginBottom: 16,
+        paddingBottom: 16,
     },
     sectionHeader: {
         flexDirection: "row",
@@ -237,8 +269,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginRight: 10,
     },
     sectionHeading: {
-        fontSize: 15,
-        fontWeight: "700",
+        fontFamily: 'OpenSans-Bold',
+        fontWeight: '700',
+        fontStyle: 'normal',
+        fontSize: 16,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: colors.onSurface,
         flex: 1,
     },

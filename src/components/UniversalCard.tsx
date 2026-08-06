@@ -11,7 +11,7 @@ const { width } = Dimensions.get('window');
 const cardWidth = (width - 44) / 2;
 
 type UniversalCardProps = {
-    type: 'program' | 'event';
+    type: 'program' | 'event' | 'rental';
     item: ProgramsData | EventsData | any;
     variant: 'horizontal' | 'grid' | 'featured' | 'list';
     primaryColor: string;
@@ -21,26 +21,67 @@ type UniversalCardProps = {
 export default function UniversalCard({ type, item, variant, primaryColor, onPress }: UniversalCardProps) {
     if (!item) return null;
 
-    // Parse date for programs
+    // Parse date for programs and events
     let badge = null;
-    if (type === 'program' && item.schedule__dates) {
-        const dateStr = item.schedule__dates;
 
+    const parseDateStr = (dateStr: string) => {
         // Matches: 20 July 2026
         const match = dateStr.match(/(\d{1,2})\s+([A-Za-z]+)/);
+        // Matches: July 20, 2026
+        const matchUS = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})/);
 
         if (match) {
-            badge = {
+            return {
                 month: match[2].toUpperCase().slice(0, 3),
                 day: match[1]
             };
+        } else if (matchUS) {
+            return {
+                month: matchUS[1].toUpperCase().slice(0, 3),
+                day: matchUS[2]
+            };
         }
+
+        // Fallback standard parsing
+        const dateObj = new Date(dateStr);
+        if (!isNaN(dateObj.getTime())) {
+            const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            return { month: MONTHS[dateObj.getMonth()], day: dateObj.getDate().toString() };
+        }
+        return null;
+    };
+    
+    const parseEventDateStr = (dateStr: string) => {
+        // Matches: 17/07/2026 1:00 am
+        const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (match) {
+            const day = match[1];
+            const monthIndex = parseInt(match[2], 10) - 1;
+            const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            if (monthIndex >= 0 && monthIndex < 12) {
+                return { month: MONTHS[monthIndex], day: day };
+            }
+        }
+        return null;
+    };
+
+    if (type === 'program' && item.schedule__dates) {
+        badge = parseDateStr(item.schedule__dates);
+    } else if (type === 'event' && item["start_date_&_time"]) {
+        badge = parseEventDateStr(item["start_date_&_time"]);
     }
 
-    const title = type === 'program' ? item.program_name : item.event_name;
-    const subtitle = type === 'program' ? "Elk Country Visitor Center" : (item.short_description || item["start_date_&_time"]);
+    const title = type === 'program' ? item.program_name : type === 'rental' ? item.rental_name : item.event_name;
+    const subtitle = type === 'rental' ? item.rental_type : item.short_description;
 
-    const imageUrl = item.thumbnail_image?.url as string;
+    let imageUrl = item.thumbnail_image?.url as string;
+    if (type === 'rental') {
+        if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
+            imageUrl = item.additional_images[0]?.url;
+        } else if (item.featured_image?.url) {
+            imageUrl = item.featured_image.url;
+        }
+    }
 
     const styles = React.useMemo(() => createStyles(primaryColor), [primaryColor]);
 

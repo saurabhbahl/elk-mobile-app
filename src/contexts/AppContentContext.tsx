@@ -75,6 +75,7 @@ export interface TrailsData {
     featured_image?: boolean | Record<string, unknown>;
     description?: string;
     trailhead_address?: string;
+    location_poi_link?: unknown[];
     distance?: string;
     seasonal_closure?: string;
     active?: boolean;
@@ -110,7 +111,7 @@ export interface RentalsData {
     rental_type?: string;
     availability_notes?: string;
     pricing_notes?: string;
-    cta_1_label_?: string;
+    cta_1_label?: string;
     cta_1_link?: string;
     cta_2_label?: string;
     cta_2_link?: string;
@@ -133,6 +134,7 @@ export interface TipsData {
 export interface PlanYourTripData {
     screen_title?: string;
     hero_image?: any;
+    image_gallery?: any[];
     intro_paragraph?: string;
     content_sections?: any[];
 }
@@ -192,12 +194,14 @@ export interface TrailSettingsData {
 export interface RentalSettingsData {
     screen_title?: string;
     intro_text?: string;
+    image_gallery?: any[];
 }
 
 export interface TipsScreenSettingsData {
     screen_title?: string;
     intro_paragraph?: string;
     header_icon?: string;
+    image_gallery?: any[];
 }
 
 export interface MapSettingsData {
@@ -304,7 +308,7 @@ export interface AppContentSyncContextType {
     performInitialSync: () => Promise<boolean>;
 }
 
-export interface AppContentContextType extends AppContentDataContextType, AppContentSyncContextType {}
+export interface AppContentContextType extends AppContentDataContextType, AppContentSyncContextType { }
 
 const AppContentDataContext = createContext<AppContentDataContextType | undefined>(undefined);
 const AppContentSyncContext = createContext<AppContentSyncContextType | undefined>(undefined);
@@ -418,12 +422,21 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
             const recordsMap = appRepository.getAllRecords();
 
-            setProgramsData(recordsMap.programs as ProgramsData[]);
-            setEventsData(recordsMap.events as EventsData[]);
-            setTrailsData(recordsMap.trails as TrailsData[]);
-            setRentalsData(recordsMap.rentals as RentalsData[]);
-            setTipsData(recordsMap.tips as TipsData[]);
-            setCamerasData(recordsMap.cameras as CamerasData[]);
+            const sortBySortOrder = (arr: any[]) => {
+                if (!arr || !Array.isArray(arr)) return [];
+                return [...arr].sort((a, b) => {
+                    const orderA = a.sort_order !== undefined && a.sort_order !== null && a.sort_order !== '' ? parseInt(a.sort_order, 10) : 99999;
+                    const orderB = b.sort_order !== undefined && b.sort_order !== null && b.sort_order !== '' ? parseInt(b.sort_order, 10) : 99999;
+                    return orderA - orderB;
+                });
+            };
+
+            setProgramsData(sortBySortOrder(recordsMap.programs) as ProgramsData[]);
+            setEventsData(sortBySortOrder(recordsMap.events) as EventsData[]);
+            setTrailsData(sortBySortOrder(recordsMap.trails) as TrailsData[]);
+            setRentalsData(sortBySortOrder(recordsMap.rentals) as RentalsData[]);
+            setTipsData(sortBySortOrder(recordsMap.tips) as TipsData[]);
+            setCamerasData(sortBySortOrder(recordsMap.cameras) as CamerasData[]);
 
             if (recordsMap.pois) {
                 const mappedPois = (recordsMap.pois as PoisData[]).map((poi: PoisData) => ({
@@ -522,7 +535,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             if (hasUpdates) {
                 loadFromSQLite();
             }
-            
+
             // Fire and forget silent map updates based on timestamp
             silentUpdateMap().catch(e => console.warn("[AppContent] Silent map update failed:", e));
 

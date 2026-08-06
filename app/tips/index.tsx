@@ -1,15 +1,18 @@
 import AppText from "@/src/components/AppText";
+import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import SectionHeader from "@/src/components/SectionHeader";
+import { FontAwesome5 } from '@expo/vector-icons';
 import React from "react";
 import {
     ActivityIndicator,
+    Platform,
     StatusBar,
     StyleSheet,
-    View,
-    Platform
+    View
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInUp } from "react-native-reanimated";
 
 
 import CachedImage from "@/src/components/CachedImage";
@@ -24,13 +27,30 @@ const getValidColor = (color: string | undefined) => {
     return color.startsWith("#") ? color : `#${color}`;
 };
 
-const TipCard = React.memo(({ item, index, styles, primaryColor, isDark, colors }: {
+const getDashiconMapping = (dashicon: string) => {
+    switch (dashicon) {
+        case 'dashicons-yes': return 'check';
+        case 'dashicons-yes-alt': return 'check-circle';
+        case 'dashicons-info': return 'info-circle';
+        case 'dashicons-warning': return 'exclamation-triangle';
+        case 'dashicons-location': return 'map-marker-alt';
+        case 'dashicons-calendar-alt': return 'calendar-alt';
+        case 'dashicons-camera': return 'camera';
+        case 'dashicons-images-alt2': return 'images';
+        case 'dashicons-sos': return 'life-ring';
+        default: return 'circle';
+    }
+};
+
+const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor, isDark, colors, isLast }: {
     item: TipsData;
     index: number;
     styles: any;
     primaryColor: string | undefined;
+    secondaryColor: string | undefined;
     isDark: boolean;
     colors: any;
+    isLast: boolean;
 }) => {
     const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
 
@@ -38,17 +58,26 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, isDark, colors 
 
     return (
         <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
-            <View style={styles.tipCard}>
+            <View style={[styles.tipCard, { borderBottomColor: secondaryColor || "#ea0b0b", borderBottomWidth: isLast ? 0 : 1 }]}>
                 <View style={styles.tipContent}>
                     {(isValidData(item.tip_title) || isValidData(item.category__tag)) ? (
                         <View style={styles.titleRow}>
                             <View style={styles.titleLeft}>
                                 {isValidData(imageUrl) ? (
-                                    <CachedImage
-                                        uri={imageUrl}
-                                        style={styles.tipIcon}
-                                        contentFit="contain"
-                                    />
+                                    imageUrl.startsWith('dashicons-') ? (
+                                        <FontAwesome5
+                                            name={getDashiconMapping(imageUrl)}
+                                            size={18}
+                                            color={primaryColor || colors.onSurface}
+                                            style={styles.tipIcon}
+                                        />
+                                    ) : (
+                                        <CachedImage
+                                            uri={imageUrl}
+                                            style={styles.tipIcon}
+                                            contentFit="contain"
+                                        />
+                                    )
                                 ) : null}
                                 {isValidData(item.tip_title) ? (
                                     <AppText style={styles.tipTitle}>{item.tip_title}</AppText>
@@ -69,9 +98,13 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, isDark, colors 
                             contentWidth={width - 64}
                             source={{ html: item.tip_body as string }}
                             baseStyle={{
+                                fontFamily: 'OpenSans-Regular',
+                                fontWeight: '400',
+                                fontStyle: 'normal',
                                 fontSize: 13,
                                 color: colors.onSurfaceVariant,
-                                lineHeight: 18,
+                                lineHeight: 20,
+                                letterSpacing: 0,
                             }}
                             tagsStyles={{ p: { marginVertical: 4 } }}
                         />
@@ -94,86 +127,94 @@ export default function TipsScreen() {
 
     const tips = tipsData || [];
 
+    const galleryImages = React.useMemo(() => {
+        const gallery = tipsScreenSettingsData?.image_gallery;
+        if (!gallery || !Array.isArray(gallery)) return [];
+        return gallery.map((img: any) => img?.url).filter(Boolean);
+    }, [tipsScreenSettingsData?.image_gallery]);
+
     const renderTipItem = React.useCallback(({ item, index }: { item: TipsData; index: number }) => (
         <TipCard
             item={item}
             index={index}
             styles={styles}
             primaryColor={primaryColor}
+            secondaryColor={secondaryColor}
             isDark={isDark}
             colors={colors}
+            isLast={index === tips.length - 1}
         />
-    ), [styles, primaryColor, isDark, colors]);
+    ), [styles, primaryColor, secondaryColor, isDark, colors, tips.length]);
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            {isValidData(tipsScreenSettingsData?.screen_title) ? (
-                <View style={styles.headerRow}>
-                    {(() => {
-                        if (!tipsScreenSettingsData) return null;
-                        const iconUrl = typeof tipsScreenSettingsData.header_icon === 'string'
-                            ? tipsScreenSettingsData.header_icon
-                            : (tipsScreenSettingsData.header_icon as any)?.url;
-                        if (!isValidData(iconUrl)) return null;
-                        return (
-                            <CachedImage
-                                uri={iconUrl}
-                                style={styles.headerIcon}
-                                contentFit="contain"
-                            />
-                        );
-                    })()}
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {tipsScreenSettingsData?.screen_title}
-                    </AppText>
-                </View>
-            ) : null}
+            <Animated.FlatList
+                data={apiStatus === "fetching" ? [] : tips}
+                keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
+                renderItem={renderTipItem as any}
+                contentContainerStyle={styles.listContainer}
+                showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+                initialNumToRender={5}
+                maxToRenderPerBatch={8}
+                windowSize={5}
+                removeClippedSubviews={Platform.OS === 'android'}
+                ListHeaderComponent={
+                    <View style={{ paddingBottom: 16 }}>
+                        {isValidData(tipsScreenSettingsData?.screen_title) ? (
+                            <View>
+                                <SectionHeader
+                                    title={tipsScreenSettingsData?.screen_title as string}
+                                    iconSource={require("../../assets/images/tips.png")}
+                                    primaryColor={primaryColor || "#000000"}
+                                    secondaryColor={secondaryColor || "#ea0b0b"}
+                                    isDark={isDark}
+                                    isFeatured={true}
+                                />
+                            </View>
+                        ) : null}
 
-            {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
-                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    <RenderHTML
-                        contentWidth={width - 32}
-                        source={{ html: tipsScreenSettingsData?.intro_paragraph || "" }}
-                        baseStyle={{
-                            fontSize: 14,
-                            color: isDark ? "#E5E5E5" : "#333",
-                            lineHeight: 20,
-                            textAlign: "center"
-                        }}
-                        tagsStyles={{ p: { textAlign: "center", marginVertical: 4 } }}
-                    />
-                </View>
-            ) : null}
+                        {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
+                            <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                                <RenderHTML
+                                    contentWidth={width - 32}
+                                    source={{ html: tipsScreenSettingsData?.intro_paragraph || "" }}
+                                    baseStyle={{
+                                        fontSize: 14,
+                                        color: isDark ? "#E5E5E5" : "#333",
+                                        lineHeight: 20,
+                                        textAlign: "center"
+                                    }}
+                                    tagsStyles={{ p: { textAlign: "center", marginVertical: 4 } }}
+                                />
+                            </View>
+                        ) : null}
 
-            {apiStatus === "fetching" ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={primaryColor} />
-                </View>
-            ) : (
-                <Animated.FlatList
-                    data={tips}
-                    keyExtractor={(item: any, index: number) => item.id?.toString() || index.toString()}
-                    renderItem={renderTipItem as any}
-                    contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
-                    initialNumToRender={5}
-                    maxToRenderPerBatch={8}
-                    windowSize={5}
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    ListEmptyComponent={
+                        {galleryImages.length > 0 ? (
+                            <View style={{ marginHorizontal: 16, alignItems: 'center' }}>
+                                <ImageGallerySlider images={galleryImages} width={width - 32} height={190} />
+                            </View>
+                        ) : null}
+                    </View>
+                }
+                ListEmptyComponent={
+                    apiStatus === "fetching" ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={primaryColor} />
+                        </View>
+                    ) : (
                         <AppText style={styles.emptyText}>No viewing tips available at the moment.</AppText>
-                    }
-                />
-            )}
+                    )
+                }
+            />
         </SafeAreaView>
     );
 }
@@ -188,37 +229,18 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "center",
         alignItems: "center",
     },
-    headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 16,
-    },
-    headerIcon: {
-        width: 18,
-        height: 18,
-        marginRight: 6,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: "bold",
-    },
     listContainer: {
         paddingHorizontal: 16,
         paddingBottom: 24,
     },
     tipCard: {
         backgroundColor: colors.surface,
-        borderRadius: 12,
-        marginBottom: 20,
-        overflow: "hidden",
-        borderWidth: 1,
-        borderColor: "#EAEAEA",
+        borderBottomWidth: 1,
+        marginBottom: 16,
+        paddingBottom: 16,
     },
     tipContent: {
-        padding: 16,
+        padding: 0,
     },
     tipIcon: {
         width: 18,
@@ -238,8 +260,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginBottom: 8,
     },
     tipTitle: {
-        fontSize: 18,
+        fontFamily: 'OpenSans-Bold',
         fontWeight: "700",
+        fontStyle: 'normal',
+        fontSize: 16,
+        lineHeight: 20,
+        letterSpacing: 0,
         color: colors.onSurface,
         flex: 1,
         marginRight: 8,

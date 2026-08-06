@@ -1,18 +1,20 @@
 import AppText from "@/src/components/AppText";
-import { Image } from "expo-image";
 import React from "react";
 import {
     ActivityIndicator,
+    Platform,
     StatusBar,
     StyleSheet,
-    View,
-    Platform
+    View
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInUp } from "react-native-reanimated";
 
 
+import CachedImage from "@/src/components/CachedImage";
+import PrimaryButton from "@/src/components/PrimaryButton";
+import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
@@ -34,13 +36,24 @@ const TrailCard = React.memo(({ item, index, styles }: {
     return (
         <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
             <View style={styles.trailItemContainer}>
+                {/* Feature Image */}
+                {typeof item.featured_image === 'object' && item.featured_image !== null && (item.featured_image as any).url ? (
+                    <View style={{ position: 'relative', marginBottom: 16 }}>
+                        <CachedImage
+                            uri={(item.featured_image as any).url}
+                            style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' }}
+                            contentFit="cover"
+                        />
+                    </View>
+                ) : null}
+
                 {(isValidData(item.trail_name) || isValidData(item.distance)) ? (
                     <View style={styles.trailHeaderRow}>
                         {isValidData(item.trail_name) ? (
                             <AppText style={styles.trailName}>{item.trail_name}</AppText>
                         ) : null}
                         {isValidData(item.distance) ? (
-                            <AppText style={styles.trailDistance}>{item.distance}</AppText>
+                            <AppText style={styles.trailDistance}>{item.distance} miles</AppText>
                         ) : null}
                     </View>
                 ) : null}
@@ -58,6 +71,10 @@ const TrailCard = React.memo(({ item, index, styles }: {
                 ) :
                     <AppText style={styles.trailDescription}>No description available.</AppText>
                 }
+
+                <View style={{ marginTop: 16, alignSelf: 'flex-start' }}>
+                    <PrimaryButton title="Get Directions" onPress={() => { }} />
+                </View>
             </View>
         </Animated.View>
     );
@@ -71,7 +88,7 @@ export default function TrailsScreen() {
 
     const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor as string), [colors, fonts, isDark, primaryColor]);
 
     const trails = trailsData || [];
 
@@ -84,8 +101,8 @@ export default function TrailsScreen() {
     ), [styles]);
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -96,11 +113,15 @@ export default function TrailsScreen() {
 
 
             {isValidData(trailSettingsData?.screen_title) ? (
-                <View style={styles.headerRow}>
-                    <Image source={require("../../assets/images/trail.png")} style={styles.headerIcon} />
-                    <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
-                        {trailSettingsData?.screen_title}
-                    </AppText>
+                <View style={{ paddingHorizontal: 16 }}>
+                    <SectionHeader
+                        title={trailSettingsData?.screen_title as string}
+                        iconSource={require("../../assets/images/trailsicon.png")}
+                        primaryColor={primaryColor || "#000000"}
+                        secondaryColor={secondaryColor || "#ea0b0b"}
+                        isDark={isDark}
+                        style={{ marginLeft: 0 }}
+                    />
                 </View>
             ) : null}
 
@@ -130,7 +151,7 @@ export default function TrailsScreen() {
     );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, primaryColor: string) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.surface,
@@ -180,18 +201,20 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     trailName: {
         fontSize: 15,
         fontWeight: "700",
-        color: colors.onSurface,
+        color: primaryColor,
         marginRight: 8,
     },
 
     trailDistance: {
+        fontFamily: 'OpenSans-Regular',
         fontSize: 12,
-        color: colors.onSurface,
-        fontWeight: "500",
+        color: primaryColor,
     },
 
+
     trailDescription: {
-        fontSize: 13,
+        fontFamily: 'OpenSans-Regular',
+        fontSize: 12,
         color: "#555555",
         lineHeight: 18,
     },

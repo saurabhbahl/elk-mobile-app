@@ -1,8 +1,8 @@
 import AppText from "@/src/components/AppText";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import SectionHeader from "@/src/components/SectionHeader";
 import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import React from "react";
 import {
     ActivityIndicator,
@@ -35,6 +35,7 @@ export default function VisitorsCenterScreen() {
     const { brandData, visitorsData, apiStatus } = useAppContentData();
     const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
     const bgColor = getValidColor(brandData?.brand_color_primary);
+    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
     const images: string[] = [];
     if (visitorsData?.image_gallery && Array.isArray(visitorsData.image_gallery)) {
         visitorsData.image_gallery.forEach((img: any) => {
@@ -77,11 +78,15 @@ export default function VisitorsCenterScreen() {
                             <View style={styles.scrollContent}>
                                 {/* Header Row */}
                                 {isValidData(visitorsData?.screen_title) ? (
-                                    <View style={styles.headerRow}>
-                                        <Image source={require("../../assets/images/house-flag.png")} style={styles.headerIcon} contentFit="contain" />
-                                        <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
-                                            {visitorsData?.screen_title}
-                                        </AppText>
+                                    <View style={{ paddingTop: 16, paddingBottom: 16 }}>
+                                        <SectionHeader
+                                            title={visitorsData?.screen_title as string}
+                                            iconSource={require("../../assets/images/house-flag.png")}
+                                            primaryColor={bgColor || "#000000"}
+                                            secondaryColor={brandData?.brand_color__secondary || "#ea0b0b"}
+                                            isDark={isDark}
+                                            isFeatured={true}
+                                        />
                                     </View>
                                 ) : null}
 
@@ -103,17 +108,15 @@ export default function VisitorsCenterScreen() {
                                                 onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
                                             >
                                                 <View style={styles.ctaImagePlaceholder}>
-                                                    <Ionicons name="navigate-circle-outline" size={32} color={bgColor} />
+                                                    <Ionicons name="call-outline" size={32} color={bgColor} />
                                                 </View>
                                                 <View style={styles.ctaContent}>
-                                                    <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_1_label}
                                                     </AppText>
-                                                    {isValidData(visitorsData?.address) ? (
-                                                        <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                                            {visitorsData?.address}
-                                                        </AppText>
-                                                    ) : null}
+                                                    <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                        Click here to call
+                                                    </AppText>
                                                 </View>
                                             </TouchableOpacity>
                                         ) : null}
@@ -126,33 +129,44 @@ export default function VisitorsCenterScreen() {
                                                 onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
                                             >
                                                 <View style={styles.ctaImagePlaceholder}>
-                                                    <Ionicons name="call-outline" size={30} color={bgColor} />
+                                                    <Ionicons name="mail-outline" size={30} color={bgColor} />
                                                 </View>
                                                 <View style={styles.ctaContent}>
-                                                    <AppText style={styles.ctaTitle} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_2_label}
                                                     </AppText>
-                                                    {isValidData(visitorsData?.phone_number) ? (
-                                                        <AppText style={styles.ctaSubtitle} numberOfLines={1}>
-                                                            {visitorsData?.phone_number}
-                                                        </AppText>
-                                                    ) : null}
+                                                    <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                        Click here to email us
+                                                    </AppText>
                                                 </View>
                                             </TouchableOpacity>
                                         ) : null}
                                     </View>
                                 ) : null}
 
+                                {/* Address Section */}
+                                {isValidData(visitorsData?.address) ? (
+                                    <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                                        <AppText style={styles.addressText}>
+                                            {visitorsData?.address}
+                                        </AppText>
+                                    </View>
+                                ) : null}
+
                                 {/* Body Copy Section */}
                                 {isValidData(visitorsData?.body_copy) ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                                    <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 8 : 24 }}>
                                         <RenderHTML
                                             contentWidth={width - 32}
                                             source={{ html: visitorsData?.body_copy || "" }}
                                             baseStyle={{
+                                                fontFamily: 'OpenSans-Regular',
+                                                fontWeight: '400',
+                                                fontStyle: 'normal',
                                                 fontSize: 13,
                                                 color: colors.onSurface,
-                                                lineHeight: 18,
+                                                lineHeight: 20,
+                                                letterSpacing: 0,
                                                 textAlign: "justify",
                                             }}
                                             tagsStyles={{ p: { textAlign: "justify", marginVertical: 4 } }}
@@ -226,14 +240,31 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "center",
     },
     ctaTitle: {
+        fontFamily: 'OpenSans-Bold',
+        fontWeight: '700',
+        fontStyle: 'normal',
         fontSize: 12,
-        fontWeight: "bold",
+        lineHeight: 15,
+        letterSpacing: 0,
         color: colors.onSurface,
     },
     ctaSubtitle: {
+        fontFamily: 'OpenSans-Regular',
+        fontWeight: '400',
+        fontStyle: 'normal',
         fontSize: 10,
+        letterSpacing: 0,
         color: "#8E8E93",
         marginTop: 2,
+    },
+    addressText: {
+        fontFamily: 'OpenSans-Bold',
+        fontWeight: '700',
+        fontStyle: 'normal',
+        fontSize: 16,
+        lineHeight: 20,
+        letterSpacing: 0,
+        color: colors.onSurface,
     },
     bodyCopy: {
         fontSize: 13,

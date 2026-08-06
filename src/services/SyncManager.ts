@@ -51,6 +51,16 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
     const popup = d.popup_content as Record<string, unknown>;
     addImage(popup.popup_image, ['popup_content', 'popup_image']);
   }
+  // 2b. Plan Your Trip Hero
+  if (d.plan_your_trip) {
+    const trip = d.plan_your_trip as Record<string, unknown>;
+    if (trip.hero_image) addImage(trip.hero_image, ['plan_your_trip', 'hero_image']);
+  }
+  // 2c. Tips Settings Icon
+  if (d.tips_screen_settings) {
+    const tipsS = d.tips_screen_settings as Record<string, unknown>;
+    if (tipsS.header_icon) addImage(tipsS.header_icon, ['tips_screen_settings', 'header_icon']);
+  }
   // 3. Home Screen
   const hs = d.home_screen as Record<string, unknown>;
   if (hs?.featured_event && Array.isArray(hs.featured_event)) {
@@ -69,7 +79,7 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
     if (d[key] && Array.isArray(d[key])) {
       (d[key] as Record<string, unknown>[]).forEach((item: Record<string, unknown>, idx: number) => {
         addImage(item.thumbnail_image || item.featured_image || item.nav_image, [key, String(idx), item.thumbnail_image ? 'thumbnail_image' : item.featured_image ? 'featured_image' : 'nav_image']);
-        
+
         // Rentals use the first image in 'additional_images' as their listing featured image
         if (key === 'rentals' && item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
           addImage(item.additional_images[0], [key, String(idx), 'additional_images', '0']);
@@ -79,7 +89,7 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
         if (key === 'tips' && item.tip_icon__image) {
           addImage(item.tip_icon__image, [key, String(idx), 'tip_icon__image']);
         }
-        
+
         // POIs custom map pin icons
         if (key === 'pois' && item.pin_icon_override) {
           addImage(item.pin_icon_override, [key, String(idx), 'pin_icon_override']);

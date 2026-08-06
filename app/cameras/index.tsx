@@ -1,6 +1,5 @@
 import AppText from "@/src/components/AppText";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
 import {
@@ -12,12 +11,13 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
+import SectionHeader from "@/src/components/SectionHeader";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -50,10 +50,10 @@ function NativeVideoPlayer({ source }: { source: string }) {
 export default function LiveCameraScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark, bgColor as string), [colors, fonts, isDark, bgColor]);
 
     const { isConnected } = useNetInfo();
     const [activeCamIndex, setActiveCamIndex] = useState(0);
@@ -74,7 +74,7 @@ export default function LiveCameraScreen() {
     const handleWebViewNavigation = (event: any) => {
         if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
             Linking.openURL(event.url).catch(err => console.error("Couldn't open YouTube link", err));
-            return false; 
+            return false;
         }
         return true;
     };
@@ -177,8 +177,8 @@ export default function LiveCameraScreen() {
     };
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -195,124 +195,131 @@ export default function LiveCameraScreen() {
                     <ActivityIndicator size="large" color={bgColor} />
                 </View>
             ) : (
-                <Animated.ScrollView 
-                    contentContainerStyle={styles.scrollContent} 
+                <Animated.ScrollView
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     onScroll={scrollHandler}
                     scrollEventThrottle={16}
-                    entering={FadeInUp.duration(200)} 
+                    entering={FadeInUp.duration(200)}
                 >
-                        {/* Header Row */}
-                        {isValidData(liveCamSettingsData?.screen_title) ? (
-                            <View style={styles.headerRow}>
-                                <Image source={require("../../assets/images/clapperboard-play.png")} style={styles.headerIcon} contentFit="contain" />
-                                <AppText style={[styles.sectionTitle, { color: isDark ? "#FFFFFF" : bgColor }]}>
-                                    {liveCamSettingsData?.screen_title}
-                                </AppText>
-                            </View>
-                        ) : null}
+                    {/* Header Row */}
+                    {isValidData(liveCamSettingsData?.screen_title) ? (
+                        <View style={{ paddingHorizontal: 16 }}>
+                            <SectionHeader
+                                title={liveCamSettingsData?.screen_title as string}
+                                iconSource={require("../../assets/images/clapperboard-play.png")}
+                                primaryColor={bgColor || "#000000"}
+                                secondaryColor={secColor || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginLeft: 0 }}
+                            />
+                        </View>
+                    ) : null}
 
-                        {/* Camera Tabs */}
-                        {cameras.length > 0 ? (
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.tabsScroll}
-                            >
-                                {cameras.map((cam: CamerasData, index: number) => {
-                                    const isActive = index === activeCamIndex;
-                                    return (
-                                        <TouchableOpacity
-                                            key={cam.id || index}
+                    {/* Camera Tabs */}
+                    {cameras.length > 0 ? (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.tabsScroll}
+                        >
+                            {cameras.map((cam: CamerasData, index: number) => {
+                                const isActive = index === activeCamIndex;
+                                return (
+                                    <TouchableOpacity
+                                        key={cam.id || index}
+                                        style={[
+                                            styles.tabButton,
+                                            isActive && { backgroundColor: bgColor, borderColor: bgColor },
+                                        ]}
+                                        onPress={() => handleTabChange(index)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <AppText
                                             style={[
-                                                styles.tabButton,
-                                                isActive && { backgroundColor: bgColor, borderColor: bgColor },
+                                                styles.tabButtonText,
+                                                isActive && { color: "#FFFFFF" },
                                             ]}
-                                            onPress={() => handleTabChange(index)}
-                                            activeOpacity={0.8}
                                         >
-                                            <AppText
-                                                style={[
-                                                    styles.tabButtonText,
-                                                    isActive && { color: isDark ? "#FFFFFF" : secColor },
-                                                ]}
-                                            >
-                                                {cam.camera_name}
-                                            </AppText>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </ScrollView>
-                        ) : null}
+                                            {cam.camera_name}
+                                        </AppText>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    ) : null}
 
-                        {/* Active Camera Video Preview Box */}
-                        <View style={styles.playerContainer}>
-                            {activeCamera ? (
-                                isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
-                                    <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
+                    {/* Active Camera Video Preview Box */}
+                    <View style={styles.playerContainer}>
+                        {activeCamera ? (
+                            isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
+                                <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
+                                    <CachedImage
+                                        uri={activeCamera.thumbnail__poster?.url as string}
+                                        style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
+                                        contentFit="cover"
+                                    />
+                                    <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
+                                    <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
+                                        {liveCamSettingsData?.offline_message}
+                                    </AppText>
+                                </View>
+                            ) : isPlaying ? (
+                                renderPlayer()
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.playerTouchable}
+                                    activeOpacity={0.9}
+                                    onPress={handlePlayStream}
+                                >
+                                    <View style={styles.playerImage}>
                                         <CachedImage
                                             uri={activeCamera.thumbnail__poster?.url as string}
-                                            style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
+                                            style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
+
                                         />
-                                        <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
-                                        <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
-                                            {liveCamSettingsData?.offline_message}
-                                        </AppText>
-                                    </View>
-                                ) : isPlaying ? (
-                                    renderPlayer()
-                                ) : (
-                                    <TouchableOpacity
-                                        style={styles.playerTouchable}
-                                        activeOpacity={0.9}
-                                        onPress={handlePlayStream}
-                                    >
-                                        <View style={styles.playerImage}>
-                                            <CachedImage
-                                                uri={activeCamera.thumbnail__poster?.url as string}
-                                                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
-                                                contentFit="cover"
-                                            />
-                                            <View style={[StyleSheet.absoluteFill, styles.playerOverlay]}>
-                                                <Ionicons name="play-circle" size={64} color="rgba(255, 255, 255, 0.85)" />
+                                        <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: bgColor ? `${bgColor}99` : 'rgba(0, 0, 0, 0.4)' }]}>
+                                            <View style={{ width: 44, height: 44, borderRadius: 32, backgroundColor: '#E22B2B', borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Ionicons name="play" size={22} color="#FFFFFF" style={{ marginLeft: 2 }} />
                                             </View>
                                         </View>
-                                    </TouchableOpacity>
-                                )
-                            ) : (
-                                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
-                                    <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
-                                    <AppText style={styles.noCameraText}>No active live cameras available.</AppText>
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Stream Notes and Quality details */}
-                        {(isValidData(activeCamera?.description) ||
-                            (isConnected === false && isValidData(liveCamSettingsData?.offline_message)) ||
-                            isValidData(liveCamSettingsData?.quality_note)) ? (
-                            <View style={styles.detailsContainer}>
-                                {isValidData(activeCamera?.description) ? (
-                                    <AppText style={styles.cameraDescription}>
-                                        {(activeCamera.description || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                                    </AppText>
-                                ) : null}
-
-                                {isValidData(liveCamSettingsData?.quality_note) ? (
-                                    <AppText style={styles.noteText}>
-                                        {(liveCamSettingsData?.quality_note || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
-                                    </AppText>
-                                ) : null}
+                                    </View>
+                                </TouchableOpacity>
+                            )
+                        ) : (
+                            <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
+                                <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
+                                <AppText style={styles.noCameraText}>No active live cameras available.</AppText>
                             </View>
-                        ) : null}
+                        )}
+                    </View>
+
+                    {/* Stream Notes and Quality details */}
+                    {(isValidData(activeCamera?.description) ||
+                        (isConnected === false && isValidData(liveCamSettingsData?.offline_message)) ||
+                        isValidData(liveCamSettingsData?.quality_note)) ? (
+                        <View style={styles.detailsContainer}>
+                            {isValidData(activeCamera?.description) ? (
+                                <AppText style={styles.cameraDescription}>
+                                    {(activeCamera.description || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                </AppText>
+                            ) : null}
+
+                            {isValidData(liveCamSettingsData?.quality_note) ? (
+                                <AppText style={styles.cameraDescription}>
+                                    {(liveCamSettingsData?.quality_note || "").replace(/<\/?[^>]+(>|$)/g, "").trim()}
+                                </AppText>
+                            ) : null}
+                        </View>
+                    ) : null}
                 </Animated.ScrollView>
             )}
         </SafeAreaView>
     );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, bgColor: string) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.surface,
@@ -351,9 +358,9 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: colors.surfaceVariant,
+        backgroundColor: "transparent",
         borderWidth: 1,
-        borderColor: colors.outlineVariant,
+        borderColor: "transparent",
     },
     tabButtonActive: {
         backgroundColor: "#D1D1D6",
@@ -365,14 +372,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
-        color: "#8E8E93",
+        color: bgColor,
     },
     tabButtonTextActive: {
         color: colors.onSurface,
     },
     playerContainer: {
         marginHorizontal: 16,
-        height: 200,
+        height: 250,
         borderRadius: 16,
         backgroundColor: colors.surfaceVariant,
         borderWidth: 1,
@@ -413,8 +420,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginTop: 20,
     },
     cameraDescription: {
-        fontFamily: "Lexend_500Medium",
-        fontWeight: "500",
+        fontFamily: "OpenSans-Regular",
+        fontWeight: "400",
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
@@ -422,22 +429,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginBottom: 12,
     },
     infoText: {
-        fontFamily: "Lexend_500Medium",
-        fontWeight: "500",
+        fontFamily: "OpenSans-Regular",
+        fontWeight: "400",
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
         color: colors.onSurface,
         textAlign: "justify",
         marginBottom: 16,
-    },
-    noteText: {
-        fontFamily: "Lexend_500Medium",
-        fontWeight: "500",
-        fontSize: 13,
-        lineHeight: 20,
-        letterSpacing: 0,
-        color: "#8E8E93",
-        fontStyle: "italic",
     },
 });

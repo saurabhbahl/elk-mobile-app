@@ -53,18 +53,18 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
       [key, value]
     );
   }
-  
+
   getMetadata(key: string): string | null {
     try {
-        const results = this.query<{value: string}>('SELECT value FROM sync_metadata WHERE key = ?', [key]);
-        return results.length > 0 ? results[0].value : null;
+      const results = this.query<{ value: string }>('SELECT value FROM sync_metadata WHERE key = ?', [key]);
+      return results.length > 0 ? results[0].value : null;
     } catch {
-        return null;
+      return null;
     }
   }
 
   getAllRecords(): Record<string, unknown[]> {
-    const rawRecords = this.query<{type: string, json_data: string}>('SELECT type, json_data FROM app_records');
+    const rawRecords = this.query<{ type: string, json_data: string }>('SELECT type, json_data FROM app_records');
     const recordsMap: Record<string, unknown[]> = {};
     rawRecords.forEach(record => {
       if (!recordsMap[record.type]) {
@@ -80,7 +80,7 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
   }
 
   getAllSettings(): Record<string, unknown> {
-    const rawSettings = this.query<{key: string, json_data: string}>('SELECT key, json_data FROM app_settings');
+    const rawSettings = this.query<{ key: string, json_data: string }>('SELECT key, json_data FROM app_settings');
     const settingsMap: Record<string, unknown> = {};
     rawSettings.forEach(setting => {
       try {

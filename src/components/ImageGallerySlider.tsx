@@ -39,7 +39,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
     const showControls = images.length > 1;
 
     return (
-        <View style={[styles.carouselContainer, { width, height, backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant }]}>
+        <View style={[styles.carouselContainer, { width, aspectRatio: 4 / 3, backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant }]}>
             <FlatList
                 ref={flatListRef}
                 data={images}
@@ -54,8 +54,8 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                 renderItem={({ item }) => (
                     <CachedImage
                         uri={item}
-                        style={{ width, height }}
-                        contentFit="cover"
+                        style={{ width, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' }}
+                        contentFit="contain"
                     />
                 )}
             />
@@ -64,7 +64,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     <TouchableOpacity
                         style={[
                             styles.arrowButton, 
-                            { left: 10, top: height / 2 - 16, backgroundColor: brandPrimary },
+                            { left: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
                             activeIndex === 0 ? { opacity: 0.4 } : { opacity: 1 }
                         ]}
                         onPress={handlePrevSlide}
@@ -76,7 +76,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     <TouchableOpacity
                         style={[
                             styles.arrowButton, 
-                            { right: 10, top: height / 2 - 16, backgroundColor: brandPrimary },
+                            { right: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
                             activeIndex === images.length - 1 ? { opacity: 0.4 } : { opacity: 1 }
                         ]}
                         onPress={handleNextSlide}

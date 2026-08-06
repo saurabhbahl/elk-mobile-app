@@ -10,12 +10,12 @@
  * - Shows WireframePlaceholder immediately if uri is falsy
  */
 
-import { Image } from 'expo-image';
+import { cacheImageIfNeeded, getCachedImageLocalPath, getOriginalUrl } from '@/src/utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleProp, ImageStyle } from 'react-native';
+import { Image } from 'expo-image';
+import { useEffect, useRef, useState } from 'react';
+import { ImageStyle, StyleProp } from 'react-native';
 import WireframePlaceholder from './WireframePlaceholder';
-import { cacheImageIfNeeded, getOriginalUrl, getCachedImageLocalPath } from '@/src/utils/imageCache';
 
 interface CachedImageProps {
   /** The image URI — may be a local file:/// path, http:// URL, or null/undefined */
@@ -126,14 +126,16 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
     if (mountedRef.current) setHasError(true);
   };
 
+  const defaultStyle = { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' } as StyleProp<ImageStyle>;
+
   if (!resolvedUri || hasError) {
-    return <WireframePlaceholder style={style} />;
+    return <WireframePlaceholder style={[defaultStyle, style]} />;
   }
 
   return (
     <Image
       source={{ uri: resolvedUri }}
-      style={style}
+      style={[defaultStyle, style]}
       contentFit={contentFit}
       cachePolicy="disk"
       onError={handleError}
