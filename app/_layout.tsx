@@ -37,7 +37,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import "react-native-reanimated";
-import { SharedValue, useSharedValue } from 'react-native-reanimated';
+import Animated, { SharedValue, useSharedValue, useAnimatedStyle, interpolate } from 'react-native-reanimated';
 
 import { ThemeProvider as CustomThemeProvider, useTheme } from "@/src/context/ThemeContext";
 import { AppContentProvider } from "@/src/contexts/AppContentContext";
@@ -180,6 +180,15 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   const pathname = usePathname();
   const segments = useSegments();
   const primaryColor = brandData?.brand_color_primary || "#000000";
+  const { navbarVisibility } = useNavigationMode();
+
+  const quickLinksStyle = useAnimatedStyle(() => {
+    return {
+      height: interpolate(navbarVisibility.value, [0, 1], [114, 0]),
+      opacity: interpolate(navbarVisibility.value, [0, 1], [1, 0]),
+      overflow: 'hidden'
+    };
+  });
 
   // Delta check on app resume or active timers
   useEffect(() => {
@@ -221,9 +230,9 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
       {shouldShowHeader && (
         <SafeAreaView style={{ backgroundColor: primaryColor }} edges={['top', 'left', 'right']}>
           <Navbar />
-          <View style={{ backgroundColor: colors.background }}>
+          <Animated.View style={[{ backgroundColor: colors.background }, quickLinksStyle]}>
             <QuickLinks />
-          </View>
+          </Animated.View>
         </SafeAreaView>
       )}
       <OfflinePopup />

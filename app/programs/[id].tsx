@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
@@ -32,6 +34,7 @@ export default function ProgramDetailScreen() {
     const { brandData, programsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -83,13 +86,23 @@ export default function ProgramDetailScreen() {
     const rawDescription = program.full_description || "";
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
 
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+            >
                 {/* Heading Row */}
                 {isValidData(program.program_name) ? (
                     <View style={{ paddingHorizontal: 16 }}>
@@ -148,7 +161,7 @@ export default function ProgramDetailScreen() {
                         />
                     ) : null}
                 </View>
-            </ScrollView>
+            </Animated.ScrollView>
         </SafeAreaView>
     );
 }

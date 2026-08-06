@@ -78,7 +78,7 @@ export default function VisitorsCenterScreen() {
                             <View style={styles.scrollContent}>
                                 {/* Header Row */}
                                 {isValidData(visitorsData?.screen_title) ? (
-                                    <View style={{ paddingTop: 16, paddingBottom: 16 }}>
+                                    <View>
                                         <SectionHeader
                                             title={visitorsData?.screen_title as string}
                                             iconSource={require("../../assets/images/house-flag.png")}

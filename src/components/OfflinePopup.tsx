@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
-import AppText from './AppText';
-import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
-import { useTheme } from '@/src/context/ThemeContext';
-import { BlurView } from 'expo-blur';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAppContent } from '@/src/contexts/AppContentContext';
 import { width } from '@/src/constants/theme';
+import { useTheme } from '@/src/context/ThemeContext';
+import { useAppContent } from '@/src/contexts/AppContentContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+import { BlurView } from 'expo-blur';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import AppText from './AppText';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -17,7 +17,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     const netInfo = useNetInfo();
     const { colors, isDark } = useTheme();
     const { brandData } = useAppContent();
-    
+
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#8B1E1E";
     const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#FFFFFF";
 
@@ -37,8 +37,8 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
 
     const Content = (
         <View style={[
-            styles.popupContainer, 
-            { 
+            styles.popupContainer,
+            {
                 backgroundColor: isDark ? '#1F2421' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                 shadowColor: isDark ? '#000000' : '#2E3B2F',
@@ -58,7 +58,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                     activeOpacity={0.8}
                     onPress={() => setVisible(false)}
                 >
-                    <AppText style={[styles.primaryButtonText, { color: secondaryColor }]}>Continue</AppText>
+                    <AppText style={[styles.primaryButtonText, { color: '#ffffff' }]}>Continue</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.secondaryButton, { borderColor: primaryColor }]}
@@ -66,11 +66,11 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                     onPress={async () => {
                         // Optimistically hide the popup
                         setVisible(false);
-                        
+
                         // Fetch the latest fresh state directly
                         const state = await NetInfo.fetch();
                         const currentlyOffline = forceShowForTesting || state.isConnected === false;
-                        
+
                         // If still offline, show it again after a brief moment
                         if (currentlyOffline) {
                             setTimeout(() => {

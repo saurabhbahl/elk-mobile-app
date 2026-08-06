@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
@@ -34,6 +36,7 @@ export default function RentalDetailScreen() {
     const { brandData, rentalsData, apiStatus } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -89,11 +92,21 @@ export default function RentalDetailScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <SafeAreaView 
+            style={styles.container} 
+            edges={["left", "right"]}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+            >
 
                 {/* Heading Row */}
                 {isValidData(rental.rental_name) ? (
@@ -199,7 +212,7 @@ export default function RentalDetailScreen() {
                     ) : null}
 
                 </View>
-            </ScrollView>
+            </Animated.ScrollView>
         </SafeAreaView>
     );
 }

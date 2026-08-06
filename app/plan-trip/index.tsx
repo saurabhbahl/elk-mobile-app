@@ -153,16 +153,16 @@ export default function PlanTripScreen() {
                             const iconUrl = sec.section_icon?.url;
                             return (
                                 <Animated.View key={index} entering={FadeInUp.duration(200).delay(Math.min(index * 15 + 80, 160))}>
-                                     <View style={[styles.sectionCard, { borderBottomColor: secondaryColor || "#ea0b0b", borderBottomWidth: index === activeSections.length - 1 ? 0 : 1 }]}>
+                                    <View style={[styles.sectionCard, { borderBottomColor: secondaryColor || "#ea0b0b", borderBottomWidth: index === activeSections.length - 1 ? 0 : 1 }]}>
                                         {(isValidData(sec.section_heading) || isValidData(iconUrl)) ? (
                                             <View style={styles.sectionHeader}>
                                                 {isValidData(iconUrl) ? (
                                                     iconUrl.startsWith('dashicons-') ? (
-                                                        <FontAwesome5 
-                                                            name={getDashiconMapping(iconUrl)} 
-                                                            size={20} 
-                                                            color={primaryColor || colors.onSurface} 
-                                                            style={styles.sectionIconImg} 
+                                                        <FontAwesome5
+                                                            name={getDashiconMapping(iconUrl)}
+                                                            size={20}
+                                                            color={primaryColor || colors.onSurface}
+                                                            style={styles.sectionIconImg}
                                                         />
                                                     ) : (
                                                         <Image source={{ uri: iconUrl }} style={styles.sectionIconImg} contentFit="contain" />
@@ -222,7 +222,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontWeight: "bold",
     },
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: 100,
     },
     imageContainer: {
         paddingHorizontal: 16,
