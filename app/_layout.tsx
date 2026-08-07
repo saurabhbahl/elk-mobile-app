@@ -14,7 +14,7 @@ import { Stack, usePathname, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from "expo-status-bar";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
+import { ActivityIndicator, AppState, AppStateStatus, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/src/components/Navbar";
@@ -182,11 +182,12 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   const primaryColor = brandData?.brand_color_primary || "#000000";
   const { navbarVisibility } = useNavigationMode();
 
+  const QUICKLINKS_HEIGHT = 114;
   const quickLinksStyle = useAnimatedStyle(() => {
     return {
-      height: interpolate(navbarVisibility.value, [0, 1], [114, 0]),
+      height: interpolate(navbarVisibility.value, [0, 1], [QUICKLINKS_HEIGHT, 0]),
       opacity: interpolate(navbarVisibility.value, [0, 1], [1, 0]),
-      overflow: 'hidden'
+      overflow: 'hidden',
     };
   });
 
@@ -228,12 +229,12 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
       {shouldShowHeader && (
-        <SafeAreaView style={{ backgroundColor: primaryColor }} edges={['top', 'left', 'right']}>
-          <Navbar />
-          <Animated.View style={[{ backgroundColor: colors.background }, quickLinksStyle]}>
-            <QuickLinks />
-          </Animated.View>
-        </SafeAreaView>
+          <SafeAreaView style={{ backgroundColor: primaryColor }} edges={['top', 'left', 'right']}>
+            <Navbar />
+            <Animated.View style={[{ backgroundColor: colors.background }, quickLinksStyle]}>
+              <QuickLinks />
+            </Animated.View>
+          </SafeAreaView>
       )}
       <OfflinePopup />
       <View style={{ flex: 1 }}>

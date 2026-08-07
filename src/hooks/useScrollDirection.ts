@@ -1,15 +1,27 @@
+import { Platform } from "react-native";
 import {
+    Easing,
     useAnimatedScrollHandler,
     useSharedValue,
     withTiming,
 } from "react-native-reanimated";
 import { useNavigationMode } from "../../app/_layout";
 
+// Smooth 180ms cubic-bezier transition for all platforms to avoid flashing/harsh layout jumps.
+const ANIM_DURATION = 500;
+const ANIM_CONFIG = { duration: ANIM_DURATION, easing: Easing.out(Easing.cubic) };
+
+// Android fires scroll events on the JS thread — throttle to 32ms (30fps) to
+// reduce workload on low-end devices. iOS uses the native thread so 16ms is fine.
+export const SCROLL_THROTTLE = Platform.OS === 'android' ? 32 : 16;
+
 // Minimum px in ONE finger gesture to trigger hide/show
 const HIDE_GESTURE_DISTANCE = 15;
 const SHOW_GESTURE_DISTANCE = 15;
-// If content is shorter than this, never hide
+// If content is shorter than this, never hide the navbar
 const MIN_SCROLLABLE = 300;
+// How many px past the scroll boundary before we classify it as overscroll
+const OVERSCROLL_BUFFER = 5;
 
 export function useScrollDirection() {
     const { navbarVisibility } = useNavigationMode();
@@ -30,6 +42,11 @@ export function useScrollDirection() {
 
     const hasScrolled = useSharedValue(false);
 
+    // KEY FIX: once a gesture enters rubber-band territory (overscroll), lock ALL
+    // show/hide decisions for the rest of that gesture so the bounce-back doesn't
+    // cause dancing. Resets when a new finger gesture begins.
+    const overscrollLocked = useSharedValue(false);
+
     // How close to the top or bottom (in px) to block navbar changes
     const EDGE_GUARD = 80;
 
@@ -43,6 +60,7 @@ export function useScrollDirection() {
             dragStartY.value = startY;
             dragStartMaxScroll.value = ms;
             gestureHandled.value = false;
+            overscrollLocked.value = false; // reset lock for new gesture
             hasScrolled.value = true;
 
             // Set edge flags based on where the finger touched down
@@ -55,7 +73,7 @@ export function useScrollDirection() {
             if (atTop && (targetState.value !== 0 || navbarVisibility.value > 0)) {
                 targetState.value = 0;
                 gestureHandled.value = true;
-                navbarVisibility.value = withTiming(0, { duration: 200 });
+                navbarVisibility.value = withTiming(0, ANIM_CONFIG);
             }
         },
 
@@ -65,25 +83,40 @@ export function useScrollDirection() {
             const currentY = event.contentOffset.y;
             const currentMaxScroll = event.contentSize.height - event.layoutMeasurement.height;
 
+            // Use the frozen max (captured before navbar animation changed layout).
+            // Fall back to live value only when drag hasn't started yet.
+            const frozenMax = dragStartMaxScroll.value;
+            const maxForGuard = frozenMax > 0 ? frozenMax : currentMaxScroll;
+
+            // Detect overscroll (rubber-banding). If currentY is outside the valid
+            // scroll range by more than OVERSCROLL_BUFFER, lock this gesture.
+            if (currentY < -OVERSCROLL_BUFFER || currentY > maxForGuard + OVERSCROLL_BUFFER) {
+                overscrollLocked.value = true;
+                return;
+            }
+
+            // Once locked, skip ALL hide/show logic until the next gesture starts.
+            // This stops the snap-back animation from triggering a show/hide flicker.
+            if (overscrollLocked.value) {
+                return;
+            }
+
             // If dragStartY hasn't been set (onBeginDrag didn't fire — common on Android
             // for short content), handle the small-content case here directly.
             if (dragStartY.value < 0) {
                 if (currentMaxScroll < MIN_SCROLLABLE && (targetState.value !== 0 || navbarVisibility.value > 0)) {
                     targetState.value = 0;
-                    navbarVisibility.value = withTiming(0, { duration: 200 });
+                    navbarVisibility.value = withTiming(0, ANIM_CONFIG);
                 }
                 return;
             }
 
-            // Use the maxScroll captured at drag start (immune to layout changes from animations)
-            const frozenMaxScroll = dragStartMaxScroll.value;
-
             // Content too short at gesture start → never allow hiding this gesture
-            if (frozenMaxScroll < MIN_SCROLLABLE) {
+            if (frozenMax < MIN_SCROLLABLE) {
                 // If navbar is hidden from a previous page, show it
                 if (targetState.value !== 0 || navbarVisibility.value > 0) {
                     targetState.value = 0;
-                    navbarVisibility.value = withTiming(0, { duration: 200 });
+                    navbarVisibility.value = withTiming(0, ANIM_CONFIG);
                 }
                 return;
             }
@@ -92,7 +125,7 @@ export function useScrollDirection() {
             if (currentY < EDGE_GUARD) {
                 if (targetState.value !== 0 || navbarVisibility.value > 0) {
                     targetState.value = 0;
-                    navbarVisibility.value = withTiming(0, { duration: 200 });
+                    navbarVisibility.value = withTiming(0, ANIM_CONFIG);
                 }
                 return;
             }
@@ -100,18 +133,16 @@ export function useScrollDirection() {
             const gestureDistance = currentY - dragStartY.value;
 
             // Scrolled DOWN more than threshold → HIDE
-            // Allow re-evaluation every scroll event (no gestureHandled gate) so fast flings work
             if (
                 gestureDistance >= HIDE_GESTURE_DISTANCE &&
                 !dragStartedAtTop.value &&
                 targetState.value !== 1
             ) {
                 targetState.value = 1;
-                navbarVisibility.value = withTiming(1, { duration: 200 });
+                navbarVisibility.value = withTiming(1, ANIM_CONFIG);
             }
 
             // Scrolled UP more than threshold → SHOW
-            // Use gestureHandled here to prevent flicker on rubber-band bounce at bottom
             if (
                 gestureDistance <= -SHOW_GESTURE_DISTANCE &&
                 !gestureHandled.value &&
@@ -120,7 +151,7 @@ export function useScrollDirection() {
             ) {
                 targetState.value = 0;
                 gestureHandled.value = true;
-                navbarVisibility.value = withTiming(0, { duration: 200 });
+                navbarVisibility.value = withTiming(0, ANIM_CONFIG);
             }
         },
 
@@ -129,6 +160,7 @@ export function useScrollDirection() {
             dragStartY.value = -1;
             dragStartMaxScroll.value = -1;
             gestureHandled.value = false;
+            overscrollLocked.value = false;
             dragStartedAtBottom.value = false;
             dragStartedAtTop.value = false;
         },
@@ -138,6 +170,7 @@ export function useScrollDirection() {
             dragStartY.value = -1;
             dragStartMaxScroll.value = -1;
             gestureHandled.value = false;
+            overscrollLocked.value = false;
             dragStartedAtBottom.value = false;
             dragStartedAtTop.value = false;
         },
@@ -161,7 +194,7 @@ export function useScrollDirection() {
         // Only act if the scroll handler hasn't already handled this gesture
         if (deltaY > 20 && !hasScrolled.value && (targetState.value !== 0 || navbarVisibility.value > 0)) {
             targetState.value = 0;
-            navbarVisibility.value = withTiming(0, { duration: 200 });
+            navbarVisibility.value = withTiming(0, ANIM_CONFIG);
         }
     };
 

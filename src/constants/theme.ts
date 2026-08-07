@@ -143,3 +143,11 @@ export const DARK_FONTS = {
 // Default exports for backwards compatibility
 export const COLORS = LIGHT_COLORS;
 export const FONTS = LIGHT_FONTS;
+
+// ── Layout constants ──────────────────────────────────────────────────────────
+// Height of the bottom navigation bar (used to compute scroll bottom padding)
+export const NAVBAR_HEIGHT = 80;
+// Extra gap so the last content item clears the navbar comfortably
+export const NAVBAR_GAP = 20;
+// Convenience: add this as paddingBottom on every full-page scrollable list
+export const SCROLL_BOTTOM_PADDING = NAVBAR_HEIGHT + NAVBAR_GAP;
