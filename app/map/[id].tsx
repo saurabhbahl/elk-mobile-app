@@ -1,21 +1,20 @@
 import AppText from "@/src/components/AppText";
 import CachedImage from "@/src/components/CachedImage";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import PrimaryButton from "@/src/components/PrimaryButton";
 import SectionHeader from "@/src/components/SectionHeader";
 import { openExternalLink } from "@/src/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { StyleSheet, TouchableOpacity, View, Pressable } from "react-native";
 import RenderHTML from 'react-native-render-html';
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
-import { useFocusEffect } from "expo-router";
-import Animated, { FadeInUp, withTiming } from "react-native-reanimated";
-import { useNavigationMode } from "../../app/_layout";
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { width as windowWidth } from "../../src/constants/theme";
 import { useTheme } from "../../src/context/ThemeContext";
 import { useAppContent } from "../../src/contexts/AppContentContext";
@@ -26,18 +25,31 @@ export default function WaypointDetailsScreen() {
     const { id } = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
     const { poisData, brandData } = useAppContent();
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
-    const { navbarVisibility, setIsBottomNavbarHidden } = useNavigationMode();
-    useFocusEffect(
-        React.useCallback(() => {
-            navbarVisibility.value = withTiming(0, { duration: 250 });
-            setIsBottomNavbarHidden(false);
-        }, [navbarVisibility, setIsBottomNavbarHidden])
-    );
     const brandPrimary = normalizeHex(brandData?.brand_color_primary);
     const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
 
     const waypoints = poisData || [];
+
+    const insets = useSafeAreaInsets();
+    const [showHeader, setShowHeader] = useState(true);
+    const headerOpacity = useSharedValue(1);
+
+    useEffect(() => {
+        headerOpacity.value = withTiming(showHeader ? 1 : 0, { duration: 250 });
+    }, [showHeader, headerOpacity]);
+
+    const navAreaAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            maxHeight: withTiming(showHeader ? 300 : 0, { duration: 250 }),
+            opacity: withTiming(showHeader ? 1 : 0, { duration: 250 }),
+        };
+    });
+
+    const contentAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            paddingTop: withTiming(showHeader ? 0 : insets.top, { duration: 250 }),
+        };
+    });
 
     const waypoint = useMemo(() => {
         const numericId = parseInt(String(id), 10);
@@ -72,16 +84,20 @@ export default function WaypointDetailsScreen() {
         <SafeAreaView
             style={[styles.container, { backgroundColor: colors.surface }]}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
                 <Animated.ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                 >
+                    {/* Collapsible Header outside the Pressable */}
+                    <Animated.View style={[navAreaAnimatedStyle, { marginHorizontal: -20, marginTop: -16, overflow: 'hidden' }]} pointerEvents={showHeader ? 'auto' : 'none'}>
+                        <Navbar />
+                        <QuickLinks />
+                    </Animated.View>
+
+                    <Pressable onPress={() => setShowHeader(p => !p)} style={{ flex: 1 }} pointerEvents="box-none">
+                        <Animated.View style={contentAnimatedStyle}>
                     {/* Title */}
                     {isValidData(waypoint.title) ? (
                         <SectionHeader
@@ -241,6 +257,8 @@ export default function WaypointDetailsScreen() {
                             );
                         })()
                     ) : null */}
+                        </Animated.View>
+                    </Pressable>
                 </Animated.ScrollView>
             </Animated.View>
         </SafeAreaView>

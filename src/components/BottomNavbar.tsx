@@ -26,16 +26,10 @@ export default function BottomNavbar() {
     const insets = useSafeAreaInsets();
     const { isBottomNavbarHidden } = useNavigationMode();
 
-    const isMapScreen = pathname === '/map' || pathname.startsWith('/map/');
-
     const translateY = useSharedValue(0);
 
     useEffect(() => {
-        if (isBottomNavbarHidden) {
-            translateY.value = withTiming(150, { duration: 300 }); // slide down completely out of view
-        } else {
-            translateY.value = withTiming(0, { duration: 300 });
-        }
+        translateY.value = withTiming(isBottomNavbarHidden ? 150 : 0, { duration: 250 });
     }, [isBottomNavbarHidden]);
 
     const animatedStyle = useAnimatedStyle(() => {
@@ -43,6 +37,8 @@ export default function BottomNavbar() {
             transform: [{ translateY: translateY.value }],
         };
     });
+
+    const isMapScreen = pathname === '/map' || pathname.startsWith('/map/');
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
     const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
@@ -91,13 +87,13 @@ export default function BottomNavbar() {
     return (
         <Animated.View style={[
             styles.container,
-            animatedStyle,
             {
                 backgroundColor: primaryColor, // Solid dark premium background matching wireframe
                 paddingBottom: Math.max(insets.bottom, isSmallDevice ? 6 : 10),
                 borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'
             },
-            isMapScreen && { position: 'absolute', bottom: 0, left: 0, right: 0 }
+            isMapScreen && { position: 'absolute', bottom: 0, left: 0, right: 0 },
+            animatedStyle
         ]}>
             <View style={styles.navRow}>
                 {navItems.map((item, index) => {

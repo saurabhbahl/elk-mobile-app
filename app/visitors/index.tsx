@@ -1,7 +1,8 @@
 import AppText from "@/src/components/AppText";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import SectionHeader from "@/src/components/SectionHeader";
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -33,7 +34,6 @@ export default function VisitorsCenterScreen() {
     const { colors, fonts, isDark } = useTheme();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, visitorsData, apiStatus } = useAppContentData();
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
     const images: string[] = [];
@@ -52,8 +52,6 @@ export default function VisitorsCenterScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
@@ -72,10 +70,10 @@ export default function VisitorsCenterScreen() {
                         data={[]}
                         renderItem={null}
                         showsVerticalScrollIndicator={false}
-                        onScroll={scrollHandler}
-                        scrollEventThrottle={16}
                         ListHeaderComponent={
                             <View style={styles.scrollContent}>
+                                <Navbar />
+                                <QuickLinks />
                                 {/* Header Row */}
                                 {isValidData(visitorsData?.screen_title) ? (
                                     <View>

@@ -45,8 +45,10 @@ import { useTheme } from '../../src/context/ThemeContext';
 
 // Components
 import { MapRouteLayers } from '../../src/components/MapRouteLayers';
+import Navbar from '../../src/components/Navbar';
 import { NavigationHeader } from '../../src/components/NavigationHeader';
 import { NavigationOverlay } from '../../src/components/NavigationOverlay';
+import QuickLinks from '../../src/components/QuickLinks';
 import { RoutePlanner } from '../../src/components/RoutePlanner';
 import SectionHeader from '../../src/components/SectionHeader';
 
@@ -93,6 +95,26 @@ function MapScreen() {
   const { poisData, mapSettingsData, brandData } = useAppContent();
   const waypoints = poisData || [];
   const netInfo = useNetInfo();
+
+  const [showHeader, setShowHeader] = useState(true);
+  const headerOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    headerOpacity.value = withTiming(showHeader ? 1 : 0, { duration: 250 });
+  }, [showHeader, headerOpacity]);
+
+  const navAreaAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      maxHeight: withTiming(showHeader ? 300 : 0, { duration: 250 }),
+      opacity: withTiming(showHeader ? 1 : 0, { duration: 250 }),
+    };
+  });
+
+  const headerContainerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      paddingTop: withTiming(showHeader ? 0 : insets.top, { duration: 250 }),
+    };
+  });
 
   useEffect(() => {
     isAvailableAsync()
@@ -981,6 +1003,7 @@ function MapScreen() {
             setSelectedWaypoint(null);
             activeRouteRef.current = null;
             setRouteVersion(v => v + 1);
+            setShowHeader(prev => !prev);
           }}
           onRegionDidChange={(feature: any) => {
             // Track map center for drop-pin crosshair
@@ -1200,7 +1223,15 @@ function MapScreen() {
         {/* Full-width Title & Search bar + Side Controls */}
         {!isNavigating && !showPointPicker && !isSelectingPin && (
           <>
-            <View style={styles.fullWidthHeaderContainer}>
+            <Reanimated.View
+              style={[styles.fullWidthHeaderContainer, headerContainerAnimatedStyle]}
+            >
+              <Reanimated.View style={[navAreaAnimatedStyle, { overflow: 'hidden' }]} pointerEvents={showHeader ? 'auto' : 'none'}>
+                <Navbar />
+                <View>
+                  <QuickLinks />
+                </View>
+              </Reanimated.View>
               {!isSearching ? (
                 <View style={styles.fullWidthHeaderRow}>
                   <View style={{ flex: 1, marginTop: -8 }}>
@@ -1212,73 +1243,68 @@ function MapScreen() {
                       isDark={isDark}
                     />
                   </View>
-                  {/* <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={() => setIsSearching(true)}
-                    style={styles.searchIconButton}
-                  >
-                    <MaterialIcons name="search" size={24} color={isDark ? "#FFFFFF" : brandPrimary} />
-                  </TouchableOpacity> */}
                 </View>
               ) : (
-                <View style={[styles.searchBar, { marginHorizontal: 16, marginBottom: 12 }]}>
-                  <MaterialIcons name="search" size={22} color={colors.onSurfaceVariant} style={styles.searchIcon} />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search viewing areas..."
-                    placeholderTextColor={`${colors.onSurfaceVariant}80`}
-                    value={searchQuery}
-                    autoFocus
-                    onChangeText={(text) => {
-                      setSearchQuery(text);
-                      setShowSearchResults(text.length > 0);
-                    }}
-                    onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
-                    onBlur={() => {
-                      // Small timeout so item presses register before blur hides it
-                      setTimeout(() => {
-                        setShowSearchResults(false);
-                        if (searchQuery.length === 0) {
-                          setIsSearching(false);
-                        }
-                      }, 200);
-                    }}
-                  />
-                  <TouchableOpacity onPress={() => {
-                    if (searchQuery.length > 0) {
-                      setSearchQuery('');
-                      setShowSearchResults(false);
-                    } else {
-                      setIsSearching(false);
-                    }
-                  }}>
-                    <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Search results dropdown */}
-              {isSearching && showSearchResults && searchResults.length > 0 && (
-                <View style={[styles.searchResultsDropdown, { top: 60 }]}>
-                  {searchResults.slice(0, 5).map((wp) => (
-                    <TouchableOpacity
-                      key={wp.id}
-                      style={styles.searchResultItem}
-                      onPress={() => {
-                        handleSelectSearchResult(wp);
-                        setIsSearching(false);
+                <View style={{ marginHorizontal: 16, marginBottom: 12, position: 'relative', zIndex: 110 }}>
+                  <View style={styles.searchBar}>
+                    <MaterialIcons name="search" size={22} color={colors.onSurfaceVariant} style={styles.searchIcon} />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search viewing areas..."
+                      placeholderTextColor={`${colors.onSurfaceVariant}80`}
+                      value={searchQuery}
+                      autoFocus
+                      onChangeText={(text) => {
+                        setSearchQuery(text);
+                        setShowSearchResults(text.length > 0);
                       }}
-                    >
-                      <MaterialIcons name="place" size={18} color={brandPrimary || colors.primary} />
-                      <View style={styles.searchResultText}>
-                        <AppText style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</AppText>
-                        <AppText style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</AppText>
-                      </View>
+                      onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
+                      onBlur={() => {
+                        // Small timeout so item presses register before blur hides it
+                        setTimeout(() => {
+                          setShowSearchResults(false);
+                          if (searchQuery.length === 0) {
+                            setIsSearching(false);
+                          }
+                        }, 200);
+                      }}
+                    />
+                    <TouchableOpacity onPress={() => {
+                      if (searchQuery.length > 0) {
+                        setSearchQuery('');
+                        setShowSearchResults(false);
+                      } else {
+                        setIsSearching(false);
+                      }
+                    }}>
+                      <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
                     </TouchableOpacity>
-                  ))}
+                  </View>
+
+                  {/* Search results dropdown relative to the searchBar */}
+                  {showSearchResults && searchResults.length > 0 && (
+                    <View style={[styles.searchResultsDropdown, { top: 56, left: 0, right: 0 }]}>
+                      {searchResults.slice(0, 5).map((wp) => (
+                        <TouchableOpacity
+                          key={wp.id}
+                          style={styles.searchResultItem}
+                          onPress={() => {
+                            handleSelectSearchResult(wp);
+                            setIsSearching(false);
+                          }}
+                        >
+                          <MaterialIcons name="place" size={18} color={brandPrimary || colors.primary} />
+                          <View style={styles.searchResultText}>
+                            <AppText style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</AppText>
+                            <AppText style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</AppText>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )}
-            </View>
+            </Reanimated.View>
 
             <View style={[styles.sideControls, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}>
               <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate()}>

@@ -1,5 +1,7 @@
 import AppText from "@/src/components/AppText";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import SectionHeader from "@/src/components/SectionHeader";
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Image } from "expo-image";
@@ -13,7 +15,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -45,7 +46,6 @@ export default function PlanTripScreen() {
     const { brandData, planTripData, apiStatus } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -86,23 +86,8 @@ export default function PlanTripScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-            {isValidData(title) ? (
-                <View >
-                    <SectionHeader
-                        title={title as string}
-                        iconSource={require("../../assets/images/mapicon.png")}
-                        primaryColor={primaryColor || "#000000"}
-                        secondaryColor={secondaryColor || "#ea0b0b"}
-                        isDark={isDark}
-                        isFeatured={true}
-                    />
-                </View>
-            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -112,9 +97,24 @@ export default function PlanTripScreen() {
                 <Animated.ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                 >
+                    <View>
+                        <Navbar />
+                        <QuickLinks />
+                    </View>
+
+                    {isValidData(title) ? (
+                        <View >
+                            <SectionHeader
+                                title={title as string}
+                                iconSource={require("../../assets/images/mapicon.png")}
+                                primaryColor={primaryColor || "#000000"}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                isFeatured={true}
+                            />
+                        </View>
+                    ) : null}
                     {isValidData(heroImageUrl) ? (
                         <Animated.View entering={FadeInUp.duration(200)} style={styles.imageContainer}>
                             <Image

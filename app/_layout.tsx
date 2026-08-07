@@ -228,14 +228,6 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
-      {shouldShowHeader && (
-          <SafeAreaView style={{ backgroundColor: primaryColor }} edges={['top', 'left', 'right']}>
-            <Navbar />
-            <Animated.View style={[{ backgroundColor: colors.background }, quickLinksStyle]}>
-              <QuickLinks />
-            </Animated.View>
-          </SafeAreaView>
-      )}
       <OfflinePopup />
       <View style={{ flex: 1 }}>
         <Stack>

@@ -1,5 +1,7 @@
 import AppText from "@/src/components/AppText";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import React from "react";
 import {
     ActivityIndicator,
@@ -18,7 +20,6 @@ import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { RentalsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
-import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -30,8 +31,6 @@ export default function RentalsScreen() {
     const { brandData, rentalsData, apiStatus, rentalSettingsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
-
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -58,6 +57,22 @@ export default function RentalsScreen() {
 
     const ListHeader = React.useMemo(() => (
         <View>
+            <View style={{ marginHorizontal: -16 }}>
+                <Navbar />
+                <QuickLinks />
+            </View>
+            {isValidData(rentalSettingsData?.screen_title) ? (
+                <View style={{ paddingHorizontal: 16 }}>
+                    <SectionHeader
+                        title={rentalSettingsData?.screen_title as string}
+                        iconSource={require("../../assets/images/rentals.png")}
+                        primaryColor={primaryColor || "#000000"}
+                        secondaryColor={secondaryColor || "#ea0b0b"}
+                        isDark={isDark}
+                        style={{ marginLeft: 0 }}
+                    />
+                </View>
+            ) : null}
 
             {galleryImages.length > 0 ? (
                 <View style={{ marginBottom: 16, alignItems: 'center' }}>
@@ -90,30 +105,14 @@ export default function RentalsScreen() {
                 Our Rental Locations
             </AppText>
         </View>
-    ), [rentalSettingsData?.intro_text, galleryImages, isDark, secondaryColor]);
+    ), [rentalSettingsData?.screen_title, rentalSettingsData?.intro_text, galleryImages, isDark, primaryColor, secondaryColor]);
 
     return (
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-            {isValidData(rentalSettingsData?.screen_title) ? (
-                <View style={{ paddingHorizontal: 16 }}>
-                    <SectionHeader
-                        title={rentalSettingsData?.screen_title as string}
-                        iconSource={require("../../assets/images/rentals.png")}
-                        primaryColor={primaryColor || "#000000"}
-                        secondaryColor={secondaryColor || "#ea0b0b"}
-                        isDark={isDark}
-                        style={{ marginLeft: 0 }}
-                    />
-                </View>
-            ) : null}
-
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -127,8 +126,6 @@ export default function RentalsScreen() {
                     ListHeaderComponent={ListHeader}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                     initialNumToRender={5}
                     maxToRenderPerBatch={6}
                     windowSize={5}

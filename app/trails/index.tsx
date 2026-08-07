@@ -1,4 +1,6 @@
 import AppText from "@/src/components/AppText";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import React from "react";
 import {
     ActivityIndicator,
@@ -20,7 +22,6 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "@/src/utils/validation";
-import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -94,8 +95,6 @@ export default function TrailsScreen() {
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
 
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
-
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor as string), [colors, fonts, isDark, primaryColor]);
 
     const trails = trailsData || [];
@@ -112,26 +111,8 @@ export default function TrailsScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-
-
-
-            {isValidData(trailSettingsData?.screen_title) ? (
-                <View style={{ paddingHorizontal: 16 }}>
-                    <SectionHeader
-                        title={trailSettingsData?.screen_title as string}
-                        iconSource={require("../../assets/images/trailsicon.png")}
-                        primaryColor={primaryColor || "#000000"}
-                        secondaryColor={secondaryColor || "#ea0b0b"}
-                        isDark={isDark}
-                        style={{ marginLeft: 0 }}
-                    />
-                </View>
-            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -144,12 +125,30 @@ export default function TrailsScreen() {
                     renderItem={renderTrailItem as any}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                     initialNumToRender={8}
                     maxToRenderPerBatch={12}
                     windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}
+                    ListHeaderComponent={
+                        <View>
+                            <View style={{ marginHorizontal: -16 }}>
+                                <Navbar />
+                                <QuickLinks />
+                            </View>
+                            {isValidData(trailSettingsData?.screen_title) ? (
+                                <View style={{ paddingHorizontal: 16 }}>
+                                    <SectionHeader
+                                        title={trailSettingsData?.screen_title as string}
+                                        iconSource={require("../../assets/images/trailsicon.png")}
+                                        primaryColor={primaryColor || "#000000"}
+                                        secondaryColor={secondaryColor || "#ea0b0b"}
+                                        isDark={isDark}
+                                        style={{ marginLeft: 0 }}
+                                    />
+                                </View>
+                            ) : null}
+                        </View>
+                    }
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No trails available</AppText>
                     }

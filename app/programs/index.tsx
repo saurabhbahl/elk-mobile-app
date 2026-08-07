@@ -1,4 +1,6 @@
 import AppText from "@/src/components/AppText";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import React from "react";
 import {
     ActivityIndicator,
@@ -17,7 +19,6 @@ import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
-import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -33,8 +34,6 @@ export default function ProgramsScreen() {
     const { brandData, programsData, apiStatus, programsSettingData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
-
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -59,26 +58,8 @@ export default function ProgramsScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-
-
-
-            {isValidData(programsSettingData?.screen_title) ? (
-                <View style={{ paddingHorizontal: 16 }}>
-                    <SectionHeader
-                        title={programsSettingData?.screen_title as string}
-                        iconSource={require("../../assets/images/programicon.png")}
-                        primaryColor={primaryColor || "#000000"}
-                        secondaryColor={secondaryColor || "#ea0b0b"}
-                        isDark={isDark}
-                        style={{ marginLeft: 0 }}
-                    />
-                </View>
-            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -94,12 +75,30 @@ export default function ProgramsScreen() {
                     contentContainerStyle={isGrid ? styles.gridContainer : styles.gridContainer}
                     columnWrapperStyle={isGrid ? styles.columnWrapper : undefined}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                     initialNumToRender={6}
                     maxToRenderPerBatch={10}
                     windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}
+                    ListHeaderComponent={
+                        <View>
+                            <View style={{ marginHorizontal: -16 }}>
+                                <Navbar />
+                                <QuickLinks />
+                            </View>
+                            {isValidData(programsSettingData?.screen_title) ? (
+                                <View style={{ paddingHorizontal: 16 }}>
+                                    <SectionHeader
+                                        title={programsSettingData?.screen_title as string}
+                                        iconSource={require("../../assets/images/programicon.png")}
+                                        primaryColor={primaryColor || "#000000"}
+                                        secondaryColor={secondaryColor || "#ea0b0b"}
+                                        isDark={isDark}
+                                        style={{ marginLeft: 0 }}
+                                    />
+                                </View>
+                            ) : null}
+                        </View>
+                    }
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No programs available</AppText>
                     }

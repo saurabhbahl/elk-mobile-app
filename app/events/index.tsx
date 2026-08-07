@@ -1,4 +1,6 @@
 import AppText from "@/src/components/AppText";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import React from "react";
 import {
     ActivityIndicator,
@@ -16,7 +18,6 @@ import UniversalCard from "@/src/components/UniversalCard";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
 const cardWidth = (width - 44) / 2; // 16px padding on sides, 12px gap in middle
 
@@ -32,9 +33,6 @@ export default function EventsScreen() {
     const { brandData, eventsData, apiStatus, eventSettingsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
-
-
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -55,26 +53,8 @@ export default function EventsScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-
-
-
-            {eventSettingsData?.screen_title ? (
-                <View style={{ paddingHorizontal: 16 }}>
-                    <SectionHeader
-                        title={eventSettingsData.screen_title as string}
-                        iconSource={require("../../assets/images/eventicon.png")}
-                        primaryColor={primaryColor || "#000000"}
-                        secondaryColor={secondaryColor || "#ea0b0b"}
-                        isDark={isDark}
-                        style={{ marginLeft: 0 }}
-                    />
-                </View>
-            ) : null}
 
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
@@ -89,8 +69,31 @@ export default function EventsScreen() {
                     numColumns={1}
                     contentContainerStyle={styles.gridContainer}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
+                    ListHeaderComponent={
+                        <View>
+                            <View style={{ marginHorizontal: -16 }}>
+                                <Navbar />
+                                <QuickLinks />
+                            </View>
+                            {eventSettingsData?.screen_title ? (
+                                <View style={{ paddingHorizontal: 16 }}>
+                                    <SectionHeader
+                                        title={eventSettingsData.screen_title as string}
+                                        iconSource={require("../../assets/images/eventicon.png")}
+                                        primaryColor={primaryColor || "#000000"}
+                                        secondaryColor={secondaryColor || "#ea0b0b"}
+                                        isDark={isDark}
+                                        style={{ marginLeft: 0 }}
+                                    />
+                                </View>
+                            ) : null}
+                        </View>
+                    }
+                    showsVerticalScrollIndicator={false}
                     initialNumToRender={6}
                     maxToRenderPerBatch={10}
                     windowSize={5}

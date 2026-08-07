@@ -1,5 +1,6 @@
 import AppText from "@/src/components/AppText";
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
@@ -35,7 +36,6 @@ export default function ProgramDetailScreen() {
     const { brandData, programsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -92,8 +92,6 @@ export default function ProgramDetailScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
@@ -103,9 +101,9 @@ export default function ProgramDetailScreen() {
             <Animated.ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
-                onScroll={scrollHandler}
-                scrollEventThrottle={16}
             >
+                <Navbar />
+                <QuickLinks />
                 {/* Heading Row */}
                 {isValidData(program.program_name) ? (
                     <View style={{ paddingHorizontal: 16 }}>

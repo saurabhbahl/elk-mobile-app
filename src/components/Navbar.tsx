@@ -5,16 +5,13 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import Animated, { FadeIn, interpolate, useAnimatedStyle } from 'react-native-reanimated';
-import { useNavigationMode } from '../../app/_layout';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const scale = width / 600;
 const r = (size: number) => Math.min(size * scale, size * 1.5);
-
-// Pre-computed constant — safe to use inside Reanimated worklets
-const NAVBAR_HEIGHT = r(144);
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -24,30 +21,18 @@ const getValidColor = (color: string | undefined) => {
 export default function Navbar() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData } = useAppContent();
-    const { navbarVisibility } = useNavigationMode();
+    const insets = useSafeAreaInsets();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
-    // Directly derive animated styles from the shared value — zero React re-renders
-    const animatedStyle = useAnimatedStyle(() => {
-        const height = interpolate(navbarVisibility.value, [0, 1], [NAVBAR_HEIGHT, 0]);
-        return {
-            height,
-            opacity: interpolate(navbarVisibility.value, [0, 0.8, 1], [1, 1, 0]),
-            overflow: 'hidden',
-        };
-    });
-
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
 
     return (
-        <Animated.View style={[
+        <View style={[
             styles.header,
-            animatedStyle,
+            { paddingTop: insets.top, paddingBottom: r(5) },
             primaryColor ? { backgroundColor: primaryColor } : {},
             {
                 borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)',
-                overflow: 'hidden'
             }
         ]}>
             <View style={styles.leftActions}>
@@ -74,29 +59,13 @@ export default function Navbar() {
                     />
                 ) : null}
             </View>
-
-            {/* <View style={styles.rightActions}> */}
-            {/* SETTINGS Button */}
-            {/* <TouchableOpacity
-                    style={styles.tipsContainer}
-                    activeOpacity={0.7}
-                    onPress={() => router.push("/map/settings" as any)}
-                >
-                    <View style={[styles.tipsCircle, { backgroundColor: 'rgba(255,255,255,0.2)', borderColor: 'rgba(255,255,255,0.3)' }]}>
-                        <MaterialCommunityIcons name="cog" size={18} color={secondaryColor} />
-                    </View>
-                    <View style={[styles.tipsBadge, { backgroundColor: secondaryColor }]}>
-                        <AppText style={[styles.tipsBadgeText, { color: primaryColor || '#8B1E1E' }]}>SETTINGS</AppText>
-                    </View>
-                </TouchableOpacity> */}
-            {/* </View> */}
-        </Animated.View>
+        </View>
     );
 }
 
 const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
     header: {
-        height: r(144),
+        minHeight: r(120),
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -105,14 +74,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     headerLogo: {
-        height: r(140),
-        width: r(140),
+        height: r(150),
+        width: r(150),
     },
 
     headerExplorer: {
-        height: r(180),
-        width: r(180),
-        marginTop: r(30),
+        height: r(160),
+        width: r(160),
+        marginTop: r(20),
     },
 
     leftActions: {

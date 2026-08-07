@@ -1,4 +1,6 @@
 import AppText from "@/src/components/AppText";
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
 import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useState } from "react";
@@ -14,7 +16,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { useScrollDirection } from "../../src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import SectionHeader from "@/src/components/SectionHeader";
@@ -49,7 +50,6 @@ function NativeVideoPlayer({ source }: { source: string }) {
 
 export default function LiveCameraScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
@@ -180,8 +180,6 @@ export default function LiveCameraScreen() {
         <SafeAreaView
             style={styles.container}
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
@@ -198,10 +196,12 @@ export default function LiveCameraScreen() {
                 <Animated.ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
                     entering={FadeInUp.duration(200)}
                 >
+                    <View>
+                        <Navbar />
+                        <QuickLinks />
+                    </View>
                     {/* Header Row */}
                     {isValidData(liveCamSettingsData?.screen_title) ? (
                         <View style={{ paddingHorizontal: 16 }}>

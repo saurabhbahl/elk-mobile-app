@@ -19,12 +19,13 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Navbar from "@/src/components/Navbar";
+import QuickLinks from "@/src/components/QuickLinks";
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, ProgramsData, TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { normalizeHex } from "../../src/utils/colorUtils";
-import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -55,23 +56,19 @@ export default function HomeScreen() {
         }
     }, [isFocused, popupData]);
 
-    const { scrollHandler, handleTouchStart, handleTouchEnd } = useScrollDirection();
-
     return (
         <SafeAreaView 
             style={styles.container} 
             edges={["left", "right"]}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
             <Animated.ScrollView 
                 contentContainerStyle={styles.scrollContent} 
                 showsVerticalScrollIndicator={false}
-                onScroll={scrollHandler}
-                scrollEventThrottle={16}
             >
+                <Navbar />
+                <QuickLinks />
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
                     <Animated.View entering={FadeInUp.duration(300)}>
