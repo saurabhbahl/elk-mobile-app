@@ -215,7 +215,15 @@ function MapScreen() {
   }, []);
 
   // Sync navigation mode to layout context so tab bar hides/shows
-  const { setIsNavigating: setLayoutNavigating, setIsBottomNavbarHidden } = useNavigationMode();
+  const { setIsNavigating: setLayoutNavigating, setIsBottomNavbarHidden, navbarVisibility } = useNavigationMode();
+
+  // Always show navbar and quicklinks on the map index page
+  useFocusEffect(
+    useCallback(() => {
+      navbarVisibility.value = withTiming(0, { duration: 200 });
+    }, [navbarVisibility])
+  );
+
   useFocusEffect(
     useCallback(() => {
       setLayoutNavigating(isNavigating || isCalculatingRoute);
@@ -790,12 +798,15 @@ function MapScreen() {
 
   // ── Exit navigation ─────────────────────────────────────────────────────────
   const handleExitNavigation = useCallback(() => {
+    const shouldGoBack = hasHandledNavParam.current !== false && router.canGoBack();
+
     activeRouteRef.current = null;
     fullRouteRef.current = null;
     lastSliceIdx.current = -1;
 
     router.setParams({
       routeToWaypointId: undefined,
+      navigateToWaypointId: undefined,
       navRequestId: undefined
     } as any);
 
@@ -816,6 +827,10 @@ function MapScreen() {
         nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: "straight" as any } as any,
       });
     });
+
+    if (shouldGoBack) {
+      router.back();
+    }
   }, []);
 
   // Handle Android hardware back button in navigation mode
@@ -823,7 +838,6 @@ function MapScreen() {
     if (!isNavigating) return;
     const onBackPress = () => {
       handleExitNavigation();
-      router.back();
       return true;
     };
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -984,12 +998,13 @@ function MapScreen() {
             <Camera ref={cameraRef} zoom={mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9} center={[currentRegion.longitude, currentRegion.latitude]} />
           )}
           {/* Built-in dot — hidden during navigation so our custom arrow takes over */}
-          <UserLocation
-            visible={!isNavigating}
-            animated
-            androidRenderMode="normal"
-            showsUserHeadingIndicator
-          />
+          {!isNavigating && (
+            <UserLocation
+              animated
+              androidRenderMode="normal"
+              showsUserHeadingIndicator
+            />
+          )}
 
           {/* Custom heading arrow shown during navigation */}
           {isNavigating && location && (
@@ -1197,13 +1212,13 @@ function MapScreen() {
                       isDark={isDark}
                     />
                   </View>
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     activeOpacity={0.9}
                     onPress={() => setIsSearching(true)}
                     style={styles.searchIconButton}
                   >
                     <MaterialIcons name="search" size={24} color={isDark ? "#FFFFFF" : brandPrimary} />
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               ) : (
                 <View style={[styles.searchBar, { marginHorizontal: 16, marginBottom: 12 }]}>
@@ -1278,8 +1293,8 @@ function MapScreen() {
 
         {/* ── Waypoint carousel (hidden during navigation and pin selection) ── */}
         {selectedWaypoint && !isNavigating && !showPointPicker && !isSelectingPin && (
-          <Reanimated.View 
-            entering={FadeInDown.duration(300).delay(150)} 
+          <Reanimated.View
+            entering={FadeInDown.duration(300).delay(150)}
             exiting={FadeOutDown.duration(200)}
             style={[styles.hotspotCardContainer, { bottom: 0 }]}
           >
@@ -1668,15 +1683,19 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       alignItems: 'center',
     },
     viewMoreButton: {
-      backgroundColor: isDark ? colors.surfaceVariant : '#ECEEED',
+      backgroundColor: isDark ? colors.surfaceVariant : brandPrimary,
       borderRadius: 99,
-      paddingVertical: 8,
+      paddingVertical: 13,
       paddingHorizontal: 20,
     },
     viewMoreButtonText: {
-      fontFamily: fonts.bodyBold,
-      fontSize: 12,
-      color: isDark ? colors.onSurface : '#000000',
+      fontFamily: 'OpenSans-Regular',
+      fontWeight: '400',
+      fontStyle: 'normal',
+      fontSize: 13,
+      lineHeight: 13,
+      letterSpacing: 0,
+      color: isDark ? colors.onSurface : '#ffffff',
     },
 
     // Drop-pin crosshair

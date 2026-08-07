@@ -53,7 +53,7 @@ export default function LiveCameraScreen() {
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secColor = getValidColor(brandData?.brand_color__secondary);
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark, bgColor as string), [colors, fonts, isDark, bgColor]);
+    const styles = React.useMemo(() => createStyles(colors, fonts, isDark, bgColor as string, secColor as string), [colors, fonts, isDark, bgColor, secColor]);
 
     const { isConnected } = useNetInfo();
     const [activeCamIndex, setActiveCamIndex] = useState(0);
@@ -230,7 +230,7 @@ export default function LiveCameraScreen() {
                                         key={cam.id || index}
                                         style={[
                                             styles.tabButton,
-                                            isActive && { backgroundColor: bgColor, borderColor: bgColor },
+                                            isActive && { backgroundColor: secColor, borderColor: secColor },
                                         ]}
                                         onPress={() => handleTabChange(index)}
                                         activeOpacity={0.8}
@@ -279,7 +279,7 @@ export default function LiveCameraScreen() {
                                             contentFit="cover"
 
                                         />
-                                        <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: bgColor ? `${bgColor}99` : 'rgba(0, 0, 0, 0.4)' }]}>
+                                        <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: secColor ? `${secColor}40` : 'rgba(0, 0, 0, 0.4)' }]}>
                                             <View style={{ width: 44, height: 44, borderRadius: 32, backgroundColor: '#E22B2B', borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
                                                 <Ionicons name="play" size={22} color="#FFFFFF" style={{ marginLeft: 2 }} />
                                             </View>
@@ -319,7 +319,7 @@ export default function LiveCameraScreen() {
     );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, bgColor: string) => StyleSheet.create({
+const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, primaryColor: string, secondaryColor: string) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.surface,
@@ -372,7 +372,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
-        color: bgColor,
+        color: primaryColor,
     },
     tabButtonTextActive: {
         color: colors.onSurface,

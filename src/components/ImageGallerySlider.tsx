@@ -1,11 +1,10 @@
-import React, { useRef, useState } from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/src/context/ThemeContext";
-import CachedImage from "./CachedImage";
 import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { normalizeHex } from "@/src/utils/colorUtils";
+import { Ionicons } from "@expo/vector-icons";
+import { useRef, useState } from "react";
+import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import CachedImage from "./CachedImage";
 
 interface ImageGallerySliderProps {
     images: string[];
@@ -55,7 +54,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     <CachedImage
                         uri={item}
                         style={{ width, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' }}
-                        contentFit="contain"
+                        contentFit="cover"
                     />
                 )}
             />
@@ -63,7 +62,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                 <>
                     <TouchableOpacity
                         style={[
-                            styles.arrowButton, 
+                            styles.arrowButton,
                             { left: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
                             activeIndex === 0 ? { opacity: 0.4 } : { opacity: 1 }
                         ]}
@@ -75,7 +74,7 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[
-                            styles.arrowButton, 
+                            styles.arrowButton,
                             { right: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
                             activeIndex === images.length - 1 ? { opacity: 0.4 } : { opacity: 1 }
                         ]}

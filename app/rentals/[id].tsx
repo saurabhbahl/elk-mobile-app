@@ -1,19 +1,18 @@
 import AppText from "@/src/components/AppText";
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
     InteractionManager,
-    ScrollView,
     StatusBar,
     StyleSheet,
     View
 } from "react-native";
+import Animated from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated from "react-native-reanimated";
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
@@ -92,8 +91,8 @@ export default function RentalDetailScreen() {
     }
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -101,8 +100,8 @@ export default function RentalDetailScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            <Animated.ScrollView 
-                contentContainerStyle={styles.scrollContent} 
+            <Animated.ScrollView
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}

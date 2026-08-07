@@ -52,7 +52,7 @@ export function useScrollDirection() {
             dragStartedAtTop.value = atTop;
 
             // If user touches near the top and navbar is already hidden, show it immediately
-            if (atTop && targetState.value !== 0) {
+            if (atTop && (targetState.value !== 0 || navbarVisibility.value > 0)) {
                 targetState.value = 0;
                 gestureHandled.value = true;
                 navbarVisibility.value = withTiming(0, { duration: 200 });
@@ -63,23 +63,25 @@ export function useScrollDirection() {
             "worklet";
 
             const currentY = event.contentOffset.y;
+            const currentMaxScroll = event.contentSize.height - event.layoutMeasurement.height;
 
-            // If dragStartY hasn't been set (momentum scroll with no new drag), skip
+            // If dragStartY hasn't been set (onBeginDrag didn't fire — common on Android
+            // for short content), handle the small-content case here directly.
             if (dragStartY.value < 0) {
-                return;
-            }
-
-            // Already acted once this gesture — don't act again until next touch
-            if (gestureHandled.value) {
+                if (currentMaxScroll < MIN_SCROLLABLE && (targetState.value !== 0 || navbarVisibility.value > 0)) {
+                    targetState.value = 0;
+                    navbarVisibility.value = withTiming(0, { duration: 200 });
+                }
                 return;
             }
 
             // Use the maxScroll captured at drag start (immune to layout changes from animations)
             const frozenMaxScroll = dragStartMaxScroll.value;
+
             // Content too short at gesture start → never allow hiding this gesture
             if (frozenMaxScroll < MIN_SCROLLABLE) {
                 // If navbar is hidden from a previous page, show it
-                if (targetState.value !== 0) {
+                if (targetState.value !== 0 || navbarVisibility.value > 0) {
                     targetState.value = 0;
                     navbarVisibility.value = withTiming(0, { duration: 200 });
                 }
@@ -88,7 +90,7 @@ export function useScrollDirection() {
 
             // Always show when scrolled near the top (regardless of edge guard)
             if (currentY < EDGE_GUARD) {
-                if (targetState.value !== 0) {
+                if (targetState.value !== 0 || navbarVisibility.value > 0) {
                     targetState.value = 0;
                     navbarVisibility.value = withTiming(0, { duration: 200 });
                 }
@@ -97,26 +99,25 @@ export function useScrollDirection() {
 
             const gestureDistance = currentY - dragStartY.value;
 
-            // Bottom edge: block BOTH hide and show (rubber-band protection)
-            if (dragStartedAtBottom.value) {
-                return;
-            }
-
-            // Scrolled DOWN more than threshold in this gesture → HIDE
-            // Top edge: block hiding only (user may still scroll up to show)
+            // Scrolled DOWN more than threshold → HIDE
+            // Allow re-evaluation every scroll event (no gestureHandled gate) so fast flings work
             if (
                 gestureDistance >= HIDE_GESTURE_DISTANCE &&
                 !dragStartedAtTop.value &&
                 targetState.value !== 1
             ) {
                 targetState.value = 1;
-                gestureHandled.value = true;
                 navbarVisibility.value = withTiming(1, { duration: 200 });
             }
 
-            // Scrolled UP more than threshold in this gesture → SHOW
-            // Always allowed (even from top edge) so navbar can reappear
-            if (gestureDistance <= -SHOW_GESTURE_DISTANCE && targetState.value !== 0) {
+            // Scrolled UP more than threshold → SHOW
+            // Use gestureHandled here to prevent flicker on rubber-band bounce at bottom
+            if (
+                gestureDistance <= -SHOW_GESTURE_DISTANCE &&
+                !gestureHandled.value &&
+                !dragStartedAtBottom.value &&
+                (targetState.value !== 0 || navbarVisibility.value > 0)
+            ) {
                 targetState.value = 0;
                 gestureHandled.value = true;
                 navbarVisibility.value = withTiming(0, { duration: 200 });
@@ -154,16 +155,13 @@ export function useScrollDirection() {
     };
 
     const handleTouchEnd = (e: any) => {
-        if (hasScrolled.value) return;
-
         const deltaY = e.nativeEvent.pageY - touchStartY.value;
 
-        // Finger moved DOWN → show navbar
-        if (deltaY > 20) {
-            if (targetState.value !== 0) {
-                targetState.value = 0;
-                navbarVisibility.value = withTiming(0, { duration: 200 });
-            }
+        // Finger moved DOWN on screen (deltaY > 0) = scroll-up gesture = show navbar
+        // Only act if the scroll handler hasn't already handled this gesture
+        if (deltaY > 20 && !hasScrolled.value && (targetState.value !== 0 || navbarVisibility.value > 0)) {
+            targetState.value = 0;
+            navbarVisibility.value = withTiming(0, { duration: 200 });
         }
     };
 

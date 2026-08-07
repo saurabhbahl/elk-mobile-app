@@ -114,7 +114,7 @@ export default function VisitorsCenterScreen() {
                                                     <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_1_label}
                                                     </AppText>
-                                                    <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to call
                                                     </AppText>
                                                 </View>
@@ -135,7 +135,7 @@ export default function VisitorsCenterScreen() {
                                                     <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_2_label}
                                                     </AppText>
-                                                    <AppText style={styles.ctaSubtitle} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to email us
                                                     </AppText>
                                                 </View>
@@ -249,12 +249,11 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         color: colors.onSurface,
     },
     ctaSubtitle: {
-        fontFamily: 'OpenSans-Regular',
-        fontWeight: '400',
+        fontFamily: 'OpenSans-Light',
+        fontWeight: '300',
         fontStyle: 'normal',
-        fontSize: 10,
+        fontSize: 11,
         letterSpacing: 0,
-        color: "#8E8E93",
         marginTop: 2,
     },
     addressText: {

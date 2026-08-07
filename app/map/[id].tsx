@@ -117,7 +117,7 @@ export default function WaypointDetailsScreen() {
                                 <View style={styles.imageSliderContainer}>
                                     <CachedImage
                                         uri={sliderImages[0]}
-                                        style={{ width: "100%", height: "100%" }}
+                                        style={{ width: "100%", height: "100%", aspectRatio: undefined }}
                                         contentFit="cover"
                                     />
                                 </View>
@@ -144,10 +144,12 @@ export default function WaypointDetailsScreen() {
                                 </AppText>
                             </View>
                         ) : null}
-                        <PrimaryButton
-                            title="Get Directions"
-                            onPress={handleGetDirections}
-                        />
+                        {isValidData(waypoint.latitude) && isValidData(waypoint.longitude) ? (
+                            <PrimaryButton
+                                title="Get Directions"
+                                onPress={handleGetDirections}
+                            />
+                        ) : null}
                     </View>
 
                     {/* Badges Section */}
@@ -197,7 +199,7 @@ export default function WaypointDetailsScreen() {
                     ) : null}
 
                     {/* Seasonal Notes */}
-                    {isValidData(waypoint.seasonal_notes) ? (
+                    {/* isValidData(waypoint.seasonal_notes) ? (
                         <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                             <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
                             <View style={{ flex: 1 }}>
@@ -214,10 +216,10 @@ export default function WaypointDetailsScreen() {
                                 />
                             </View>
                         </View>
-                    ) : null}
+                    ) : null */}
 
                     {/* External Link */}
-                    {isValidData(waypoint.external_link) ? (
+                    {/* isValidData(waypoint.external_link) ? (
                         (() => {
                             const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
                             const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;
@@ -238,7 +240,7 @@ export default function WaypointDetailsScreen() {
                                 </TouchableOpacity>
                             );
                         })()
-                    ) : null}
+                    ) : null */}
                 </Animated.ScrollView>
             </Animated.View>
         </SafeAreaView>
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 16,
-        paddingBottom: 40,
+        paddingBottom: 140, // Increased to avoid hiding behind the BottomNavbar
     },
     titleContainer: {
         flexDirection: "row",

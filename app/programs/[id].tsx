@@ -1,19 +1,18 @@
 import AppText from "@/src/components/AppText";
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
     InteractionManager,
-    ScrollView,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
     View
 } from "react-native";
+import Animated from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated from "react-native-reanimated";
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
@@ -21,7 +20,9 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
-import { isValidData } from "@/src/utils/validation";
+import { normalizeHex } from "../../src/utils/colorUtils";
+import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
+import { isValidData } from "../../src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -41,6 +42,8 @@ export default function ProgramDetailScreen() {
     const program = programsData?.find(
         (p: ProgramsData, index: number) => String(p.id || index) === String(id)
     );
+
+    const poiId = React.useMemo(() => extractPoiId(program?.location), [program?.location]);
 
     const [isTransitioning, setIsTransitioning] = React.useState(true);
 
@@ -86,8 +89,8 @@ export default function ProgramDetailScreen() {
     const rawDescription = program.full_description || "";
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -97,8 +100,8 @@ export default function ProgramDetailScreen() {
 
 
 
-            <Animated.ScrollView 
-                contentContainerStyle={styles.scrollContent} 
+            <Animated.ScrollView
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
@@ -125,9 +128,11 @@ export default function ProgramDetailScreen() {
                             style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
                             contentFit="cover"
                         />
-                        <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
-                            <PrimaryButton title="Get Directions" onPress={() => { }} />
-                        </View>
+                        {poiId !== null ? (
+                            <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
+                                <PrimaryButton title="Get Directions" onPress={() => navigateToPoi(router, poiId)} />
+                            </View>
+                        ) : null}
                     </View>
                 ) : null}
 

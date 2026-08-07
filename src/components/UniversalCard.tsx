@@ -50,7 +50,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
         }
         return null;
     };
-    
+
     const parseEventDateStr = (dateStr: string) => {
         // Matches: 17/07/2026 1:00 am
         const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -133,7 +133,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
                         </AppText>
                     )}
                     {isValidData(subtitle) && (
-                        <AppText style={styles.cardLocation} numberOfLines={1}>
+                        <AppText style={type === 'rental' ? [styles.cardName, { marginTop: 2 }] : styles.cardLocation} numberOfLines={1}>
                             {subtitle}
                         </AppText>
                     )}
@@ -236,16 +236,19 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         justifyContent: 'center',
     },
     cardName: {
-        fontSize: width < 380 ? 14 : 16,
+        fontSize: width < 380 ? 12 : 14,
         fontFamily: 'OpenSans-Bold',
         color: "#FFFFFF",
     },
     cardLocation: {
-        fontSize: 11,
+        fontSize: width < 380 ? 10 : 12,
+        fontWeight: 400,
+        letterSpacing: 0,
         fontFamily: 'OpenSans-Regular',
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: '#ffffff',
         marginTop: 2,
     },
+
     cardBadge: {
         position: 'absolute',
         top: 0,

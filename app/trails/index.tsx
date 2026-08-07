@@ -10,7 +10,7 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-
+import { router } from "expo-router";
 
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
@@ -18,6 +18,7 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
+import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "@/src/utils/validation";
 import { useScrollDirection } from '../../src/hooks/useScrollDirection';
 
@@ -68,13 +69,20 @@ const TrailCard = React.memo(({ item, index, styles }: {
                         }}
                         tagsStyles={{ p: { marginVertical: 4 } }}
                     />
-                ) :
-                    <AppText style={styles.trailDescription}>No description available.</AppText>
-                }
+                ) : null}
 
-                <View style={{ marginTop: 16, alignSelf: 'flex-start' }}>
-                    <PrimaryButton title="Get Directions" onPress={() => { }} />
-                </View>
+                {/* Get Directions Button */}
+                {(() => {
+                    const poiId = extractPoiId(item.location_poi_link);
+                    if (poiId !== null) {
+                        return (
+                            <View style={{ marginTop: 16, alignSelf: 'flex-start' }}>
+                                <PrimaryButton title="Get Directions" onPress={() => navigateToPoi(router, poiId)} />
+                            </View>
+                        );
+                    }
+                    return null;
+                })()}
             </View>
         </Animated.View>
     );
@@ -190,6 +198,9 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     trailItemContainer: {
         marginBottom: 20,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.outlineVariant,
     },
 
     trailHeaderRow: {

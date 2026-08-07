@@ -1,20 +1,19 @@
 import AppText from "@/src/components/AppText";
+import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
     InteractionManager,
-    ScrollView,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
     View
 } from "react-native";
+import Animated from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated from "react-native-reanimated";
-import { useScrollDirection } from "@/src/hooks/useScrollDirection";
 
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
@@ -22,12 +21,73 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { extractPoiId, navigateToPoi } from "@/src/utils/mapUtils";
 import { openExternalLink } from "@/src/utils/openLink";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith("#") ? color : `#${color}`;
+};
+
+const formatEventDateTime = (startStr: string, endStr?: string) => {
+    if (!startStr) return "";
+
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const parsePart = (str: string) => {
+        const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(.*))?/);
+        if (match) {
+            const day = parseInt(match[1], 10);
+            const monthIndex = parseInt(match[2], 10) - 1;
+            const year = match[3];
+            let time = (match[4] || "").trim();
+            time = time.replace(/:00/g, "").replace(/\s+/g, "").toLowerCase();
+            if (monthIndex >= 0 && monthIndex < 12) {
+                return { day, month: MONTHS[monthIndex], year, time };
+            }
+        }
+        
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/:00/g, "").replace(/\s+/g, "").toLowerCase();
+            return {
+                day: d.getDate(),
+                month: MONTHS[d.getMonth()],
+                year: d.getFullYear(),
+                time: timeStr !== "invaliddate" ? timeStr : ""
+            };
+        }
+        return null;
+    };
+
+    const start = parsePart(startStr);
+    if (!start) return startStr + (endStr ? ` - ${endStr}` : "");
+
+    let result = `${start.month} ${start.day}, ${start.year}`;
+    if (start.time) {
+        result += ` ${start.time}`;
+    }
+
+    if (endStr) {
+        const end = parsePart(endStr);
+        if (end) {
+            if (start.day === end.day && start.month === end.month && start.year === end.year) {
+                if (end.time) {
+                    result += `-${end.time}`;
+                }
+            } else {
+                result += ` - ${end.month} ${end.day}, ${end.year}`;
+                if (end.time) {
+                    result += ` ${end.time}`;
+                }
+            }
+        } else {
+            result += ` - ${endStr}`;
+        }
+    }
+
+    return result;
 };
 
 export default function EventDetailScreen() {
@@ -40,9 +100,13 @@ export default function EventDetailScreen() {
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
-    const event = eventsData?.find(
-        (e: EventsData, index: number) => String(e.id || index) === String(id)
-    );
+    const event = React.useMemo(() => {
+        return eventsData?.find(
+            (e: EventsData) => String(e.id) === String(id)
+        );
+    }, [eventsData, id]);
+
+    const poiId = React.useMemo(() => extractPoiId(event?.location_poi_link), [event?.location_poi_link]);
 
     const rawDescription = event?.full_description || "";
 
@@ -91,16 +155,16 @@ export default function EventDetailScreen() {
     }
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            <Animated.ScrollView 
-                contentContainerStyle={styles.scrollContent} 
+            <Animated.ScrollView
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={scrollHandler}
                 scrollEventThrottle={16}
@@ -127,9 +191,11 @@ export default function EventDetailScreen() {
                             style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
                             contentFit="cover"
                         />
-                        <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
-                            <PrimaryButton title="Get Directions" onPress={() => { }} />
-                        </View>
+                        {poiId !== null ? (
+                            <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
+                                <PrimaryButton title="Get Directions" onPress={() => navigateToPoi(router, poiId)} />
+                            </View>
+                        ) : null}
                     </View>
                 ) : null}
 
@@ -140,8 +206,7 @@ export default function EventDetailScreen() {
                         <View style={styles.infoRow}>
                             <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
                             <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
-                                {event["start_date_&_time"]}
-                                {isValidData(event["end_date_&_time"]) ? ` - ${event["end_date_&_time"]}` : ""}
+                                {formatEventDateTime(event["start_date_&_time"] as string, isValidData(event["end_date_&_time"]) ? event["end_date_&_time"] as string : undefined)}
                             </AppText>
                         </View>
                     ) : null}

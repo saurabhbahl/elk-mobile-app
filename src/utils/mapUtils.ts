@@ -116,3 +116,38 @@ export function getTurnInstruction(bearing1: number, bearing2: number): { text: 
   
   return { text: 'Continue Straight', icon: 'straight' };
 }
+
+/**
+ * Extracts a POI ID from an ACF relationship field, handling both arrays of objects
+ * arrays of IDs, or single IDs/Objects.
+ */
+export function extractPoiId(poiLinkField: any): number | null {
+  if (!poiLinkField) return null;
+  
+  if (Array.isArray(poiLinkField) && poiLinkField.length > 0) {
+      const item = poiLinkField[0];
+      if (typeof item === 'number') return item;
+      if (typeof item === 'string') return parseInt(item, 10) || null;
+      if (typeof item === 'object') {
+          return item?.ID || item?.id || null;
+      }
+  }
+  
+  if (typeof poiLinkField === 'number') return poiLinkField;
+  if (typeof poiLinkField === 'string') return parseInt(poiLinkField, 10) || null;
+  if (typeof poiLinkField === 'object') {
+      return poiLinkField?.ID || poiLinkField?.id || null;
+  }
+  
+  return null;
+}
+
+/**
+ * Initiates routing to a specific POI on the Map screen.
+ */
+export function navigateToPoi(router: any, poiId: number) {
+  router.push({
+      pathname: '/map',
+      params: { routeToWaypointId: poiId, navRequestId: Date.now().toString() }
+  });
+}
