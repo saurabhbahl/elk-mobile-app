@@ -18,7 +18,7 @@ const angle = Math.atan2(height, width) * (180 / Math.PI);
 
 export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { brandData, apiStatus } = useAppContent();
+    const { brandData, apiStatus, syncStatusText, syncProgress, syncError, performInitialSync } = useAppContent();
     const bgColor = brandData?.brand_color_primary || "#000000";
     const secColor = brandData?.brand_color__secondary || "#ea0b0b";
 
@@ -54,9 +54,30 @@ export default function LandingScreen() {
                         ) : null}
 
                         {apiStatus === 'loading' ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
-                                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                                <AppText style={{ fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}>Loading...</AppText>
+                            <View style={{ alignItems: 'center' }}>
+                                {syncError ? (
+                                    <>
+                                        <AppText style={{ fontSize: 12, color: '#FF5252', textAlign: 'center', marginBottom: 16 }}>{syncError}</AppText>
+                                        <TouchableOpacity
+                                            style={[styles.button, secColor ? { backgroundColor: secColor } : {}]}
+                                            onPress={performInitialSync}
+                                        >
+                                            <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>Retry Setup</AppText>
+                                        </TouchableOpacity>
+                                    </>
+                                ) : (
+                                    <>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
+                                            <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                                            <AppText style={{ fontSize: 14, fontWeight: 'bold', color: '#FFFFFF' }}>
+                                                {syncStatusText || 'Loading...'}
+                                            </AppText>
+                                        </View>
+                                        <AppText style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.7)', marginTop: 4 }}>
+                                            {Math.round(syncProgress * 100)}%
+                                        </AppText>
+                                    </>
+                                )}
                             </View>
                         ) : (
                             <TouchableOpacity

@@ -323,7 +323,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         checkMapStatus,
     } = useOfflineMap();
 
-    const [initialSyncPhase, setInitialSyncPhase] = useState<'idle' | 'content' | 'map' | 'complete'>('idle');
+    const [initialSyncPhase, setInitialSyncPhase] = useState<'idle' | 'content' | 'map' | 'routes' | 'complete'>('idle');
 
     const [brandData, setBrandData] = useState<AppBranding | null>(null);
     const [popupData, setPopupData] = useState<PopupContent | null>(null);
@@ -346,7 +346,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [navigationData, setNavigationData] = useState<NavigationData[] | null>(null);
     const [poisData, setPoisData] = useState<MappedPoisData[] | null>(null);
 
-    const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('fetching');
+    const [apiStatus, setApiStatus] = useState<'fetching' | 'loading' | 'ready'>('loading');
 
     // Sync states
     const [isSyncing, setIsSyncing] = useState(false);
@@ -358,7 +358,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         if (initialSyncPhase === 'map' && isMapDownloading) {
             const overallProgress = 0.3 + mapDownloadProgress * 0.7; // Scale 30% - 100%
             setSyncProgress(overallProgress);
-            setSyncStatusText("Downloading offline map...");
+            setSyncStatusText("Downloading map data...");
         }
     }, [initialSyncPhase, isMapDownloading, mapDownloadProgress]);
 
@@ -491,7 +491,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
             // Phase 2: Map sync
             setInitialSyncPhase('map');
-            setSyncStatusText("Downloading offline map...");
+            setSyncStatusText("Downloading map data...");
             setSyncProgress(0.3);
 
             try {
@@ -507,6 +507,31 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             } catch (mapErr) {
                 console.warn("[Sync] Error downloading map during initial sync:", mapErr);
             }
+
+            // // Phase 3: Route preload
+            // setInitialSyncPhase('routes');
+            // setSyncStatusText("Downloading map data...");
+            // setSyncProgress(0.9);
+
+            // try {
+            //     const recordsMap = appRepository.getAllRecords();
+            //     if (recordsMap.pois) {
+            //         const mappedPois = (recordsMap.pois as any[]).map((poi: any) => ({
+            //             id: poi.id || 0,
+            //             coordinate: {
+            //                 latitude: parseFloat(poi.latitude || '0'),
+            //                 longitude: parseFloat(poi.longitude || '0'),
+            //             }
+            //         }));
+
+            //         const { preloadAllRoutesHelper } = require('../hooks/useRoutePreloader');
+            //         await preloadAllRoutesHelper(mappedPois, (p: any) => {
+            //             setSyncProgress(0.9 + (p.percentage / 100) * 0.1);
+            //         });
+            //     }
+            // } catch (err) {
+            //     console.warn("[Sync] Route preloading failed:", err);
+            // }
 
             setInitialSyncPhase('complete');
             loadFromSQLite();
@@ -559,7 +584,8 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             // Trigger background delta checks on boot
             refreshData();
         } else {
-            setApiStatus('fetching'); // Triggers SyncProgressScreen overlay
+            setApiStatus('loading');
+            performInitialSync();
         }
     }, []);
 

@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Navbar from "@/src/components/Navbar";
 import OfflinePopup from "@/src/components/OfflinePopup";
 import QuickLinks from "@/src/components/QuickLinks";
-import SyncProgressScreen from "@/src/components/SyncProgressScreen";
+
 import { useAppContentData, useAppContentSync } from "@/src/contexts/AppContentContext";
 
 import {
@@ -216,9 +216,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
     };
   }, [apiStatus]);
 
-  if (apiStatus === 'fetching') {
-    return <SyncProgressScreen />;
-  }
+
 
   // Hide headers on splash (index) and modal routes
   const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
