@@ -110,17 +110,17 @@ export default function BottomNavbar() {
                         >
                             <Image
                                 source={item.icon}
-                                style={[styles.navIcon, { tintColor: isActive ? '#ffffff' : '#ffffff' }]}
+                                style={[styles.navIcon, { tintColor: isActive ? secondaryColor : 'rgba(255, 255, 255, 0.6)' }]}
                                 contentFit="contain"
                             />
                             <AppText style={[
                                 styles.label,
-                                { color: isActive ? '#ffffff' : '#ffffff', fontWeight: isActive ? '700' : '500' }
+                                { color: isActive ? secondaryColor : 'rgba(255, 255, 255, 0.6)', fontWeight: isActive ? '700' : '500' }
                             ]}>
                                 {item.name}
                             </AppText>
                             {isActive && (
-                                <View style={[styles.activeIndicator, { backgroundColor: primaryColor }]} />
+                                <View style={[styles.activeIndicator, { backgroundColor: secondaryColor }]} />
                             )}
                         </TouchableOpacity>
                     );

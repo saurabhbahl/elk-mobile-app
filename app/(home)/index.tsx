@@ -305,6 +305,7 @@ export default function HomeScreen() {
                                                 contentWidth={width * 0.95 - 48}
                                                 source={{ html: popupData.popup_body_copy }}
                                                 baseStyle={{
+                                                    fontFamily: 'OpenSans-Regular',
                                                     fontSize: 14,
                                                     color: "#E5E5E5",
                                                     textAlign: "center",
@@ -337,6 +338,7 @@ export default function HomeScreen() {
                                             contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
                                             source={{ html: popupData.popup_body_copy }}
                                             baseStyle={{
+                                                fontFamily: 'OpenSans-Regular',
                                                 fontSize: 14,
                                                 color: colors.onSurfaceVariant,
                                                 textAlign: "center",
@@ -505,6 +507,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     aboutKecaText: {
+        fontFamily: 'Roboto-Bold',
         color: '#FFFFFF',
         fontSize: 11,
         fontWeight: 'bold',
@@ -515,6 +518,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     welcomeIntroText: {
+        fontFamily: 'Roboto-Bold',
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
@@ -790,7 +794,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     trailName: {
         fontSize: 14,
         fontWeight: '400',
-        fontFamily: 'Lexend_500Medium',
+        fontFamily: 'OpenSans-Regular',
         color: "#FFFFFF",
     },
 

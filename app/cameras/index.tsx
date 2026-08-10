@@ -344,7 +344,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginRight: 6,
     },
     sectionTitle: {
-        fontFamily: "Lexend_500Medium",
+        fontFamily: "OpenSans-SemiBold",
         fontWeight: "500",
         fontSize: 18,
         color: colors.onSurface,
@@ -367,7 +367,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         borderColor: "#C7C7CC",
     },
     tabButtonText: {
-        fontFamily: "Lexend_500Medium",
+        fontFamily: "OpenSans-SemiBold",
         fontWeight: "500",
         fontSize: 13,
         lineHeight: 20,
@@ -407,7 +407,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     noCameraText: {
         marginTop: 8,
-        fontFamily: "Lexend_500Medium",
+        fontFamily: "OpenSans-SemiBold",
         fontWeight: "500",
         fontSize: 13,
         lineHeight: 20,

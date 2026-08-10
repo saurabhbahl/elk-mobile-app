@@ -151,7 +151,7 @@ export default function SettingsScreen() {
         <AppText style={{
           color: '#FFFFFF',
           fontSize: 18,
-          fontFamily: "Lexend_500Medium",
+          fontFamily: "OpenSans-SemiBold",
         }}>
           Settings
         </AppText>

@@ -169,7 +169,7 @@ export default function TipsScreen() {
                             <QuickLinks />
                         </View>
                         {isValidData(tipsScreenSettingsData?.screen_title) ? (
-                            <View style={{ paddingTop: 16 }}>
+                            <View style={{ marginLeft: -16 }}>
                                 <SectionHeader
                                     title={tipsScreenSettingsData?.screen_title as string}
                                     iconSource={require("../../assets/images/tips.png")}
@@ -198,7 +198,7 @@ export default function TipsScreen() {
                         ) : null}
 
                         {galleryImages.length > 0 ? (
-                            <View style={{ marginHorizontal: 16, alignItems: 'center' }}>
+                            <View style={{ marginHorizontal: 16, marginBottom: 16, alignItems: 'center' }}>
                                 <ImageGallerySlider images={galleryImages} width={width - 32} height={190} />
                             </View>
                         ) : null}
@@ -257,6 +257,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 8,
+        // marginTop: 16
     },
     tipTitle: {
         fontFamily: 'OpenSans-Bold',

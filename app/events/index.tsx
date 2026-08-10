@@ -80,7 +80,7 @@ export default function EventsScreen() {
                                 <QuickLinks />
                             </View>
                             {eventSettingsData?.screen_title ? (
-                                <View style={{ paddingHorizontal: 16 }}>
+                                <View>
                                     <SectionHeader
                                         title={eventSettingsData.screen_title as string}
                                         iconSource={require("../../assets/images/eventicon.png")}
@@ -93,11 +93,6 @@ export default function EventsScreen() {
                             ) : null}
                         </View>
                     }
-                    showsVerticalScrollIndicator={false}
-                    initialNumToRender={6}
-                    maxToRenderPerBatch={10}
-                    windowSize={5}
-                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <AppText style={styles.emptyText}>No events available</AppText>
                     }

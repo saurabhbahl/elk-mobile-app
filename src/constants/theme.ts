@@ -119,25 +119,25 @@ export const DARK_COLORS = {
 };
 
 export const LIGHT_FONTS = {
-  heading: 'EBGaramond-Medium',
-  headingSemiBold: 'EBGaramond-SemiBold',
-  headingBold: 'EBGaramond-Bold',
-  body: 'Inter-Regular',
-  bodyMedium: 'Inter-Medium',
-  bodySemiBold: 'Inter-SemiBold',
-  bodyBold: 'Inter-Bold',
-  caption: 'Inter-Medium',
+  heading: 'OpenSans-Regular',
+  headingSemiBold: 'OpenSans-SemiBold',
+  headingBold: 'OpenSans-Bold',
+  body: 'OpenSans-Regular',
+  bodyMedium: 'OpenSans-SemiBold',
+  bodySemiBold: 'OpenSans-SemiBold',
+  bodyBold: 'OpenSans-Bold',
+  caption: 'OpenSans-Regular',
 };
 
 export const DARK_FONTS = {
-  heading: 'EBGaramond-Medium',
-  headingSemiBold: 'EBGaramond-SemiBold',
-  headingBold: 'EBGaramond-Bold',
-  body: 'Inter-Regular',
-  bodyMedium: 'Inter-Medium',
-  bodySemiBold: 'Inter-SemiBold',
-  bodyBold: 'Inter-Bold',
-  caption: 'Inter-Medium',
+  heading: 'OpenSans-Regular',
+  headingSemiBold: 'OpenSans-SemiBold',
+  headingBold: 'OpenSans-Bold',
+  body: 'OpenSans-Regular',
+  bodyMedium: 'OpenSans-SemiBold',
+  bodySemiBold: 'OpenSans-SemiBold',
+  bodyBold: 'OpenSans-Bold',
+  caption: 'OpenSans-Regular',
 };
 
 // Default exports for backwards compatibility

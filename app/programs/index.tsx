@@ -86,7 +86,7 @@ export default function ProgramsScreen() {
                                 <QuickLinks />
                             </View>
                             {isValidData(programsSettingData?.screen_title) ? (
-                                <View style={{ paddingHorizontal: 16 }}>
+                                <View>
                                     <SectionHeader
                                         title={programsSettingData?.screen_title as string}
                                         iconSource={require("../../assets/images/programicon.png")}

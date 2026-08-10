@@ -107,7 +107,7 @@ export default function RentalDetailScreen() {
 
                 {/* Heading Row */}
                 {isValidData(rental.rental_name) ? (
-                    <View style={{ paddingHorizontal: 0 }}>
+                    <View>
                         <SectionHeader
                             title={rental.rental_name as string}
                             iconSource={require("../../assets/images/rentals.png")}

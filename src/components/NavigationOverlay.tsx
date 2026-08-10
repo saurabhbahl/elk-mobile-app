@@ -1,15 +1,17 @@
 import AppText from "@/src/components/AppText";
+import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Animated,
+import {
+  Animated,
   PanResponder,
+  Platform,
   StyleSheet,
   TouchableOpacity,
-  View,
-  Platform } from "react-native";
-import { MaterialIcons } from '@expo/vector-icons';
+  View
+} from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../context/ThemeContext';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export interface TurnInstruction {
   text: string;
@@ -63,7 +65,44 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   // Top of instruction card sits just below the NavigationHeader (~80 + insets.top)
   const headerHeight = 80 + insets.top;
 
-  const [timePart, timeUnit] = (timeRemaining || '0 min').split(' ');
+  let formattedTimePart = '0';
+  let formattedTimeUnit = 'min';
+
+  const timeMatch = (timeRemaining || '0 min').match(/^(\d+)\s*min$/i);
+  if (timeMatch) {
+    const totalMinutes = parseInt(timeMatch[1], 10);
+    if (totalMinutes < 60) {
+      formattedTimePart = totalMinutes.toString();
+      formattedTimeUnit = 'min';
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      if (hours < 24) {
+        if (minutes > 0) {
+          formattedTimePart = `${hours}h`;
+          formattedTimeUnit = `${minutes}m`;
+        } else {
+          formattedTimePart = hours.toString();
+          formattedTimeUnit = 'hr';
+        }
+      } else {
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        if (remainingHours > 0) {
+          formattedTimePart = `${days}d`;
+          formattedTimeUnit = `${remainingHours}hr`;
+        } else {
+          formattedTimePart = days.toString();
+          formattedTimeUnit = 'd';
+        }
+      }
+    }
+  } else {
+    const parts = (timeRemaining || '0 min').split(' ');
+    formattedTimePart = parts[0] || '0';
+    formattedTimeUnit = parts[1] || 'min';
+  }
+
   const [distPart, distUnit] = (distanceRemaining || '0.0 mi').split(' ');
 
   const iconName = getTurnIcon(nextInstruction.text) as never;
@@ -173,8 +212,8 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
             <View style={styles.statItem}>
               <AppText style={styles.statLabel}>TIME</AppText>
               <AppText style={styles.statValue}>
-                {timePart || '0'}
-                <AppText style={styles.statUnit}> {timeUnit || 'min'}</AppText>
+                {formattedTimePart || '0'}
+                <AppText style={styles.statValue}> {formattedTimeUnit || 'min'}</AppText>
               </AppText>
             </View>
             <View style={styles.statDivider} />

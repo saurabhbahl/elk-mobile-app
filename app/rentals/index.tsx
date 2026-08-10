@@ -62,7 +62,7 @@ export default function RentalsScreen() {
                 <QuickLinks />
             </View>
             {isValidData(rentalSettingsData?.screen_title) ? (
-                <View style={{ paddingHorizontal: 16 }}>
+                <View>
                     <SectionHeader
                         title={rentalSettingsData?.screen_title as string}
                         iconSource={require("../../assets/images/rentals.png")}

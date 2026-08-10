@@ -1,6 +1,7 @@
 import AppText from "@/src/components/AppText";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
+import { router } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
@@ -12,7 +13,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
@@ -20,8 +20,8 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "@/src/utils/validation";
+import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -136,7 +136,7 @@ export default function TrailsScreen() {
                                 <QuickLinks />
                             </View>
                             {isValidData(trailSettingsData?.screen_title) ? (
-                                <View style={{ paddingHorizontal: 16 }}>
+                                <View>
                                     <SectionHeader
                                         title={trailSettingsData?.screen_title as string}
                                         iconSource={require("../../assets/images/trailsicon.png")}

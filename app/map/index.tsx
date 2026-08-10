@@ -957,7 +957,7 @@ function MapScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <AppText style={styles.loadingText}>Downloading Offline Map...</AppText>
+        <AppText style={styles.loadingText}>Downloading Map Data...</AppText>
         <AppText style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8, marginBottom: 24 }}>
           {downloadProgress < 0 ? 'Starting...' : `${Math.max(0, pct)}%`}
         </AppText>
@@ -1506,7 +1506,7 @@ function MapScreen() {
         {/* ── Download consent overlay ── */}
         {showConsentOverlay && (
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalCard, { width: windowWidth * 0.95, height: windowWidth * 0.82, padding: 24, justifyContent: 'center', maxWidth: '100%', marginTop: -120 }]}>
+            <View style={[styles.modalCard, { width: windowWidth * 0.95, height: windowWidth * 0.82, padding: 24, justifyContent: 'center', maxWidth: '100%' }]}>
               {/* Close Button */}
               <TouchableOpacity
                 style={styles.closeButton}
