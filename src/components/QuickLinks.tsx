@@ -76,7 +76,7 @@ export default function QuickLinks() {
                             <WireframePlaceholder style={styles.menuCardImage} />
                         )}
                         <View style={styles.menuCardTitleContainer}>
-                            <AppText style={[styles.menuCardTitle, isActive && { color: primaryColor }]} numberOfLines={1}>{item.nav_item_label}</AppText>
+                            <AppText style={[styles.menuCardTitle, isActive && { color: primaryColor }]} numberOfLines={2}>{item.nav_item_label}</AppText>
                         </View>
                     </TouchableOpacity>
                 );
@@ -108,10 +108,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         paddingHorizontal: 16,
         paddingVertical: 12,
         gap: 12,
+        alignItems: 'stretch',
     },
     menuCard: {
         width: 120,
-        height: 90,
         borderRadius: 12,
         borderBottomWidth: 4,
         borderBottomColor: 'transparent',
@@ -123,19 +123,20 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         elevation: 2,
     },
     menuCardImage: {
-        flex: 2,
+        height: 70,
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
         overflow: 'hidden',
     },
     menuCardTitleContainer: {
-        flex: 1,
+        flexGrow: 1,
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: colors.outlineVariant,
         paddingHorizontal: 4,
+        paddingVertical: 8,
         borderBottomLeftRadius: 8,
         borderBottomRightRadius: 8,
         overflow: 'hidden',
@@ -144,5 +145,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 11,
         fontFamily: 'OpenSans-SemiBold',
         color: colors.onSurface,
+        textAlign: 'center',
     },
 });

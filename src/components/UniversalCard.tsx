@@ -217,6 +217,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         flex: 1,
         width: '100%',
         position: 'relative',
+        backgroundColor: '#ffffff'
     },
     bottomSection: {
         width: '100%',
@@ -226,9 +227,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         paddingVertical: 20,
         justifyContent: 'space-between',
         backgroundColor: primaryColor,
-        borderRadius: 10,
         overflow: 'hidden',
-        marginTop: -10
     },
     textCol: {
         flex: 1,

@@ -21,6 +21,7 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   BackHandler,
   Easing,
@@ -105,7 +106,7 @@ function MapScreen() {
 
   const navAreaAnimatedStyle = useAnimatedStyle(() => {
     return {
-      maxHeight: withTiming(showHeader ? 300 : 0, { duration: 250 }),
+      maxHeight: withTiming(showHeader ? 500 : 0, { duration: 250 }),
       opacity: withTiming(showHeader ? 1 : 0, { duration: 250 }),
     };
   });
@@ -545,6 +546,24 @@ function MapScreen() {
       // Build ordered list of waypoint IDs
       const allIds = [from.id, ...stops.map(s => s.id), to.id];
 
+      if (!from?.coordinate || !to?.coordinate) {
+        setTimeout(() => Alert.alert('Route Not Available', 'Missing location data for routing.'), 300);
+        setIsCalculatingRoute(false);
+        isNavInFlightRef.current = false;
+        return;
+      }
+
+      // Block routes that span unrealistic distances (e.g., across oceans)
+      const straightLineDist = calcDistance(from.coordinate, to.coordinate);
+      if (straightLineDist > 5000000) { // 5000 km (~3100 miles)
+        setTimeout(() => {
+          Alert.alert('Location Too Far', 'This place is too far away. Please choose a closer location.');
+        }, 300);
+        setIsCalculatingRoute(false);
+        isNavInFlightRef.current = false;
+        return;
+      }
+
       // Get route from SQLite cache (falls back to OSRM if not cached)
       const result = await getRouteBetween(
         from.id,
@@ -556,7 +575,11 @@ function MapScreen() {
       );
 
       if (!result.coordinates || result.coordinates.length < 2) {
-        alert('No route found. Please check your connection or try another destination.');
+        setTimeout(() => {
+          Alert.alert('Route Not Available', 'No route found. Please check your connection or try another destination.');
+        }, 300);
+        setIsCalculatingRoute(false);
+        isNavInFlightRef.current = false;
         return;
       }
 
@@ -1220,6 +1243,17 @@ function MapScreen() {
           </View>
         )}
 
+
+        {/* ── Processing Indicator (Floating on Map) ── */}
+        {isCalculatingRoute && !showPointPicker && (
+          <View style={{ position: 'absolute', top: 350, left: 0, right: 0, alignItems: 'center', zIndex: 100 }} pointerEvents="none">
+            <View style={{ backgroundColor: isDark ? '#2E3B2F' : '#FFFFFF', padding: 12, borderRadius: 22, alignItems: 'center', flexDirection: 'row', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }}>
+              <ActivityIndicator size="small" color={brandPrimary || colors.primary} style={{ marginRight: 12 }} />
+              <AppText style={{ fontSize: 14, fontFamily: 'OpenSans-SemiBold', color: isDark ? '#FFFFFF' : '#000000' }}>Processing...</AppText>
+            </View>
+          </View>
+        )}
+
         {/* Full-width Title & Search bar + Side Controls */}
         {!isNavigating && !showPointPicker && !isSelectingPin && (
           <>
@@ -1232,9 +1266,11 @@ function MapScreen() {
                   <QuickLinks />
                 </View>
               </Reanimated.View>
+
+
               {!isSearching ? (
                 <View style={styles.fullWidthHeaderRow}>
-                  <View style={{ flex: 1, marginTop: -8 }}>
+                  <View style={{ flex: 1, marginTop: 4 }}>
                     <SectionHeader
                       title={isValidData(mapSettingsData?.screen_title) ? (mapSettingsData?.screen_title ?? "") : ""}
                       iconSource={require('../../assets/images/mapicon.png')}
@@ -1242,6 +1278,7 @@ function MapScreen() {
                       secondaryColor={brandSecondary || "#ea0b0b"}
                       isDark={isDark}
                     />
+                    {/* ── Processing Indicator removed from here ── */}
                   </View>
                 </View>
               ) : (
@@ -1269,6 +1306,7 @@ function MapScreen() {
                         }, 200);
                       }}
                     />
+
                     <TouchableOpacity onPress={() => {
                       if (searchQuery.length > 0) {
                         setSearchQuery('');
@@ -1368,7 +1406,11 @@ function MapScreen() {
             setIsSelectingPin(true);
             setShowPointPicker(false);
           }}
-          onStartNavigation={startActualNavigation}
+          onStartNavigation={(from, to, stops) => {
+            // Manual route via RoutePlanner overrides the "go back" behavior
+            hasHandledNavParam.current = false;
+            startActualNavigation(from, to, stops);
+          }}
         />
 
         {/* ── Navigation mode: premium header + HUD ── */}
@@ -1436,15 +1478,6 @@ function MapScreen() {
                 Move map to place {pinPickerType === 'start' ? 'start' : pinPickerType === 'stop' ? 'stop' : 'destination'}
               </AppText>
             </View>
-
-            {/* Debug Coordinate Display (to verify drop pin accuracy) */}
-            <View style={[styles.pinLabelBar, { top: insets.top + 60, backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-              <AppText style={{ color: 'white', fontSize: 12, fontFamily: fonts.body, textAlign: 'center' }}>
-                Center Lat: {dropPinPreviewCoordinate?.latitude?.toFixed(6) ?? mapCenter?.lat?.toFixed(6) ?? '...'}{'\n'}
-                Center Lng: {dropPinPreviewCoordinate?.longitude?.toFixed(6) ?? mapCenter?.lng?.toFixed(6) ?? '...'}
-              </AppText>
-            </View>
-
             {/* Compass direction indicator */}
             {location && (
               <View style={[styles.compassContainer, { top: insets.top + 60 }]}>
@@ -1456,7 +1489,7 @@ function MapScreen() {
             )}
 
             {/* Bottom confirm / cancel */}
-            <View style={[styles.pinActionBar, { bottom: insets.bottom }]}>
+            <View style={[styles.pinActionBar, { bottom: insets.bottom + 100 }]}>
               <TouchableOpacity
                 style={styles.pinCancelBtn}
                 onPress={() => { setIsSelectingPin(false); setShowPointPicker(true); }}

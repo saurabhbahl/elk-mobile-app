@@ -89,6 +89,15 @@ export default function WaypointDetailsScreen() {
                 <Animated.ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    onScroll={(e) => {
+                        const y = e.nativeEvent.contentOffset.y;
+                        if (y > 50 && showHeader) {
+                            setShowHeader(false);
+                        } else if (y <= 10 && !showHeader) {
+                            setShowHeader(true);
+                        }
+                    }}
+                    scrollEventThrottle={16}
                 >
                     {/* Collapsible Header outside the Pressable */}
                     <Animated.View style={[navAreaAnimatedStyle, { marginHorizontal: -20, marginTop: -16, overflow: 'hidden' }]} pointerEvents={showHeader ? 'auto' : 'none'}>
@@ -96,7 +105,7 @@ export default function WaypointDetailsScreen() {
                         <QuickLinks />
                     </Animated.View>
 
-                    <Pressable onPress={() => setShowHeader(p => !p)} style={{ flex: 1 }} pointerEvents="box-none">
+                    <View style={{ flex: 1 }} pointerEvents="box-none">
                         <Animated.View style={contentAnimatedStyle}>
                     {/* Title */}
                     {isValidData(waypoint.title) ? (
@@ -258,7 +267,7 @@ export default function WaypointDetailsScreen() {
                         })()
                     ) : null */}
                         </Animated.View>
-                    </Pressable>
+                    </View>
                 </Animated.ScrollView>
             </Animated.View>
         </SafeAreaView>

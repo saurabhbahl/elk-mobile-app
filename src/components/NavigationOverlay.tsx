@@ -188,8 +188,11 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         ]}
         pointerEvents="box-none"
       >
-        <Animated.View style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom + 34 }]}>
-          <View style={styles.panelHandleHitArea} {...panelPanResponder.panHandlers}>
+        <Animated.View
+          style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom + 34 }]}
+          {...panelPanResponder.panHandlers}
+        >
+          <View style={styles.panelHandleHitArea}>
             <View style={styles.panelHandle} />
           </View>
 
@@ -281,7 +284,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       marginBottom: 4,
     },
     instructionText: {
-      fontFamily: fonts.headingBold,
+      fontFamily: 'Roboto-Bold',
       fontSize: 22,
       color: colors.primary,
       lineHeight: 26,
