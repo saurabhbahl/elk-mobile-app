@@ -24,150 +24,225 @@ export interface Waypoint {
 //     id: 1,
 //     coordinate: { latitude: 41.11601224723354, longitude: -78.52400676232403 },
 //     title: 'S.B. Elliott State Park',
-//     description: 'Take a quick hike, enjoy a picnic lunch or stay overnight in a rustic CCC-era cabin in this small wooded park.'
+//     address: '2112 Old Route 153, Penfield, PA 15849',
+//     pin_popup_summary: 'A quiet wooded park with hiking, picnicking, and rustic cabins.',
+//     full_description:
+//       'S.B. Elliott State Park is a small, peaceful park surrounded by forest. Visitors can enjoy short hikes, have a picnic, or stay overnight in a rustic cabin.'
 //   },
 //   {
 //     id: 2,
 //     coordinate: { latitude: 41.203569028195716, longitude: -78.50082818408791 },
 //     title: 'Parker Dam State Park',
-//     description: 'Watch for black swallowtail butterflies in wildflowers at edge of Parker Lake or the occasional osprey or bald eagle overhead. Walk Beaver Dam Trail to experience varied habitat types and look for sturdy beaver huts.'
+//     address: '28 Fairview Road, Penfield, PA 15849',
+//     pin_popup_summary: 'A scenic state park with a lake, trails, cabins, and abundant wildlife.',
+//     full_description:
+//       'Parker Dam State Park features a scenic lake surrounded by forest. Visitors can hike, fish, picnic, swim, camp, and explore the nearby Moshannon State Forest.'
 //   },
 //   {
 //     id: 3,
 //     coordinate: { latitude: 41.2745823150544, longitude: -78.29063643513553 },
 //     title: 'Marion Brooks Natural Area',
-//     description: 'This area is best known for its stand of white birches. In late July, blueberries and huckleberries abound here, a favorite of bears and hungry hikers. Listen for wood peckers and eastern towhee.'
+//     address: 'Quehanna Highway, Benezette, PA 15821',
+//     pin_popup_summary: 'A beautiful natural area known for its large stand of white birch trees.',
+//     full_description:
+//       'Marion Brooks Natural Area protects a large stand of white birch trees along the Quehanna Highway. Visitors can explore the forest and look for wildlife and birds.'
 //   },
 //   {
 //     id: 4,
 //     coordinate: { latitude: 41.262089466071885, longitude: -78.25830604467583 },
 //     title: 'Beaver Run Dam Viewing Area',
-//     description: 'Walk the short trail to a viewing blind and look for cavity-nesting wood ducks and hooded mergansers. Smaller nest boxes house eastern bluebirds and tree swallows. You may also see great blue heron fishing by the shore.'
+//     address: 'Quehanna Highway, Benezette, PA 15821',
+//     pin_popup_summary: 'A quiet wildlife viewing spot near Beaver Run.',
+//     full_description:
+//       'Beaver Run Dam Viewing Area provides a short trail and a wildlife viewing area near the Quehanna Highway. The surrounding wetlands and forest attract many birds and other wildlife.'
 //   },
 //   {
 //     id: 5,
 //     coordinate: { latitude: 41.22910217002885, longitude: -78.19136018336509 },
 //     title: 'Hoover Farm Viewing Area',
-//     description: 'Take the short trail to a viewing blind and look for elk, white-tailed deer, wild turkeys, and grassland birds. A longer 5-mile hike option also loops around the viewing area.'
+//     address: 'Wykoff Run Road & Quehanna Highway, Benezette, PA 15821',
+//     pin_popup_summary: 'A popular wildlife viewing area where elk and other animals gather.',
+//     full_description:
+//       'Hoover Farm has an accessible viewing blind overlooking wildlife food plots. Elk are commonly seen here, along with deer, wild turkeys, foxes, and birds.'
 //   },
 //   {
 //     id: 6,
 //     coordinate: { latitude: 41.23122243361177, longitude: -78.19167450159732 },
 //     title: 'Wyckoff Run Natural Area',
-//     description: 'Birds, birds, and more birds! At this Audubon Important Bird Area, hikers and cross-country skiers can spot a wide variety of species while exploring the Old Hoover Trail that bisects the natural area.'
+//     address: 'Wykoff Run Road, Benezette, PA 15821',
+//     pin_popup_summary: 'A forested natural area known for wildlife, birds, and quiet trails.',
+//     full_description:
+//       'Wyckoff Run Natural Area protects a large forested area with habitat for many birds and other wildlife. The Old Hoover Trail passes through the area.'
 //   },
 //   {
 //     id: 7,
 //     coordinate: { latitude: 41.34185363316541, longitude: -78.36812624789334 },
 //     title: 'Winslow Hill Viewing Area',
-//     description: 'Once strip-mined, this reclaimed site provides good elk viewing with more parking off Dewey Road. About 1/4 mile further on Winslow Hill Road, look for the Woodring Farm Trail, a 3/4 mile walking path to another viewing area.'
+//     address: 'Winslow Hill Road, Benezette, PA 15821',
+//     pin_popup_summary: 'One of Pennsylvania’s best-known spots for watching elk.',
+//     full_description:
+//       'Winslow Hill Viewing Area overlooks open meadows that attract elk and other wildlife. Early morning and evening are popular times for wildlife viewing.'
 //   },
 //   {
 //     id: 8,
 //     coordinate: { latitude: 41.34608984365709, longitude: -78.3468193745491 },
 //     title: "Dent's Run Viewing Area",
-//     description: 'Enjoy panoramic views of grazing fields to the north and east. At dawn and dusk watch for elk, white-tailed deer, wild turkeys or red foxes that may be hunting rodents.'
+//     address: 'Winslow Hill Road, Benezette, PA 15821',
+//     pin_popup_summary: 'A scenic overlook with excellent opportunities to see elk and wildlife.',
+//     full_description:
+//       'Dents Run Viewing Area offers wide views of open fields surrounded by forest. Elk are commonly seen here, especially during the morning and evening.'
 //   },
 //   {
 //     id: 9,
 //     coordinate: { latitude: 41.36113527056216, longitude: -78.32069820755413 },
 //     title: 'Pine Tree Trail Natural Area',
-//     description: 'The trail leads to a 12-acre white pine stand that sprouted in farm fields in the 1800s. As you walk beneath the giant pines listen for black-throated green warblers calling overhead.'
+//     address: 'West Hicks Run Road, Benezette, PA 15832',
+//     pin_popup_summary: 'A historic trail leading to a large stand of white pine trees.',
+//     full_description:
+//       'Pine Tree Trail is a self-guided interpretive trail through Elk State Forest. The trail leads to a large stand of white pine and passes remains of an old homestead.'
 //   },
 //   {
 //     id: 10,
 //     coordinate: { latitude: 41.39434245517357, longitude: -78.28294584462267 },
 //     title: 'Thunder Mtn. Equestrian Trail',
-//     description: 'The trail consists of 53 miles of roads and trails in various loops. You will have a good chance of spotting elk far from busier viewing sites. Hick’s Run is also excellent for trout fishing.'
+//     address: 'East Hicks Run Road, Benezette, PA 15821',
+//     pin_popup_summary: 'A large trail system offering horseback riding and forest views.',
+//     full_description:
+//       'Thunder Mountain Equestrian Trail includes about 53 miles of designated trails and roads through Elk State Forest. It is popular with horseback riders and outdoor enthusiasts.'
 //   },
 //   {
 //     id: 11,
 //     coordinate: { latitude: 41.36301706320921, longitude: -78.24736568225684 },
 //     title: 'Hicks Run Wildlife Viewing Area',
-//     description: 'This is one of the premier elk viewing areas along the drive, with a handicap accessible viewing blind that provides incredible views and wildlife photo opportunities.'
+//     address: 'Hicks Run Road, Benezette, PA 15821',
+//     pin_popup_summary: 'An accessible wildlife blind overlooking fields where elk often feed.',
+//     full_description:
+//       'Hicks Run Wildlife Viewing Area features a covered viewing blind overlooking wildlife food plots. Elk and other wildlife can often be seen from the area.'
 //   },
 //   {
 //     id: 12,
 //     coordinate: { latitude: 41.32626640629507, longitude: -78.11596020545255 },
 //     title: 'Bucktail Path/Johnson Run Natural Area',
-//     description: 'The rugged trail follows a private road up the mountain. From the ridge top you can see old growth hemlocks and pines growing on the steep slopes far down in Johnson Run.'
+//     address: 'Elk State Forest Route 120, Driftwood, PA 15832',
+//     pin_popup_summary: 'A rugged forest area with old-growth trees and steep mountain terrain.',
+//     full_description:
+//       'Johnson Run Natural Area protects a rugged landscape with steep valleys, streams, boulders, and old-growth hemlock and hardwood forest.'
 //   },
 //   {
 //     id: 13,
 //     coordinate: { latitude: 41.28278403212881, longitude: -78.09073690503848 },
 //     title: 'Lower Jerry Run Natural Area',
-//     description: 'Immerse yourself in the wilderness at Lower Jerry Run Natural Area, where old-growth hemlocks more than 300 years old tower 120 feet toward the sky. Watch for rattlesnakes along the trail.'
+//     address: 'Elk State Forest, Sinnemahoning, PA 15861',
+//     pin_popup_summary: 'A remote natural area known for old-growth pine and hemlock forest.',
+//     full_description:
+//       'Lower Jerry Run Natural Area protects an old-growth forest of pine and hemlock. The area is remote and best suited for visitors prepared for backcountry hiking.'
 //   },
 //   {
 //     id: 14,
 //     coordinate: { latitude: 41.47674758301308, longitude: -78.05649766071 },
 //     title: 'Sinnemahoning State Park Viewing Area',
-//     description: 'The site is at the north end of the park, just 1/4 mile from the Wildlife Center. A viewing blind offers opportunities to observe white-tailed deer, elk, and eagles in the fields along Sinnemahoning Creek and the Lowlands Trail.'
+//     address: '4843 Park Road, Austin, PA 16720',
+//     pin_popup_summary: 'A wildlife viewing area where visitors can look for elk, deer, and eagles.',
+//     full_description:
+//       'The viewing area at Sinnemahoning State Park overlooks open habitat near the creek. Visitors may see elk, white-tailed deer, bald eagles, and other wildlife.'
 //   },
 //   {
 //     id: 15,
 //     coordinate: { latitude: 41.376320041824975, longitude: -77.93213487940838 },
 //     title: 'Kettle Creek State Park',
-//     description: 'The Alvin R. Bush Dam creates the 167-acre Kettle Creek Reservoir, a stocked trout lake that is irresistible to anglers. The park’s wide variety of habitats offer multiple wildlife viewing opportunities.'
+//     address: '97 Kettle Creek Park Lane, Renovo, PA 17764',
+//     pin_popup_summary: 'A mountain park with a large reservoir, fishing, hiking, and wildlife.',
+//     full_description:
+//       'Kettle Creek State Park is surrounded by mountains and forest. The park offers fishing, boating, hiking, camping, swimming, picnicking, and wildlife viewing.'
 //   },
 //   {
 //     id: 16,
 //     coordinate: { latitude: 41.253862769958985, longitude: -77.72546860435533 },
 //     title: 'Cranberry Swamp Natural Area',
-//     description: 'At the headwaters of Cranberry Run, this open wetland is filled with rushes, sedges, and grasses surrounded by forests. It is home to swamp sparrows and common yellowthroats. When blooming, steeple bush attracts many butterflies.'
+//     address: 'Chuck Keiper Trail, Renovo, PA 17764',
+//     pin_popup_summary: 'A mountain bog surrounded by forest and rich wetland habitat.',
+//     full_description:
+//       'Cranberry Swamp Natural Area protects a 144-acre mountain bog along the Chuck Keiper Trail. The wetland provides habitat for birds, butterflies, and many native plants.'
 //   },
 //   {
 //     id: 17,
 //     coordinate: { latitude: 41.23316904127265, longitude: -77.77456368400671 },
 //     title: 'East Branch Swamp Natural Area',
-//     description: 'Early 20th-century loggers, followed by fires and a tornado, felled many trees here. It created a broad range of habitats in which wildlife abounds, including an amazing variety of wood warblers.'
+//     address: 'PA Route 144, Renovo, PA 17764',
+//     pin_popup_summary: 'A diverse wetland and forest area with excellent bird habitat.',
+//     full_description:
+//       'East Branch Swamp Natural Area is located along Route 144 and forms part of the Chuck Keiper Trail system. Its varied forest and wetland habitats support many birds and other wildlife.'
 //   },
 //   {
 //     id: 18,
 //     coordinate: { latitude: 41.23743319701814, longitude: -77.78590435027826 },
 //     title: 'Fish Dam Run Scenic View',
-//     description: 'This ridgetop vista provides impressive views westward. It is a good place to look for red-tailed hawks and American kestrels. Watch for chipping sparrows along the roadside and parking area.'
+//     address: 'PA Route 144, Renovo, PA 17764',
+//     pin_popup_summary: 'A scenic overlook with wide views of the surrounding forest.',
+//     full_description:
+//       'Fish Dam Run Scenic View provides an elevated view across the forested landscape of Sproul State Forest. It is a peaceful roadside stop for enjoying mountain and valley scenery.'
 //   },
 //   {
 //     id: 19,
 //     coordinate: { latitude: 41.18927014926793, longitude: -77.85212030610056 },
 //     title: 'Two Rock Run Scenic View',
-//     description: 'In 1990, fire killed 90 percent of the trees over 10,000 acres here. Observe natural regeneration at work. Walk two short trails to scenic viewing areas.'
+//     address: 'PA Route 144, Renovo, PA 17764',
+//     pin_popup_summary: 'A scenic area showing how the forest has recovered after a major wildfire.',
+//     full_description:
+//       'Two Rock Run was affected by a major wildfire in 1990. Today, visitors can observe the natural regeneration of the forest and enjoy short walks to scenic viewpoints.'
 //   },
 //   {
 //     id: 20,
 //     coordinate: { latitude: 41.17903395036177, longitude: -77.93798398192969 },
 //     title: 'Fields Ridge Rd Overlook',
-//     description: 'Hot air rises along these steep slopes. It provides thermals for turkey vultures, broad-winged hawks, and other raptors to soar above the West Branch of the Susquehanna River below.'
+//     address: 'Fields Ridge Road, Renovo, PA 17764',
+//     pin_popup_summary: 'A high ridge overlook with views across the West Branch Susquehanna valley.',
+//     full_description:
+//       'Fields Ridge Road Overlook provides elevated views across the forest and the West Branch of the Susquehanna River. The ridge is also a good place to watch soaring birds.'
 //   },
 //   {
 //     id: 21,
 //     coordinate: { latitude: 41.16184794307325, longitude: -77.89771115587743 },
 //     title: 'State Game Lands 100',
-//     description: 'Dawn and dusk are the best times to look and listen for the forest’s resident owls. Both barred and great-horned owls perch here, waiting for prey to stir.'
+//     address: 'State Game Lands 100, Renovo, PA 17764',
+//     pin_popup_summary: 'A large wildlife area with forests and habitat for many species.',
+//     full_description:
+//       'State Game Lands 100 provides protected forest and wildlife habitat. Visitors can explore the area and look for birds and other wildlife, especially during quieter morning and evening hours.'
 //   },
 //   {
 //     id: 22,
 //     coordinate: { latitude: 41.07198079448926, longitude: -77.99653652313985 },
 //     title: 'German Settlement Reclamation',
-//     description: 'Reclaimed after strip mining these grasslands are habitat for golden-winged warblers and many bird species. Wild apple trees, remnants of early German Settlements, attract white-tailed deer and ruffed grouse.'
+//     address: 'State Game Lands, Renovo, PA 17764',
+//     pin_popup_summary: 'Reclaimed former mining land that now provides important wildlife habitat.',
+//     full_description:
+//       'This reclaimed landscape demonstrates how former mining land can recover into useful wildlife habitat. Open grasslands and old apple trees attract birds, deer, and other animals.'
 //   },
 //   {
 //     id: 23,
 //     coordinate: { latitude: 41.11104092013783, longitude: -78.10997639275506 },
 //     title: 'Karthaus Canoe Launch',
-//     description: 'Just upstream from the old green suspension bridge at Karthaus, this launch gives paddlers access to the West Branch Susquehanna River Water Trail, and some of the most remote paddling in the state.'
+//     address: 'Karthaus, PA 16845',
+//     pin_popup_summary: 'A river access point for paddling the scenic West Branch Susquehanna River.',
+//     full_description:
+//       'Karthaus Canoe Launch provides access to the West Branch Susquehanna River. It is a useful starting point for paddlers exploring the scenic and remote river corridor.'
 //   },
 //   {
 //     id: 24,
 //     coordinate: { latitude: 31.30851700123502, longitude: 75.5665335857824 },
 //     title: 'Custom Start Point',
-//     description: 'Starting point for the specific offline route generated.'
+//     address: 'Custom location',
+//     pin_popup_summary: 'The starting point for a custom offline route.',
+//     full_description:
+//       'This point marks the starting location for a custom offline route generated by the application.'
 //   },
 //   {
 //     id: 25,
 //     coordinate: { latitude: 31.307576157262805, longitude: 75.57061974516645 },
 //     title: 'Custom Destination',
-//     description: 'Destination point for the specific offline route generated.'
+//     address: 'Custom location',
+//     pin_popup_summary: 'The destination point for a custom offline route.',
+//     full_description:
+//       'This point marks the destination location for a custom offline route generated by the application.'
 //   },
 // ];

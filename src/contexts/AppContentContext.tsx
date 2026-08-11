@@ -449,7 +449,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                     title: poi.poi_name || '',
                     description: poi.pin_popup_summary || poi.full_description || '',
                 }));
-                setPoisData(mappedPois);
+                setPoisData(sortBySortOrder(mappedPois) as any[]);
             }
 
             console.log("[SQLite] Loaded cached data into React Context.");

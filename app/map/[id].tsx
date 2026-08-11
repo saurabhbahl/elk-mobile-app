@@ -40,7 +40,7 @@ export default function WaypointDetailsScreen() {
 
     const navAreaAnimatedStyle = useAnimatedStyle(() => {
         return {
-            maxHeight: withTiming(showHeader ? 300 : 0, { duration: 250 }),
+            maxHeight: withTiming(showHeader ? 600 : 0, { duration: 250 }),
             opacity: withTiming(showHeader ? 1 : 0, { duration: 250 }),
         };
     });
@@ -139,10 +139,10 @@ export default function WaypointDetailsScreen() {
 
                         if (sliderImages.length === 1) {
                             return (
-                                <View style={styles.imageSliderContainer}>
+                                <View style={[styles.imageSliderContainer, { height: undefined, aspectRatio: 4 / 3 }]}>
                                     <CachedImage
                                         uri={sliderImages[0]}
-                                        style={{ width: "100%", height: "100%", aspectRatio: undefined }}
+                                        style={{ width: "100%", height: "100%" }}
                                         contentFit="cover"
                                     />
                                 </View>

@@ -185,6 +185,7 @@ function MapScreen() {
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(null);
+  const [highlightedRoute, setHighlightedRoute] = useState<'main' | 'orange' | null>(null);
   const [location, setLocation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
@@ -499,6 +500,12 @@ function MapScreen() {
       setTimeout(() => { flatListRef.current?.scrollToIndex({ index, animated: false }); }, 50);
     }
   }, [isNavigating]);
+
+  const handleRoutePress = useCallback((route: 'main' | 'orange', coords: [number, number]) => {
+    isTappingMarker.current = true;
+    setTimeout(() => { isTappingMarker.current = false; }, 300);
+    setHighlightedRoute(route);
+  }, []);
 
   const handleScrollEnd = useCallback((event: any) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
@@ -919,30 +926,39 @@ function MapScreen() {
 
   // ── Waypoint card renderer ──────────────────────────────────────────────────
   const renderWaypointCard = useCallback(({ item }: { item: Waypoint }) => (
-    <View style={{ width: windowWidth, paddingHorizontal: 0 }}>
+    <View style={{ width: windowWidth, paddingHorizontal: 0, justifyContent: 'flex-end' }}>
       <Pressable
-        style={[styles.hotspotCard, { paddingBottom: insets.bottom + 12 }]}
+        style={[
+          styles.hotspotCard,
+          {
+            paddingBottom: insets.bottom + 12,
+            minHeight: 180 + insets.bottom,
+            justifyContent: 'space-between'
+          }
+        ]}
         onPress={(e) => e.stopPropagation()}
       >
-        <View style={styles.cardHeaderRow}>
-          <View style={styles.titleContainer}>
-            <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-            {isValidData(item.title) ? (
-              <AppText style={styles.hotspotTitle} numberOfLines={1}>
-                {item.title.toUpperCase()}
-              </AppText>
-            ) : null}
+        <View>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.titleContainer}>
+              <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
+              {isValidData(item.title) ? (
+                <AppText style={styles.hotspotTitle} numberOfLines={1}>
+                  {item.title.toUpperCase()}
+                </AppText>
+              ) : null}
+            </View>
+            <TouchableOpacity onPress={() => setSelectedWaypoint(null)} style={styles.cardCloseButton}>
+              <MaterialIcons name="close" size={14} color="white" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setSelectedWaypoint(null)} style={styles.cardCloseButton}>
-            <MaterialIcons name="close" size={14} color="white" />
-          </TouchableOpacity>
-        </View>
 
-        {isValidData(item.description) ? (
-          <AppText style={styles.hotspotDescription} numberOfLines={3}>
-            {item.description}
-          </AppText>
-        ) : null}
+          {isValidData(item.description) ? (
+            <AppText style={styles.hotspotDescription} numberOfLines={3}>
+              {item.description}
+            </AppText>
+          ) : null}
+        </View>
 
         <View style={styles.cardFooterRow}>
           <TouchableOpacity style={styles.viewMoreButton} onPress={handleViewDetails}>
@@ -968,7 +984,7 @@ function MapScreen() {
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <AppText style={{ textAlign: 'center', padding: 20, fontFamily: fonts.bodyMedium }}>
-            MapLibre requires a native build.{'\n'}Please run: npx expo run:android
+            MapLibre requires a native build.{'\n'}Please run: npx expo run
           </AppText>
         </View>
       </View>
@@ -1026,6 +1042,7 @@ function MapScreen() {
             setSelectedWaypoint(null);
             activeRouteRef.current = null;
             setRouteVersion(v => v + 1);
+            setHighlightedRoute(null);
             setShowHeader(prev => !prev);
           }}
           onRegionDidChange={(feature: any) => {
@@ -1090,6 +1107,8 @@ function MapScreen() {
             activeRouteData={activeRouteRef.current}
             routeVersion={routeVersion}
             isNavigating={isNavigating}
+            highlightedRoute={highlightedRoute}
+            onRoutePress={handleRoutePress}
           />
 
 
@@ -1355,6 +1374,33 @@ function MapScreen() {
           </>
         )}
 
+        {/* ── Route Tooltip (Custom Bottom-Left Message) ── */}
+        {highlightedRoute && !isNavigating && !showPointPicker && !isSelectingPin && (
+          <Reanimated.View
+            entering={FadeInDown.duration(300)}
+            exiting={FadeOutDown.duration(200)}
+            style={[styles.routeTooltipContainer, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}
+          >
+            <View style={styles.routeTooltipCard}>
+              <View style={[
+                styles.routeTooltipDot,
+                { backgroundColor: highlightedRoute === 'main' ? '#FFD700' : '#ff8a00' }
+              ]} />
+              <View>
+                <AppText style={styles.routeTooltipTitle}>
+                  {highlightedRoute === 'main' ? 'Elk Scenic Drive' : 'Alternate Route'}
+                </AppText>
+              </View>
+              <TouchableOpacity
+                style={styles.routeTooltipClose}
+                onPress={() => setHighlightedRoute(null)}
+              >
+                <MaterialIcons name="close" size={16} color={colors.onSurfaceVariant} />
+              </TouchableOpacity>
+            </View>
+          </Reanimated.View>
+        )}
+
         {/* ── Waypoint carousel (hidden during navigation and pin selection) ── */}
         {selectedWaypoint && !isNavigating && !showPointPicker && !isSelectingPin && (
           <Reanimated.View
@@ -1373,7 +1419,8 @@ function MapScreen() {
               getItemLayout={(_, index) => ({ length: windowWidth, offset: windowWidth * index, index })}
               initialScrollIndex={waypoints.findIndex(w => w.id === selectedWaypoint.id) !== -1 ? waypoints.findIndex(w => w.id === selectedWaypoint.id) : 0}
               removeClippedSubviews={false}
-              windowSize={5}
+              initialNumToRender={waypoints.length}
+              maxToRenderPerBatch={waypoints.length}
               onScrollToIndexFailed={(info) => {
                 setTimeout(() => { flatListRef.current?.scrollToIndex({ index: info.index, animated: false }); }, 50);
               }}
@@ -1642,6 +1689,46 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
       borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '40',
+    },
+
+    // Route Tooltip
+    routeTooltipContainer: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 90,
+    },
+    routeTooltipCard: {
+      flexDirection: 'row',
+      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+      padding: 8,
+      paddingRight: 12,
+      borderRadius: 99,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: brandPrimary + '30',
+      alignItems: 'center',
+    },
+    routeTooltipDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      marginRight: 10,
+      marginLeft: 4,
+    },
+    routeTooltipTitle: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 14,
+      color: isDark ? colors.onSurface : brandPrimary,
+    },
+    routeTooltipClose: {
+      padding: 6,
+      marginLeft: 10,
+      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
+      borderRadius: 16,
     },
     fullWidthHeaderRow: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

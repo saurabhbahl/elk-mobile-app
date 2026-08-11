@@ -49,7 +49,9 @@ export default function Navbar() {
                         />
                     ) : null}
                 </TouchableOpacity>
+            </View>
 
+            <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'flex-end', pointerEvents: 'none', marginLeft: r(55), marginTop: 170 }]}>
                 {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
                     <AnimatedImage
                         source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
@@ -79,9 +81,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     headerExplorer: {
-        height: r(160),
-        width: r(160),
-        marginTop: r(20),
+        height: r(200),
+        width: r(200),
     },
 
     leftActions: {

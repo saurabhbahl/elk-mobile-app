@@ -19,6 +19,8 @@ interface MapRouteLayersProps {
   activeRouteData: GeoJSON.FeatureCollection | null;
   routeVersion: number; // bump triggers re-render of active route
   isNavigating: boolean;
+  highlightedRoute?: 'main' | 'orange' | null;
+  onRoutePress?: (route: 'main' | 'orange', coords: [number, number]) => void;
 }
 
 /**
@@ -55,6 +57,8 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
   activeRouteData,
   routeVersion,
   isNavigating,
+  highlightedRoute,
+  onRoutePress,
 }) => {
   // ── Snake animation state ──────────────────────────────────────────────────
   const [animatedRoute, setAnimatedRoute] =
@@ -120,14 +124,32 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
     <>
       {/* ── Main scenic drive route (gold) — hidden while navigating ── */}
       {!isNavigating && (
-        <GeoJSONSource id="main-route-source" data={mainRouteFeature}>
+        <GeoJSONSource 
+          id="main-route-source" 
+          data={mainRouteFeature}
+          onPress={(e: any) => {
+            if (!onRoutePress) return;
+            let coords = null;
+            if (e?.coordinates) {
+              if (Array.isArray(e.coordinates)) coords = e.coordinates;
+              else if (typeof e.coordinates.longitude === 'number') coords = [e.coordinates.longitude, e.coordinates.latitude];
+            } else if (e?.nativeEvent?.coordinates) {
+               coords = [e.nativeEvent.coordinates.longitude, e.nativeEvent.coordinates.latitude];
+            }
+            if (!coords && (mainRouteFeature as any).features?.[0]?.geometry?.coordinates) {
+              const arr = (mainRouteFeature as any).features[0].geometry.coordinates;
+              coords = arr[Math.floor(arr.length / 2)];
+            }
+            if (coords) onRoutePress('main', coords as [number, number]);
+          }}
+        >
           <Layer
             id="main-route-line"
             type="line"
             paint={{
               'line-color': '#FFD700',
-              'line-width': 6,
-              'line-opacity': 0.8,
+              'line-width': highlightedRoute === 'main' ? 8 : 6,
+              'line-opacity': highlightedRoute === 'main' ? 1 : (highlightedRoute === 'orange' ? 0.3 : 0.8),
             }}
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
           />
@@ -136,14 +158,32 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
 
       {/* ── Orange alternate route — hidden while navigating ── */}
       {!isNavigating && (
-        <GeoJSONSource id="orange-route-source" data={orangeRouteFeature}>
+        <GeoJSONSource 
+          id="orange-route-source" 
+          data={orangeRouteFeature}
+          onPress={(e: any) => {
+            if (!onRoutePress) return;
+            let coords = null;
+            if (e?.coordinates) {
+              if (Array.isArray(e.coordinates)) coords = e.coordinates;
+              else if (typeof e.coordinates.longitude === 'number') coords = [e.coordinates.longitude, e.coordinates.latitude];
+            } else if (e?.nativeEvent?.coordinates) {
+               coords = [e.nativeEvent.coordinates.longitude, e.nativeEvent.coordinates.latitude];
+            }
+            if (!coords && (orangeRouteFeature as any).features?.[0]?.geometry?.coordinates) {
+              const arr = (orangeRouteFeature as any).features[0].geometry.coordinates;
+              coords = arr[Math.floor(arr.length / 2)];
+            }
+            if (coords) onRoutePress('orange', coords as [number, number]);
+          }}
+        >
           <Layer
             id="orange-route-casing"
             type="line"
             paint={{
               'line-color': '#ffffff',
-              'line-width': 8,
-              'line-opacity': 0.95,
+              'line-width': highlightedRoute === 'orange' ? 10 : 8,
+              'line-opacity': highlightedRoute === 'orange' ? 1 : (highlightedRoute === 'main' ? 0.3 : 0.95),
             }}
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
           />
@@ -152,8 +192,8 @@ export const MapRouteLayers: React.FC<MapRouteLayersProps> = ({
             type="line"
             paint={{
               'line-color': '#ff8a00',
-              'line-width': 5,
-              'line-opacity': 1,
+              'line-width': highlightedRoute === 'orange' ? 7 : 5,
+              'line-opacity': highlightedRoute === 'orange' ? 1 : (highlightedRoute === 'main' ? 0.3 : 1),
             }}
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
           />

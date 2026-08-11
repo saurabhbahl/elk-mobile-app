@@ -111,7 +111,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
     return (
         <TouchableOpacity style={getCardStyle()} activeOpacity={0.85} onPress={handlePress}>
             <View style={styles.imageContainer}>
-                <CachedImage uri={imageUrl} style={StyleSheet.absoluteFill} contentFit="cover" />
+                <CachedImage uri={imageUrl} style={[StyleSheet.absoluteFill, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} contentFit="cover" />
                 {badge && (
                     <View style={[styles.cardBadge, { backgroundColor: primaryColor }]}>
                         <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
@@ -217,7 +217,6 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         flex: 1,
         width: '100%',
         position: 'relative',
-        backgroundColor: '#ffffff'
     },
     bottomSection: {
         width: '100%',

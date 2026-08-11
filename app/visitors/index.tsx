@@ -37,6 +37,16 @@ export default function VisitorsCenterScreen() {
     const bgColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color__secondary);
     const images: string[] = [];
+
+    if (visitorsData?.hero) {
+        const featureImgUrl = typeof visitorsData.hero === 'string'
+            ? visitorsData.hero
+            : (visitorsData.hero as any)?.url;
+        if (typeof featureImgUrl === 'string') {
+            images.push(featureImgUrl);
+        }
+    }
+
     if (visitorsData?.image_gallery && Array.isArray(visitorsData.image_gallery)) {
         visitorsData.image_gallery.forEach((img: any) => {
             if (img?.url) images.push(img.url);

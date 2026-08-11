@@ -488,7 +488,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     welcomeBannerCard: {
         width: '100%',
-        height: 250,
+        aspectRatio: 36 / 25,
     },
 
     welcomeBannerOverlay: {
