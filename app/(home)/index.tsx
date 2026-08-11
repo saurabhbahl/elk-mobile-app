@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
 import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
+import { openExternalLink } from "@/src/utils/openLink";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -79,7 +80,7 @@ export default function HomeScreen() {
                 ) : null}
 
                 {/* Welcome Banner Card */}
-                {(isValidData(homeData?.hero_cta_button_label) || isValidData(homeData?.hero_intro_paragraph)) ? (
+                {(isValidData(homeData?.hero_cta_button_link?.title) || isValidData(homeData?.hero_intro_paragraph)) ? (
                     <Animated.View entering={FadeInUp.duration(300).delay(30)}>
                         <View style={styles.welcomeBannerContainer}>
                             <ImageBackground
@@ -87,16 +88,30 @@ export default function HomeScreen() {
                                 style={styles.welcomeBannerCard}
                                 imageStyle={{ borderRadius: 10 }}
                             >
-                                <View style={styles.welcomeBannerOverlay}>
+                                <View style={[
+                                    styles.welcomeBannerOverlay,
+                                    !isValidData(homeData?.hero_cta_button_link?.title) && { justifyContent: 'flex-end' }
+                                ]}>
                                     {/* Top Right Pill Badge: About KECA */}
-                                    {isValidData(homeData?.hero_cta_button_label) ? (
+                                    {isValidData(homeData?.hero_cta_button_link?.title) ? (
                                         <TouchableOpacity
                                             style={styles.aboutKecaBadge}
                                             activeOpacity={0.8}
-                                            onPress={() => router.push("/visitors")}
+                                            onPress={() => {
+                                                const url = homeData?.hero_cta_button_link?.url;
+                                                if (url) {
+                                                    if (url.startsWith('http')) {
+                                                        openExternalLink(url);
+                                                    } else {
+                                                        router.push(url as any);
+                                                    }
+                                                } else {
+                                                    router.push("/visitors");
+                                                }
+                                            }}
                                         >
                                             <AppText style={styles.aboutKecaText}>
-                                                {homeData?.hero_cta_button_label}
+                                                {homeData?.hero_cta_button_link?.title}
                                             </AppText>
                                         </TouchableOpacity>
                                     ) : null}

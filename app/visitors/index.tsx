@@ -15,12 +15,14 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
+import CachedImage from "@/src/components/CachedImage";
 import { openExternalLink } from "@/src/utils/openLink";
 
 const CAROUSEL_WIDTH = width - 32;
@@ -55,8 +57,16 @@ export default function VisitorsCenterScreen() {
 
     const handleOpenLink = (url: string | undefined) => {
         if (!url) return;
-        openExternalLink(url);
+        if (url.startsWith("http") || url.startsWith("tel:") || url.startsWith("mailto:")) {
+            openExternalLink(url);
+        } else {
+            router.push(url as any);
+        }
     };
+
+    const hasCta1 = isValidData(visitorsData?.cta_1_link?.title);
+    const hasCta2 = isValidData(visitorsData?.cta_2_link?.title);
+    const hasBothCtas = hasCta1 && hasCta2;
 
     return (
         <SafeAreaView
@@ -106,21 +116,32 @@ export default function VisitorsCenterScreen() {
                                 ) : null}
 
                                 {/* Call to Actions (CTA) Cards */}
-                                {(isValidData(visitorsData?.cta_1_label) || isValidData(visitorsData?.cta_2_label)) ? (
-                                    <View style={styles.ctaContainer}>
+                                {(hasCta1 || hasCta2) ? (
+                                    <View
+                                        key={hasBothCtas ? "both-ctas" : "single-cta"}
+                                        style={[styles.ctaContainer, { justifyContent: hasBothCtas ? "space-between" : "center" }]}
+                                    >
                                         {/* CTA 1: Get Directions / Address */}
-                                        {isValidData(visitorsData?.cta_1_label) ? (
+                                        {hasCta1 ? (
                                             <TouchableOpacity
-                                                style={styles.ctaCard}
+                                                style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
                                                 activeOpacity={0.9}
-                                                onPress={() => handleOpenLink((visitorsData?.cta_1_link as any)?.url)}
+                                                onPress={() => handleOpenLink(visitorsData?.cta_1_link?.url)}
                                             >
                                                 <View style={styles.ctaImagePlaceholder}>
-                                                    <Ionicons name="call-outline" size={32} color={bgColor} />
+                                                    {isValidData(visitorsData?.cta_1_image?.url) ? (
+                                                        <CachedImage
+                                                            uri={visitorsData?.cta_1_image?.url}
+                                                            style={{ width: "100%", height: "100%", aspectRatio: undefined }}
+                                                            contentFit="cover"
+                                                        />
+                                                    ) : (
+                                                        <Ionicons name="call-outline" size={32} color={bgColor} />
+                                                    )}
                                                 </View>
                                                 <View style={styles.ctaContent}>
                                                     <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
-                                                        {visitorsData?.cta_1_label}
+                                                        {visitorsData?.cta_1_link?.title}
                                                     </AppText>
                                                     <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to call
@@ -130,18 +151,26 @@ export default function VisitorsCenterScreen() {
                                         ) : null}
 
                                         {/* CTA 2: Call Us / Contact */}
-                                        {isValidData(visitorsData?.cta_2_label) ? (
+                                        {hasCta2 ? (
                                             <TouchableOpacity
-                                                style={styles.ctaCard}
+                                                style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
                                                 activeOpacity={0.9}
-                                                onPress={() => handleOpenLink((visitorsData?.cta_2_link as any)?.url)}
+                                                onPress={() => handleOpenLink(visitorsData?.cta_2_link?.url)}
                                             >
                                                 <View style={styles.ctaImagePlaceholder}>
-                                                    <Ionicons name="mail-outline" size={30} color={bgColor} />
+                                                    {isValidData(visitorsData?.cta_2_image?.url) ? (
+                                                        <CachedImage
+                                                            uri={visitorsData?.cta_2_image?.url}
+                                                            style={{ width: "100%", height: "100%", aspectRatio: undefined }}
+                                                            contentFit="cover"
+                                                        />
+                                                    ) : (
+                                                        <Ionicons name="mail-outline" size={30} color={bgColor} />
+                                                    )}
                                                 </View>
                                                 <View style={styles.ctaContent}>
                                                     <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
-                                                        {visitorsData?.cta_2_label}
+                                                        {visitorsData?.cta_2_link?.title}
                                                     </AppText>
                                                     <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to email us
@@ -227,8 +256,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     ctaCard: {
         flex: 1,
-        height: 110,
-        borderRadius: 12,
+        aspectRatio: 167.60337829589844 / 147.05844116210938,
+        borderRadius: 12.88,
         borderWidth: 1,
         borderColor: colors.outlineVariant,
         overflow: "hidden",

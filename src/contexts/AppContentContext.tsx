@@ -29,16 +29,14 @@ export interface PopupContent {
     popup_image?: {
         url: string;
     };
-    cta_button_label?: string;
-    cta_button_link?: string;
+    cta_button_link?: any;
     close_button_style?: string;
 }
 
 export interface HomeScreenData {
     hero_welcome_heading?: string;
     hero_intro_paragraph?: string;
-    hero_cta_button_label?: string;
-    hero_cta_button_link?: string;
+    hero_cta_button_link?: any;
     map_block_heading?: string;
     map_view_button_label?: string;
     programs_block_heading?: string;
@@ -111,10 +109,8 @@ export interface RentalsData {
     rental_type?: string;
     availability_notes?: string;
     pricing_notes?: string;
-    cta_1_label?: string;
-    cta_1_link?: string;
-    cta_2_label?: string;
-    cta_2_link?: string;
+    cta_1_link?: any;
+    cta_2_link?: any;
     map_poi_link?: unknown[];
     active?: boolean;
     sort_order?: string;
@@ -160,10 +156,10 @@ export interface VisitorsData {
     phone_number?: string;
     hours_of_operation?: boolean;
     accessibility_notes?: string;
-    cta_1_label?: string;
-    cta_1_link?: Record<string, unknown>;
-    cta_2_label?: string;
-    cta_2_link?: Record<string, unknown>;
+    cta_1_image?: { url: string } | null;
+    cta_1_link?: any;
+    cta_2_image?: { url: string } | null;
+    cta_2_link?: any;
     map_poi_link?: unknown[];
 }
 

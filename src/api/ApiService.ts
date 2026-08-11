@@ -1,5 +1,5 @@
 const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL;
-const API_BASE_URL = `${SITE_URL}/elk/wp-json/elk/v1`;
+const API_BASE_URL = `${SITE_URL?.replace(/\/$/, '')}/wp-json/elk/v1`;
 
 export class ApiService {
   static async fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 30000): Promise<Response> {

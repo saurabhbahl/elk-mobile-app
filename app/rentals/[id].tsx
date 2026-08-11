@@ -2,7 +2,7 @@ import AppText from "@/src/components/AppText";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
@@ -55,7 +55,11 @@ export default function RentalDetailScreen() {
 
     const handlePressLink = React.useCallback((url: string | undefined) => {
         if (url) {
-            openExternalLink(url);
+            if (url.startsWith("http") || url.startsWith("tel:") || url.startsWith("mailto:")) {
+                openExternalLink(url);
+            } else {
+                router.push(url as any);
+            }
         }
     }, []);
 
@@ -188,19 +192,19 @@ export default function RentalDetailScreen() {
                     ) : null}
 
                     {/* CTAs */}
-                    {(isValidData(rental.cta_1_label) || isValidData(rental.cta_2_label)) ? (
+                    {(isValidData(rental.cta_1_link?.title) || isValidData(rental.cta_2_link?.title)) ? (
                         <View style={styles.ctaRow}>
-                            {(isValidData(rental.cta_1_label) && isValidData(rental.cta_1_link)) ? (
+                            {isValidData(rental.cta_1_link?.title) ? (
                                 <PrimaryButton
-                                    title={rental.cta_1_label as string}
-                                    onPress={() => handlePressLink(rental.cta_1_link)}
+                                    title={rental.cta_1_link?.title as string}
+                                    onPress={() => handlePressLink(rental.cta_1_link?.url)}
                                 />
                             ) : null}
 
-                            {(isValidData(rental.cta_2_label) && isValidData(rental.cta_2_link)) ? (
+                            {isValidData(rental.cta_2_link?.title) ? (
                                 <PrimaryButton
-                                    title={rental.cta_2_label as string}
-                                    onPress={() => handlePressLink(rental.cta_2_link)}
+                                    title={rental.cta_2_link?.title as string}
+                                    onPress={() => handlePressLink(rental.cta_2_link?.url)}
                                     style={{ backgroundColor: 'transparent', borderWidth: 1, borderColor: primaryColor || '#ea0b0b' }}
                                     textStyle={{ color: isDark ? "#FFFFFF" : (primaryColor || '#ea0b0b') }}
                                 />
