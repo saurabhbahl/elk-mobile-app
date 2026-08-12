@@ -62,6 +62,27 @@ export default function LiveCameraScreen() {
     const cameras = (camerasData || []).filter((cam: CamerasData) => cam.active !== false);
     const activeCamera = cameras[activeCamIndex];
 
+    const getCameraThumbnail = () => {
+        if (!activeCamera) return null;
+
+        if (activeCamera.thumbnail_poster?.url) {
+            return activeCamera.thumbnail_poster.url as string;
+        }
+
+        if (activeCamera.stream_url) {
+            const match = activeCamera.stream_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([^&?/"']{11})/);
+            if (match && match[1]) {
+                return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+            }
+        }
+
+
+
+        return null;
+    };
+
+    const cameraThumbnail = getCameraThumbnail();
+
     const handleTabChange = (index: number) => {
         setActiveCamIndex(index);
         setIsPlaying(false);
@@ -175,7 +196,6 @@ export default function LiveCameraScreen() {
             />
         );
     };
-
     return (
         <SafeAreaView
             style={styles.container}
@@ -255,7 +275,7 @@ export default function LiveCameraScreen() {
                             isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
                                 <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
                                     <CachedImage
-                                        uri={activeCamera.thumbnail_poster?.url as string}
+                                        uri={cameraThumbnail}
                                         style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
                                         contentFit="cover"
                                     />
@@ -274,10 +294,9 @@ export default function LiveCameraScreen() {
                                 >
                                     <View style={styles.playerImage}>
                                         <CachedImage
-                                            uri={activeCamera.thumbnail_poster?.url as string}
+                                            uri={cameraThumbnail}
                                             style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
-
                                         />
                                         <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: secColor ? `${secColor}40` : 'rgba(0, 0, 0, 0.4)' }]}>
                                             <View style={{ width: 44, height: 44, borderRadius: 32, backgroundColor: '#E22B2B', borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
