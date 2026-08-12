@@ -15,7 +15,7 @@ export default function QuickLinks() {
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();
     const primaryColor = brandData?.brand_color_primary || "";
-    const secondaryColor = brandData?.brand_color__secondary || "";
+    const secondaryColor = brandData?.brand_color_secondary || "";
     const scrollViewRef = useRef<ScrollView>(null);
 
     // Find the currently active index

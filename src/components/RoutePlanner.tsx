@@ -12,11 +12,11 @@ import {
 } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { height as windowHeight } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 import { useAppContent } from '../contexts/AppContentContext';
 import { Waypoint } from '../data/waypoints';
 import { normalizeHex } from '../utils/colorUtils';
-import { height as windowHeight } from '../constants/theme';
 
 export interface RoutePlannerProps {
   isVisible: boolean;
@@ -150,7 +150,7 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
   const { colors, fonts, isDark } = useTheme();
   const { brandData, poisData } = useAppContent();
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
-  const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+  const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
   const textColor = isDark ? '#FFFFFF' : '#000000';
   const waypoints = poisData || [];
 

@@ -53,7 +53,7 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
     colors: any;
     isLast: boolean;
 }) => {
-    const imageUrl = typeof item.tip_icon__image === 'string' ? item.tip_icon__image : (item.tip_icon__image as any)?.url as string;
+    const imageUrl = typeof item.tip_icon_image === 'string' ? item.tip_icon_image : (item.tip_icon_image as any)?.url as string;
 
     if (!isValidData(item.tip_title) && !isValidData(item.tip_body)) return null;
 
@@ -61,7 +61,7 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
         <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
             <View style={[styles.tipCard, { borderBottomColor: secondaryColor || "#ea0b0b", borderBottomWidth: isLast ? 0 : 1 }]}>
                 <View style={styles.tipContent}>
-                    {(isValidData(item.tip_title) || isValidData(item.category__tag)) ? (
+                    {(isValidData(item.tip_title) || isValidData(item.category_tag)) ? (
                         <View style={styles.titleRow}>
                             <View style={styles.titleLeft}>
                                 {isValidData(imageUrl) ? (
@@ -84,10 +84,10 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
                                     <AppText style={styles.tipTitle}>{item.tip_title}</AppText>
                                 ) : null}
                             </View>
-                            {isValidData(item.category__tag) ? (
+                            {isValidData(item.category_tag) ? (
                                 <View style={[styles.badge, primaryColor ? { backgroundColor: primaryColor + "15" } : null]}>
                                     <AppText style={[styles.badgeText, primaryColor ? { color: isDark ? "#FFFFFF" : primaryColor } : null]}>
-                                        {item.category__tag}
+                                        {item.category_tag}
                                     </AppText>
                                 </View>
                             ) : null}
@@ -120,7 +120,7 @@ export default function TipsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, tipsData, apiStatus, tipsScreenSettingsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 

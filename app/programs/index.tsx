@@ -33,7 +33,7 @@ export default function ProgramsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, programsData, apiStatus, programsSettingData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 

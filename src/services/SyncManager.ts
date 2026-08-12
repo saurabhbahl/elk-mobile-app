@@ -85,9 +85,9 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
           addImage(item.additional_images[0], [key, String(idx), 'additional_images', '0']);
         }
 
-        // Tips use 'tip_icon__image' for their listing screen icon
-        if (key === 'tips' && item.tip_icon__image) {
-          addImage(item.tip_icon__image, [key, String(idx), 'tip_icon__image']);
+        // Tips use 'tip_icon_image' for their listing screen icon
+        if (key === 'tips' && item.tip_icon_image) {
+          addImage(item.tip_icon_image, [key, String(idx), 'tip_icon_image']);
         }
 
         // POIs custom map pin icons

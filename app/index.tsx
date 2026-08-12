@@ -20,7 +20,7 @@ export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, apiStatus, syncStatusText, syncProgress, syncError, performInitialSync } = useAppContent();
     const bgColor = brandData?.brand_color_primary || "#000000";
-    const secColor = brandData?.brand_color__secondary || "#ea0b0b";
+    const secColor = brandData?.brand_color_secondary || "#ea0b0b";
 
     const bgImageUri = brandData?.splash_loading_screen_background
         ? (typeof brandData.splash_loading_screen_background === 'string'

@@ -34,7 +34,7 @@ export default function ProgramDetailScreen() {
     const { id } = useLocalSearchParams();
     const { brandData, programsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -136,9 +136,9 @@ export default function ProgramDetailScreen() {
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
-                    {isValidData(program.schedule__dates) ? (
+                    {isValidData(program.schedule_dates) ? (
                         <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
-                            {program.schedule__dates}
+                            {program.schedule_dates}
                         </AppText>
                     ) : null}
                     {/* Short Description */}

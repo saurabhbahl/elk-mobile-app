@@ -125,7 +125,7 @@ function MapScreen() {
 
   const { colors, fonts, isDark } = useTheme();
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
-  const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+  const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
   // ── Map engine ──────────────────────────────────────────────────────────────

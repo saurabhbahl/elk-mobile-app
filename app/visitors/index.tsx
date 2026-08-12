@@ -4,6 +4,7 @@ import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import SectionHeader from "@/src/components/SectionHeader";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import {
     ActivityIndicator,
@@ -15,7 +16,6 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -37,7 +37,7 @@ export default function VisitorsCenterScreen() {
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
     const { brandData, visitorsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
     const images: string[] = [];
 
     if (visitorsData?.hero) {
@@ -101,7 +101,7 @@ export default function VisitorsCenterScreen() {
                                             title={visitorsData?.screen_title as string}
                                             iconSource={require("../../assets/images/house-flag.png")}
                                             primaryColor={bgColor || "#000000"}
-                                            secondaryColor={brandData?.brand_color__secondary || "#ea0b0b"}
+                                            secondaryColor={brandData?.brand_color_secondary || "#ea0b0b"}
                                             isDark={isDark}
                                             isFeatured={true}
                                         />

@@ -2,15 +2,14 @@ import AppText from "@/src/components/AppText";
 import CachedImage from "@/src/components/CachedImage";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
 import Navbar from "@/src/components/Navbar";
-import QuickLinks from "@/src/components/QuickLinks";
 import PrimaryButton from "@/src/components/PrimaryButton";
+import QuickLinks from "@/src/components/QuickLinks";
 import SectionHeader from "@/src/components/SectionHeader";
-import { openExternalLink } from "@/src/utils/openLink";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState, useCallback, useEffect } from "react";
-import { StyleSheet, TouchableOpacity, View, Pressable, ScrollView } from "react-native";
+import { useMemo } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import RenderHTML from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,7 +25,7 @@ export default function WaypointDetailsScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { poisData, brandData } = useAppContent();
     const brandPrimary = normalizeHex(brandData?.brand_color_primary);
-    const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+    const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
 
     const waypoints = poisData || [];
 
@@ -78,124 +77,124 @@ export default function WaypointDetailsScreen() {
                     </View>
 
                     <View style={{ flex: 1 }}>
-                    {/* Title */}
-                    {isValidData(waypoint.title) ? (
-                        <SectionHeader
-                            title={waypoint.title as string}
-                            iconSource={require("../../assets/images/mapicon.png")}
-                            primaryColor={brandPrimary || "#000000"}
-                            secondaryColor={brandSecondary || "#ea0b0b"}
-                            isDark={isDark}
-                            style={{ marginHorizontal: 0, marginBottom: 16 }}
-                        />
-                    ) : null}
+                        {/* Title */}
+                        {isValidData(waypoint.title) ? (
+                            <SectionHeader
+                                title={waypoint.title as string}
+                                iconSource={require("../../assets/images/mapicon.png")}
+                                primaryColor={brandPrimary || "#000000"}
+                                secondaryColor={brandSecondary || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginHorizontal: 0, marginBottom: 16 }}
+                            />
+                        ) : null}
 
-                    {/* Featured Image / Gallery */}
-                    {(() => {
-                        const sliderImages: string[] = [];
+                        {/* Featured Image / Gallery */}
+                        {(() => {
+                            const sliderImages: string[] = [];
 
-                        if (isValidData(waypoint.featured_image)) {
-                            const featuredUrl = typeof waypoint.featured_image === 'string' ? waypoint.featured_image : (waypoint.featured_image as any).url || (waypoint.featured_image as any).sizes?.large;
-                            if (featuredUrl) sliderImages.push(featuredUrl);
-                        }
+                            if (isValidData(waypoint.featured_image)) {
+                                const featuredUrl = typeof waypoint.featured_image === 'string' ? waypoint.featured_image : (waypoint.featured_image as any).url || (waypoint.featured_image as any).sizes?.large;
+                                if (featuredUrl) sliderImages.push(featuredUrl);
+                            }
 
-                        if (isValidData(waypoint.image_gallery) && Array.isArray(waypoint.image_gallery)) {
-                            waypoint.image_gallery.forEach((img: any) => {
-                                const url = typeof img === 'string' ? img : img.url || img.sizes?.large;
-                                if (url && !sliderImages.includes(url)) sliderImages.push(url);
-                            });
-                        }
+                            if (isValidData(waypoint.image_gallery) && Array.isArray(waypoint.image_gallery)) {
+                                waypoint.image_gallery.forEach((img: any) => {
+                                    const url = typeof img === 'string' ? img : img.url || img.sizes?.large;
+                                    if (url && !sliderImages.includes(url)) sliderImages.push(url);
+                                });
+                            }
 
-                        if (sliderImages.length === 0) return null;
+                            if (sliderImages.length === 0) return null;
 
-                        if (sliderImages.length === 1) {
+                            if (sliderImages.length === 1) {
+                                return (
+                                    <View style={[styles.imageSliderContainer, { height: undefined, aspectRatio: 4 / 3 }]}>
+                                        <CachedImage
+                                            uri={sliderImages[0]}
+                                            style={{ width: "100%", height: "100%" }}
+                                            contentFit="cover"
+                                        />
+                                    </View>
+                                );
+                            }
+
                             return (
-                                <View style={[styles.imageSliderContainer, { height: undefined, aspectRatio: 4 / 3 }]}>
-                                    <CachedImage
-                                        uri={sliderImages[0]}
-                                        style={{ width: "100%", height: "100%" }}
-                                        contentFit="cover"
+                                <View style={{ marginBottom: 20 }}>
+                                    <ImageGallerySlider
+                                        images={sliderImages}
+                                        width={windowWidth - 40}
+                                        height={220}
                                     />
                                 </View>
                             );
-                        }
+                        })()}
 
-                        return (
-                            <View style={{ marginBottom: 20 }}>
-                                <ImageGallerySlider
-                                    images={sliderImages}
-                                    width={windowWidth - 40}
-                                    height={220}
-                                />
-                            </View>
-                        );
-                    })()}
-
-                    {/* Location Address & Get Directions Section */}
-                    <View style={styles.locationSection}>
-                        {isValidData(waypoint.address) ? (
-                            <View style={styles.addressContainer}>
-                                <AppText style={[styles.addressText, { fontFamily: 'OpenSans-Bold', color: isDark ? '#fff' : '#000' }]}>
-                                    {waypoint.address}
-                                </AppText>
-                            </View>
-                        ) : null}
-                        {isValidData(waypoint.latitude) && isValidData(waypoint.longitude) ? (
-                            <PrimaryButton
-                                title="Get Directions"
-                                onPress={handleGetDirections}
-                            />
-                        ) : null}
-                    </View>
-
-                    {/* Badges Section */}
-                    {(waypoint.handicap_accessible || waypoint.open_year_round) ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
-                            {waypoint.handicap_accessible ? (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-                                    <Image
-                                        source={require("../../assets/images/wheelchair.png")}
-                                        style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                        contentFit="contain"
-                                    />
-                                    <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                        Handicap Accessible
+                        {/* Location Address & Get Directions Section */}
+                        <View style={styles.locationSection}>
+                            {isValidData(waypoint.address) ? (
+                                <View style={styles.addressContainer}>
+                                    <AppText style={[styles.addressText, { fontFamily: 'OpenSans-Bold', color: isDark ? '#fff' : '#000' }]}>
+                                        {waypoint.address}
                                     </AppText>
                                 </View>
                             ) : null}
-                            {waypoint.open_year_round ? (
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Image
-                                        source={require("../../assets/images/calendar-check.png")}
-                                        style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
-                                        contentFit="contain"
-                                    />
-                                    <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
-                                        Open Year Round
-                                    </AppText>
-                                </View>
+                            {isValidData(waypoint.latitude) && isValidData(waypoint.longitude) ? (
+                                <PrimaryButton
+                                    title="Get Directions"
+                                    onPress={handleGetDirections}
+                                />
                             ) : null}
                         </View>
-                    ) : null}
 
-                    {/* Description Paragraph */}
-                    {isValidData(waypoint.full_description || waypoint.description) ? (
-                        <RenderHTML
-                            contentWidth={windowWidth - 40}
-                            source={{ html: waypoint.full_description || waypoint.description }}
-                            baseStyle={{
-                                fontFamily: 'OpenSans-Regular',
-                                fontSize: 13,
-                                lineHeight: 20,
-                                color: isDark ? colors.onSurfaceVariant : "#000000",
-                                marginBottom: 16
-                            }}
-                            tagsStyles={{ p: { marginVertical: 8 } }}
-                        />
-                    ) : null}
+                        {/* Badges Section */}
+                        {(waypoint.handicap_accessible || waypoint.open_year_round) ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 24, flexWrap: 'nowrap' }}>
+                                {waypoint.handicap_accessible ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+                                        <Image
+                                            source={require("../../assets/images/wheelchair.png")}
+                                            style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                            contentFit="contain"
+                                        />
+                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                            Handicap Accessible
+                                        </AppText>
+                                    </View>
+                                ) : null}
+                                {waypoint.open_year_round ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Image
+                                            source={require("../../assets/images/calendar-check.png")}
+                                            style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
+                                            contentFit="contain"
+                                        />
+                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                            Open Year Round
+                                        </AppText>
+                                    </View>
+                                ) : null}
+                            </View>
+                        ) : null}
 
-                    {/* Seasonal Notes */}
-                    {/* isValidData(waypoint.seasonal_notes) ? (
+                        {/* Description Paragraph */}
+                        {isValidData(waypoint.full_description || waypoint.description) ? (
+                            <RenderHTML
+                                contentWidth={windowWidth - 40}
+                                source={{ html: waypoint.full_description || waypoint.description }}
+                                baseStyle={{
+                                    fontFamily: 'OpenSans-Regular',
+                                    fontSize: 13,
+                                    lineHeight: 20,
+                                    color: isDark ? colors.onSurfaceVariant : "#000000",
+                                    marginBottom: 16
+                                }}
+                                tagsStyles={{ p: { marginVertical: 8 } }}
+                            />
+                        ) : null}
+
+                        {/* Seasonal Notes */}
+                        {/* isValidData(waypoint.seasonal_notes) ? (
                         <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                             <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
                             <View style={{ flex: 1 }}>
@@ -214,8 +213,8 @@ export default function WaypointDetailsScreen() {
                         </View>
                     ) : null */}
 
-                    {/* External Link */}
-                    {/* isValidData(waypoint.external_link) ? (
+                        {/* External Link */}
+                        {/* isValidData(waypoint.external_link) ? (
                         (() => {
                             const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
                             const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;

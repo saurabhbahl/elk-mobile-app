@@ -52,7 +52,7 @@ export default function LiveCameraScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { brandData, camerasData, liveCamSettingsData, apiStatus } = useAppContentData();
     const bgColor = getValidColor(brandData?.brand_color_primary);
-    const secColor = getValidColor(brandData?.brand_color__secondary);
+    const secColor = getValidColor(brandData?.brand_color_secondary);
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark, bgColor as string, secColor as string), [colors, fonts, isDark, bgColor, secColor]);
 
     const { isConnected } = useNetInfo();
@@ -255,7 +255,7 @@ export default function LiveCameraScreen() {
                             isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
                                 <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
                                     <CachedImage
-                                        uri={activeCamera.thumbnail__poster?.url as string}
+                                        uri={activeCamera.thumbnail_poster?.url as string}
                                         style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
                                         contentFit="cover"
                                     />
@@ -274,7 +274,7 @@ export default function LiveCameraScreen() {
                                 >
                                     <View style={styles.playerImage}>
                                         <CachedImage
-                                            uri={activeCamera.thumbnail__poster?.url as string}
+                                            uri={activeCamera.thumbnail_poster?.url as string}
                                             style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
 

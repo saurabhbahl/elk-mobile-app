@@ -15,7 +15,7 @@ export default function PrimaryButton({ title, onPress, style, textStyle }: Prim
     const { fonts } = useTheme();
     const { brandData } = useAppContentData();
 
-    const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+    const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
 
     return (
         <TouchableOpacity

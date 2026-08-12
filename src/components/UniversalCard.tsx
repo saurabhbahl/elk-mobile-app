@@ -65,8 +65,8 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
         return null;
     };
 
-    if (type === 'program' && item.schedule__dates) {
-        badge = parseDateStr(item.schedule__dates);
+    if (type === 'program' && item.schedule_dates) {
+        badge = parseDateStr(item.schedule_dates);
     } else if (type === 'event' && item["start_date_&_time"]) {
         badge = parseEventDateStr(item["start_date_&_time"]);
     }

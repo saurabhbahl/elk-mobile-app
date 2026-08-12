@@ -48,7 +48,7 @@ const formatEventDateTime = (startStr: string, endStr?: string) => {
                 return { day, month: MONTHS[monthIndex], year, time };
             }
         }
-        
+
         const d = new Date(str);
         if (!isNaN(d.getTime())) {
             const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/:00/g, "").replace(/\s+/g, "").toLowerCase();
@@ -96,7 +96,7 @@ export default function EventDetailScreen() {
     const { id } = useLocalSearchParams();
     const { brandData, eventsData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -111,7 +111,7 @@ export default function EventDetailScreen() {
     const rawDescription = event?.full_description || "";
 
     const handleRegister = () => {
-        const url = event?.registration__ticket_link;
+        const url = event?.registration_ticket_link;
         if (url) {
             openExternalLink(url, "An active internet connection is required to register or buy tickets.");
         }
@@ -249,7 +249,7 @@ export default function EventDetailScreen() {
                     ) : null}
 
                     {/* Register Button */}
-                    {isValidData(event.registration__ticket_link) ? (
+                    {isValidData(event.registration_ticket_link) ? (
                         <TouchableOpacity
                             style={[styles.registerButton, { backgroundColor: primaryColor }]}
                             onPress={handleRegister}

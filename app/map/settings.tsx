@@ -1,7 +1,7 @@
 import AppText from "@/src/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
@@ -29,7 +29,7 @@ export default function SettingsScreen() {
   const { refreshData } = useAppContentSync();
 
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
-  const brandSecondary = normalizeHex(brandData?.brand_color__secondary);
+  const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
   // Load cached route count and image cache size on mount

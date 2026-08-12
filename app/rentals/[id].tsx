@@ -35,7 +35,7 @@ export default function RentalDetailScreen() {
     const { id } = useLocalSearchParams();
     const { brandData, rentalsData, apiStatus } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary);
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 

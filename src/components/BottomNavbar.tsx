@@ -41,7 +41,7 @@ export default function BottomNavbar() {
     const isMapScreen = pathname === '/map' || pathname.startsWith('/map/');
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
 
     // Navigation items
     const navItems = [

@@ -16,7 +16,7 @@ export interface AppBranding {
         url: string;
     };
     brand_color_primary?: string;
-    brand_color__secondary?: string;
+    brand_color_secondary?: string;
     splash_loading_screen_background?: {
         url: string;
     } | string;
@@ -57,10 +57,10 @@ export interface ProgramsData {
     thumbnail_image?: Record<string, unknown>;
     short_description?: string;
     full_description?: string;
-    schedule__dates?: string;
+    schedule_dates?: string;
     location?: unknown[];
     registration_link?: string;
-    category__tag?: unknown[];
+    category_tag?: unknown[];
     featured?: boolean;
     active?: boolean;
     sort_order?: string;
@@ -92,8 +92,8 @@ export interface EventsData {
     location_name?: string;
     location_address?: string;
     location_poi_link?: unknown[];
-    registration__ticket_link?: string;
-    category__tag?: string;
+    registration_ticket_link?: string;
+    category_tag?: string;
     featured?: boolean;
     active?: boolean;
 }
@@ -121,8 +121,8 @@ export interface TipsData {
     updated_at?: string;
     tip_title?: string;
     tip_body?: string;
-    tip_icon__image?: Record<string, unknown>;
-    category__tag?: any;
+    tip_icon_image?: Record<string, unknown>;
+    category_tag?: any;
     active?: boolean;
     sort_order?: string;
 }
@@ -141,7 +141,7 @@ export interface CamerasData {
     camera_name?: string;
     stream_url?: string;
     stream_type?: string;
-    thumbnail__poster?: Record<string, unknown>;
+    thumbnail_poster?: Record<string, unknown>;
     description?: string;
     active?: boolean;
     sort_order?: string;

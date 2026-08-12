@@ -19,7 +19,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     const { brandData } = useAppContent();
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#8B1E1E";
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#FFFFFF";
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#FFFFFF";
 
     // Only show offline when explicitly disconnected (isConnected === false).
     // isInternetReachable is unreliable on Android release builds (often null) so we

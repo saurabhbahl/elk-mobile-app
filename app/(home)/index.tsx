@@ -1,11 +1,11 @@
 import AppText from "@/src/components/AppText";
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
+import { openExternalLink } from "@/src/utils/openLink";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
 import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
-import { openExternalLink } from "@/src/utils/openLink";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -26,7 +26,6 @@ import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, ProgramsData, TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { normalizeHex } from "../../src/utils/colorUtils";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -46,7 +45,7 @@ export default function HomeScreen() {
 
     const { popupData, homeData, brandData, eventsData } = useAppContentData();
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
-    const secondaryColor = getValidColor(brandData?.brand_color__secondary) || "#ea0b0b";
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor, secondaryColor), [colors, fonts, isDark, primaryColor, secondaryColor]);
 
@@ -58,14 +57,14 @@ export default function HomeScreen() {
     }, [isFocused, popupData]);
 
     return (
-        <SafeAreaView 
-            style={styles.container} 
+        <SafeAreaView
+            style={styles.container}
             edges={["left", "right"]}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-            <Animated.ScrollView 
-                contentContainerStyle={styles.scrollContent} 
+            <Animated.ScrollView
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
                 <Navbar />
@@ -183,7 +182,7 @@ export default function HomeScreen() {
                             {(homeData?.programs || []).map((program: ProgramsData, index: number) => {
                                 // Simple date badge parser
                                 let badge = null;
-                                const dateStr = program.schedule__dates;
+                                const dateStr = program.schedule_dates;
                                 if (dateStr) {
                                     const match = dateStr.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d+)/i);
                                     if (match && match[1] && match[2]) {
