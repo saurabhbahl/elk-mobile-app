@@ -8,13 +8,15 @@
  *   or lets expo-image serve it from its own internal disk cache when offline
  * - Shows WireframePlaceholder when the image cannot be loaded at all
  * - Shows WireframePlaceholder immediately if uri is falsy
+ * - Shows SkeletonPlaceholder while the image uri is resolving or the image is loading
  */
 
 import { cacheImageIfNeeded, getCachedImageLocalPath, getOriginalUrl } from '@/src/utils/imageCache';
 import NetInfo from '@react-native-community/netinfo';
 import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { ImageStyle, StyleProp } from 'react-native';
+import { ImageStyle, StyleProp, StyleSheet, View } from 'react-native';
+import SkeletonPlaceholder from './SkeletonPlaceholder';
 import WireframePlaceholder from './WireframePlaceholder';
 
 interface CachedImageProps {
@@ -24,9 +26,11 @@ interface CachedImageProps {
   style?: StyleProp<ImageStyle>;
   /** How the image should fit within its bounds (default: 'cover') */
   contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  /** Callback fired when the loading state changes */
+  onLoadStateChange?: (isLoading: boolean) => void;
 }
 
-export default function CachedImage({ uri, style, contentFit = 'cover' }: CachedImageProps) {
+export default function CachedImage({ uri, style, contentFit = 'cover', onLoadStateChange }: CachedImageProps) {
   // Normalize uri helper to resolve initial values synchronously
   const getNormalizedUri = (inputUri: any): string | null => {
     if (inputUri && typeof inputUri === 'object' && inputUri.url) {
@@ -44,6 +48,8 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
 
   const [resolvedUri, setResolvedUri] = useState<string | null>(initialUri);
   const [hasError, setHasError] = useState(false);
+  const [isResolving, setIsResolving] = useState<boolean>(!initialUri && !!normalized);
+  const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -57,13 +63,17 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
     if (!currentNormalized) {
       setResolvedUri(null);
       setHasError(false);
+      setIsResolving(false);
       return;
     }
 
     setHasError(false);
+    setIsResolving(true);
+    setIsImageLoading(true);
 
     if (currentNormalized.startsWith('file://')) {
       setResolvedUri(currentNormalized);
+      setIsResolving(false);
       return;
     }
 
@@ -71,6 +81,7 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
     const cachedLocal = getCachedImageLocalPath(currentNormalized);
     if (cachedLocal) {
       setResolvedUri(cachedLocal);
+      setIsResolving(false);
       return;
     }
 
@@ -81,11 +92,22 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
         if (!mountedRef.current) return;
         if (isConnected) {
           cacheImageIfNeeded(currentNormalized)
-            .then(local => { if (mountedRef.current) setResolvedUri(local); })
-            .catch(() => { if (mountedRef.current) setResolvedUri(currentNormalized); });
+            .then(local => {
+              if (mountedRef.current) {
+                setResolvedUri(local);
+                setIsResolving(false);
+              }
+            })
+            .catch(() => {
+              if (mountedRef.current) {
+                setResolvedUri(currentNormalized);
+                setIsResolving(false);
+              }
+            });
         } else {
           // Offline — use the http URL; expo-image will serve from its own disk cache
           setResolvedUri(currentNormalized);
+          setIsResolving(false);
         }
       });
       return;
@@ -93,11 +115,15 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
 
     // Unknown scheme — use as-is
     setResolvedUri(currentNormalized);
+    setIsResolving(false);
   }, [uri]);
 
   const handleError = async () => {
     if (!resolvedUri) {
-      if (mountedRef.current) setHasError(true);
+      if (mountedRef.current) {
+        setHasError(true);
+        setIsImageLoading(false);
+      }
       return;
     }
 
@@ -110,6 +136,7 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
         // or re-download if online
         setResolvedUri(originalUrl);
         setHasError(false);
+        setIsImageLoading(true);
         return;
       }
 
@@ -118,28 +145,49 @@ export default function CachedImage({ uri, style, contentFit = 'cover' }: Cached
       if (typeof uriStr === 'string' && uriStr.startsWith('http') && mountedRef.current) {
         setResolvedUri(uriStr);
         setHasError(false);
+        setIsImageLoading(true);
         return;
       }
     }
 
     // http URL failed too (no network, no expo-image cache) — show placeholder
-    if (mountedRef.current) setHasError(true);
+    if (mountedRef.current) {
+      setHasError(true);
+      setIsImageLoading(false);
+    }
   };
 
   const defaultStyle = { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' } as StyleProp<ImageStyle>;
 
-  if (!resolvedUri || hasError) {
+  const showSkeleton = isResolving || (!!resolvedUri && isImageLoading);
+
+  useEffect(() => {
+    if (onLoadStateChange) {
+      onLoadStateChange(showSkeleton);
+    }
+  }, [showSkeleton, onLoadStateChange]);
+
+  if (hasError || (!isResolving && !resolvedUri)) {
     return <WireframePlaceholder style={[defaultStyle, style]} />;
   }
 
   return (
-    <Image
-      source={{ uri: resolvedUri }}
-      style={[defaultStyle, style]}
-      contentFit={contentFit}
-      cachePolicy="disk"
-      onError={handleError}
-      transition={300}
-    />
+    <View style={[{ overflow: 'hidden' }, defaultStyle, style]}>
+      {resolvedUri ? (
+        <Image
+          source={{ uri: resolvedUri }}
+          style={StyleSheet.absoluteFill}
+          contentFit={contentFit}
+          cachePolicy="disk"
+          onError={handleError}
+          onLoad={() => { if (mountedRef.current) setIsImageLoading(false); }}
+          transition={300}
+        />
+      ) : null}
+
+      {showSkeleton && (
+        <SkeletonPlaceholder style={StyleSheet.absoluteFill} />
+      )}
+    </View>
   );
 }

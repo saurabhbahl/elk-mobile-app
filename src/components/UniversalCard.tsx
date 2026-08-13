@@ -6,6 +6,7 @@ import React from 'react';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from './AppText';
 import CachedImage from './CachedImage';
+import SkeletonPlaceholder from './SkeletonPlaceholder';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 44) / 2;
@@ -106,12 +107,17 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
         return styles.horizontalCard;
     };
 
-
+    const [isImageLoading, setIsImageLoading] = React.useState(!!imageUrl);
 
     return (
         <TouchableOpacity style={getCardStyle()} activeOpacity={0.85} onPress={handlePress}>
             <View style={styles.imageContainer}>
-                <CachedImage uri={imageUrl} style={[StyleSheet.absoluteFill, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} contentFit="cover" />
+                <CachedImage 
+                    uri={imageUrl} 
+                    style={[StyleSheet.absoluteFill, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} 
+                    contentFit="cover" 
+                    onLoadStateChange={setIsImageLoading}
+                />
                 {badge && (
                     <View style={[styles.cardBadge, { backgroundColor: primaryColor }]}>
                         <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
@@ -145,6 +151,10 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
                     </View>
                 )}
             </ImageBackground>
+
+            {isImageLoading && (
+                <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />
+            )}
         </TouchableOpacity>
     );
 }

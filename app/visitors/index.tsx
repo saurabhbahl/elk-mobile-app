@@ -23,6 +23,7 @@ import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData } from "@/src/utils/validation";
 
 import CachedImage from "@/src/components/CachedImage";
+import SkeletonPlaceholder from "@/src/components/SkeletonPlaceholder";
 import { openExternalLink } from "@/src/utils/openLink";
 
 const CAROUSEL_WIDTH = width - 32;
@@ -67,6 +68,9 @@ export default function VisitorsCenterScreen() {
     const hasCta1 = isValidData(visitorsData?.cta_1_link?.title);
     const hasCta2 = isValidData(visitorsData?.cta_2_link?.title);
     const hasBothCtas = hasCta1 && hasCta2;
+
+    const [cta1Loading, setCta1Loading] = React.useState(!!isValidData(visitorsData?.cta_1_image?.url));
+    const [cta2Loading, setCta2Loading] = React.useState(!!isValidData(visitorsData?.cta_2_image?.url));
 
     return (
         <SafeAreaView
@@ -134,6 +138,7 @@ export default function VisitorsCenterScreen() {
                                                             uri={visitorsData?.cta_1_image?.url}
                                                             style={{ width: "100%", height: "100%", aspectRatio: undefined }}
                                                             contentFit="cover"
+                                                            onLoadStateChange={setCta1Loading}
                                                         />
                                                     ) : (
                                                         <Ionicons name="call-outline" size={32} color={bgColor} />
@@ -147,6 +152,7 @@ export default function VisitorsCenterScreen() {
                                                         Click here to call
                                                     </AppText>
                                                 </View>
+                                                {cta1Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
                                             </TouchableOpacity>
                                         ) : null}
 
@@ -163,6 +169,7 @@ export default function VisitorsCenterScreen() {
                                                             uri={visitorsData?.cta_2_image?.url}
                                                             style={{ width: "100%", height: "100%", aspectRatio: undefined }}
                                                             contentFit="cover"
+                                                            onLoadStateChange={setCta2Loading}
                                                         />
                                                     ) : (
                                                         <Ionicons name="mail-outline" size={30} color={bgColor} />
@@ -176,6 +183,7 @@ export default function VisitorsCenterScreen() {
                                                         Click here to email us
                                                     </AppText>
                                                 </View>
+                                                {cta2Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
                                             </TouchableOpacity>
                                         ) : null}
                                     </View>

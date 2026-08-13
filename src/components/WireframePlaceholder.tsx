@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, LayoutChangeEvent, StyleProp, ViewStyle } from "react-native";
+import { LayoutChangeEvent, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
 interface WireframePlaceholderProps {
     style?: StyleProp<ViewStyle>;
