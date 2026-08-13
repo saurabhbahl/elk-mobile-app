@@ -10,7 +10,9 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -179,7 +181,7 @@ export default function WaypointDetailsScreen() {
 
                         {/* Description Paragraph */}
                         {isValidData(waypoint.full_description || waypoint.description) ? (
-                            <RenderHTML
+                            <RenderHTML systemFonts={systemFonts}
                                 contentWidth={windowWidth - 40}
                                 source={{ html: waypoint.full_description || waypoint.description }}
                                 baseStyle={{
@@ -198,7 +200,7 @@ export default function WaypointDetailsScreen() {
                         <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                             <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
                             <View style={{ flex: 1 }}>
-                                <RenderHTML
+                                <RenderHTML systemFonts={systemFonts}
                                     contentWidth={windowWidth - 40 - 24 - 28} // padding 20*2 + container padding 12*2 + icon 28
                                     source={{ html: waypoint.seasonal_notes || "" }}
                                     baseStyle={{

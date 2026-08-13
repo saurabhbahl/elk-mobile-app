@@ -11,8 +11,10 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
@@ -43,7 +45,7 @@ export default function RentalsScreen() {
     }, [rentalSettingsData?.image_gallery]);
 
     const renderRentalItem = React.useCallback(({ item, index }: { item: RentalsData; index: number }) => (
-        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15, 80))}>
+        <Animated.View entering={FadeInUp.duration(200).delay(Math.min(index * 15 + 80, 160))}>
             <View style={{ marginBottom: 20 }}>
                 <UniversalCard
                     type="rental"
@@ -75,13 +77,13 @@ export default function RentalsScreen() {
             ) : null}
 
             {galleryImages.length > 0 ? (
-                <View style={{ marginBottom: 16, alignItems: 'center' }}>
+                <Animated.View entering={FadeInUp.duration(200).delay(20)} style={{ marginBottom: 16, alignItems: 'center' }}>
                     <ImageGallerySlider images={galleryImages} width={width - 32} height={190} />
-                </View>
+                </Animated.View>
             ) : null}
             {isValidData(rentalSettingsData?.intro_text) ? (
-                <View style={{ paddingBottom: 16 }}>
-                    <RenderHTML
+                <Animated.View entering={FadeInUp.duration(200).delay(40)} style={{ paddingBottom: 16 }}>
+                    <RenderHTML systemFonts={systemFonts}
                         contentWidth={width - 32}
                         source={{ html: rentalSettingsData?.intro_text || "" }}
                         baseStyle={{
@@ -91,19 +93,21 @@ export default function RentalsScreen() {
                         }}
                         tagsStyles={{ p: { marginVertical: 4 } }}
                     />
-                </View>
+                </Animated.View>
             ) : null}
 
-            <AppText style={{
-                fontSize: 16,
-                fontWeight: '700',
-                fontFamily: 'OpenSans-Bold',
-                color: secondaryColor,
-                marginBottom: 16,
-                marginTop: 8
-            }}>
-                Our Rental Locations
-            </AppText>
+            <Animated.View entering={FadeInUp.duration(200).delay(60)}>
+                <AppText style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    fontFamily: 'OpenSans-Bold',
+                    color: secondaryColor,
+                    marginBottom: 16,
+                    marginTop: 8
+                }}>
+                    Our Rental Locations
+                </AppText>
+            </Animated.View>
         </View>
     ), [rentalSettingsData?.screen_title, rentalSettingsData?.intro_text, galleryImages, isDark, primaryColor, secondaryColor]);
 

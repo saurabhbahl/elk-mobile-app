@@ -11,7 +11,9 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -60,7 +62,7 @@ const TrailCard = React.memo(({ item, index, styles }: {
                     </View>
                 ) : null}
                 {isValidData(item.description) ? (
-                    <RenderHTML
+                    <RenderHTML systemFonts={systemFonts}
                         contentWidth={width - 32}
                         source={{ html: item.description || "" }}
                         baseStyle={{

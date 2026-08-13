@@ -157,7 +157,7 @@ export default function CachedImage({ uri, style, contentFit = 'cover', onLoadSt
     }
   };
 
-  const defaultStyle = { width: '100%', aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' } as StyleProp<ImageStyle>;
+  const defaultStyle = { width: '100%', aspectRatio: 4 / 3, backgroundColor: 'rgba(0,0,0,0.05)' } as StyleProp<ImageStyle>;
 
   const showSkeleton = isResolving || (!!resolvedUri && isImageLoading);
 
@@ -172,7 +172,7 @@ export default function CachedImage({ uri, style, contentFit = 'cover', onLoadSt
   }
 
   return (
-    <View style={[{ overflow: 'hidden' }, defaultStyle, style]}>
+    <View style={[{ overflow: 'hidden', borderWidth: 0, backgroundColor: '#f1f1f1ff' }, defaultStyle, style]}>
       {resolvedUri ? (
         <Image
           source={{ uri: resolvedUri }}

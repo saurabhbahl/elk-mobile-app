@@ -4,7 +4,7 @@ import UniversalCard from "@/src/components/UniversalCard";
 import { openExternalLink } from "@/src/utils/openLink";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
-import { ImageBackground } from "expo-image";
+import { ImageBackground, Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -17,7 +17,9 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/src/components/Navbar";
@@ -40,6 +42,9 @@ let hasDismissedPopupSession = false;
 
 export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
+    const [timerFinished, setTimerFinished] = useState(false);
+    const [popupImageLoaded, setPopupImageLoaded] = useState(false);
+    
     const { colors, fonts, isDark } = useTheme();
     const isFocused = useIsFocused();
 
@@ -50,11 +55,30 @@ export default function HomeScreen() {
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor, secondaryColor), [colors, fonts, isDark, primaryColor, secondaryColor]);
 
     useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
         if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
-            setShowPopup(true);
-
+            timeoutId = setTimeout(() => {
+                setTimerFinished(true);
+            }, 3000);
         }
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
     }, [isFocused, popupData]);
+
+    useEffect(() => {
+        if (!popupData?.popup_image?.url) {
+            setPopupImageLoaded(true);
+        }
+    }, [popupData?.popup_image?.url]);
+
+    useEffect(() => {
+        if (timerFinished && popupImageLoaded && !hasDismissedPopupSession) {
+            setShowPopup(true);
+        }
+    }, [timerFinished, popupImageLoaded]);
 
     return (
         <SafeAreaView
@@ -62,6 +86,16 @@ export default function HomeScreen() {
             edges={["left", "right"]}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
+            
+            {/* Hidden image to preload popup image */}
+            {popupData?.popup_image?.url && !popupImageLoaded && !showPopup ? (
+                <Image
+                    source={{ uri: popupData.popup_image.url }}
+                    style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }}
+                    onLoad={() => setPopupImageLoaded(true)}
+                    onError={() => setPopupImageLoaded(true)}
+                />
+            ) : null}
 
             <Animated.ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -119,6 +153,7 @@ export default function HomeScreen() {
                                     {isValidData(homeData?.hero_intro_paragraph) ? (
                                         <View style={styles.welcomeIntroContainer}>
                                             <RenderHTML
+                                                systemFonts={systemFonts}
                                                 contentWidth={width}
                                                 source={{ html: homeData?.hero_intro_paragraph || "" }}
                                                 baseStyle={styles.welcomeIntroText as any}
@@ -316,6 +351,7 @@ export default function HomeScreen() {
                                         ) : null}
                                         {isValidData(popupData.popup_body_copy) ? (
                                             <RenderHTML
+                                                systemFonts={systemFonts}
                                                 contentWidth={width * 0.95 - 48}
                                                 source={{ html: popupData.popup_body_copy }}
                                                 baseStyle={{
@@ -349,6 +385,7 @@ export default function HomeScreen() {
                                     ) : null}
                                     {isValidData(popupData.popup_body_copy) ? (
                                         <RenderHTML
+                                            systemFonts={systemFonts}
                                             contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
                                             source={{ html: popupData.popup_body_copy }}
                                             baseStyle={{
@@ -491,22 +528,15 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginBottom: 20,
         borderRadius: 10,
         overflow: 'hidden',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-        borderWidth: 1,
-        borderColor: colors.outlineVariant,
     },
 
     welcomeBannerCard: {
         width: '100%',
-        aspectRatio: 36 / 25,
+        minHeight: (width - 32) * (25 / 36),
     },
 
     welcomeBannerOverlay: {
-        flex: 1,
+        flexGrow: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.2)', // Subtle overlay
         padding: 16,
         justifyContent: 'space-between',
@@ -568,8 +598,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     mapCardContainer: {
         marginHorizontal: 16,
         borderRadius: 10.69,
-        borderWidth: 1,
-        borderColor: colors.outlineVariant,
         overflow: "hidden",
         marginBottom: 12,
     },

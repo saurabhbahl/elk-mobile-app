@@ -12,7 +12,9 @@ import {
     View
 } from "react-native";
 import Animated from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -148,7 +150,7 @@ export default function ProgramDetailScreen() {
 
                     {/* Description Paragraph */}
                     {rawDescription ? (
-                        <RenderHTML
+                        <RenderHTML systemFonts={systemFonts}
                             contentWidth={width - 32} // paddingHorizontal is 16 on each side
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{

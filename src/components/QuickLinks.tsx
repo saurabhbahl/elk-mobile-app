@@ -17,6 +17,7 @@ export default function QuickLinks() {
     const primaryColor = brandData?.brand_color_primary || "";
     const secondaryColor = brandData?.brand_color_secondary || "";
     const scrollViewRef = useRef<ScrollView>(null);
+    const isNavigating = useRef(false);
 
     // Find the currently active index
     const activeIndex = navigationData ? navigationData.findIndex((item) => {
@@ -25,22 +26,17 @@ export default function QuickLinks() {
         return pathname === url || (url !== '/' && pathname.startsWith(url));
     }) : -1;
 
-    // Scroll active item to the center of the screen
-    useEffect(() => {
-        if (activeIndex !== -1 && scrollViewRef.current) {
-            const itemWidth = 120;
-            const gap = 12;
-            const padding = 16;
-            const itemX = padding + activeIndex * (itemWidth + gap);
-            const W = width;
-            const scrollToX = itemX - (W / 2) + (itemWidth / 2);
-
-            const timer = setTimeout(() => {
-                scrollViewRef.current?.scrollTo({ x: Math.max(0, scrollToX), animated: true });
-            }, 150);
-            return () => clearTimeout(timer);
-        }
-    }, [activeIndex]);
+    // Compute initial scroll position to render perfectly on first frame
+    const getInitialScrollOffset = () => {
+        if (activeIndex === -1) return 0;
+        const itemWidth = 120;
+        const gap = 12;
+        const padding = 16;
+        const itemX = padding + activeIndex * (itemWidth + gap);
+        const W = width;
+        const scrollToX = itemX - (W / 2) + (itemWidth / 2);
+        return Math.max(0, scrollToX);
+    };
 
     const renderMenu = () => {
         if (navigationData && navigationData.length > 0) {
@@ -60,6 +56,14 @@ export default function QuickLinks() {
                         ]}
                         activeOpacity={0.8}
                         onPress={() => {
+                            if (isActive) return;
+                            if (isNavigating.current) return;
+                            
+                            isNavigating.current = true;
+                            setTimeout(() => {
+                                isNavigating.current = false;
+                            }, 800);
+
                             requestAnimationFrame(() => {
                                 router.push((item.nav_link as any)?.url as any);
                             });
@@ -70,7 +74,6 @@ export default function QuickLinks() {
                                 source={{ uri: typeof item.nav_image === 'string' ? item.nav_image : (item.nav_image as Record<string, string>)?.url }}
                                 style={styles.menuCardImage}
                                 contentFit="cover"
-                                transition={200}
                             />
                         ) : (
                             <WireframePlaceholder style={styles.menuCardImage} />
@@ -93,6 +96,7 @@ export default function QuickLinks() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.horizontalMenu}
+                contentOffset={{ x: getInitialScrollOffset(), y: 0 }}
             >
                 {renderMenu()}
             </ScrollView>
@@ -133,8 +137,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: colors.outlineVariant,
         paddingHorizontal: 4,
         paddingVertical: 8,
         borderBottomLeftRadius: 8,

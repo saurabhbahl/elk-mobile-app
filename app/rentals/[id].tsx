@@ -12,7 +12,9 @@ import {
     View
 } from "react-native";
 import Animated from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -159,7 +161,7 @@ export default function RentalDetailScreen() {
 
                     {/* Description Paragraph */}
                     {isValidData(rawDescription) ? (
-                        <RenderHTML
+                        <RenderHTML systemFonts={systemFonts}
                             contentWidth={width - 32}
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{

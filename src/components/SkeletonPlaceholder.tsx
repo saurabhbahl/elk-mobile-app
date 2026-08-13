@@ -53,5 +53,6 @@ const styles = StyleSheet.create({
         position: "relative",
         justifyContent: "center",
         alignItems: "center",
+        borderWidth: 0,
     }
 });

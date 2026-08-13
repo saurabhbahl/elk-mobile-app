@@ -14,8 +14,10 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -202,6 +204,7 @@ export default function VisitorsCenterScreen() {
                                 {isValidData(visitorsData?.body_copy) ? (
                                     <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 8 : 24 }}>
                                         <RenderHTML
+                                            systemFonts={systemFonts}
                                             contentWidth={width - 32}
                                             source={{ html: visitorsData?.body_copy || "" }}
                                             baseStyle={{
@@ -266,18 +269,16 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         flex: 1,
         aspectRatio: 167.60337829589844 / 147.05844116210938,
         borderRadius: 12.88,
-        borderWidth: 1,
-        borderColor: colors.outlineVariant,
         overflow: "hidden",
         backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.outlineVariant,
     },
     ctaImagePlaceholder: {
         flex: 3,
         backgroundColor: colors.surfaceContainerHigh,
         justifyContent: "center",
         alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: colors.outlineVariant,
     },
     ctaContent: {
         flex: 2,

@@ -13,7 +13,9 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
@@ -127,7 +129,7 @@ export default function PlanTripScreen() {
 
                     {isValidData(intro) ? (
                         <Animated.View entering={FadeInUp.duration(200).delay(40)} style={styles.introContainer}>
-                            <RenderHTML
+                            <RenderHTML systemFonts={systemFonts}
                                 contentWidth={width - 32}
                                 source={{ html: intro || "" }}
                                 baseStyle={{
@@ -174,7 +176,7 @@ export default function PlanTripScreen() {
                                             </View>
                                         ) : null}
                                         {isValidData(sec.section_body) ? (
-                                            <RenderHTML
+                                            <RenderHTML systemFonts={systemFonts}
                                                 contentWidth={width - 32}
                                                 source={{ html: sec.section_body as string }}
                                                 baseStyle={{

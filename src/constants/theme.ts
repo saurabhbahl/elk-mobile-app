@@ -81,7 +81,7 @@ export const LIGHT_COLORS = {
   surfaceContainerLowest: '#ffffff',
 
   outline: '#737973',
-  outlineVariant: '#c3c8c1',
+  outlineVariant: '#dadada',
   background: '#f8faf9',
   error: '#ba1a1a',
   onError: '#ffffff',

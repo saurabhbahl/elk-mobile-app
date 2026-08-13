@@ -13,7 +13,9 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML from 'react-native-render-html';
+import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -95,7 +97,7 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
                     ) : null}
 
                     {isValidData(item.tip_body) ? (
-                        <RenderHTML
+                        <RenderHTML systemFonts={systemFonts}
                             contentWidth={width - 64}
                             source={{ html: item.tip_body as string }}
                             baseStyle={{
@@ -183,7 +185,7 @@ export default function TipsScreen() {
 
                         {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
                             <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                                <RenderHTML
+                                <RenderHTML systemFonts={systemFonts}
                                     contentWidth={width - 32}
                                     source={{ html: tipsScreenSettingsData?.intro_paragraph || "" }}
                                     baseStyle={{

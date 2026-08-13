@@ -112,10 +112,10 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
     return (
         <TouchableOpacity style={getCardStyle()} activeOpacity={0.85} onPress={handlePress}>
             <View style={styles.imageContainer}>
-                <CachedImage 
-                    uri={imageUrl} 
-                    style={[StyleSheet.absoluteFill, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]} 
-                    contentFit="cover" 
+                <CachedImage
+                    uri={imageUrl}
+                    style={[StyleSheet.absoluteFill, { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}
+                    contentFit="cover"
                     onLoadStateChange={setIsImageLoading}
                 />
                 {badge && (
@@ -129,7 +129,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
             <ImageBackground
                 source={require('../../assets/images/vectors.png')}
                 style={styles.bottomSection}
-                imageStyle={{ opacity: 1, borderRadius: 10 }}
+                imageStyle={{ opacity: 1 }}
                 contentFit="cover"
             >
                 <View style={styles.textCol}>
@@ -171,8 +171,6 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
         flexDirection: 'column',
     },
     featuredCard: {
@@ -188,8 +186,6 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     gridCard: {
         width: cardWidth,
@@ -202,8 +198,6 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
         flexDirection: 'column',
     },
     listCard: {
@@ -219,8 +213,6 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 6,
         elevation: 3,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
 
     imageContainer: {
@@ -273,12 +265,13 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         color: '#FFFFFF',
         letterSpacing: 0.5,
         textAlign: 'center',
+        textTransform: 'uppercase'
     },
     cardBadgeDay: {
         fontSize: 20,
         fontFamily: 'OpenSans-Bold',
         color: '#FFFFFF',
-        marginTop: -8,
+        marginTop: -4,
         textAlign: 'center',
     },
     cardViewButton: {
