@@ -4,7 +4,7 @@ import UniversalCard from "@/src/components/UniversalCard";
 import { openExternalLink } from "@/src/utils/openLink";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
-import { ImageBackground, Image } from "expo-image";
+import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -18,9 +18,9 @@ import {
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
@@ -44,7 +44,7 @@ export default function HomeScreen() {
     const [showPopup, setShowPopup] = useState(false);
     const [timerFinished, setTimerFinished] = useState(false);
     const [popupImageLoaded, setPopupImageLoaded] = useState(false);
-    
+
     const { colors, fonts, isDark } = useTheme();
     const isFocused = useIsFocused();
 
@@ -86,11 +86,12 @@ export default function HomeScreen() {
             edges={["left", "right"]}
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-            
+
             {/* Hidden image to preload popup image */}
             {popupData?.popup_image?.url && !popupImageLoaded && !showPopup ? (
                 <Image
                     source={{ uri: popupData.popup_image.url }}
+                    alt={(popupData as any)?.image_alt_text}
                     style={{ width: 1, height: 1, position: 'absolute', opacity: 0 }}
                     onLoad={() => setPopupImageLoaded(true)}
                     onError={() => setPopupImageLoaded(true)}
@@ -329,13 +330,64 @@ export default function HomeScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContentWrapper}>
                         {popupData ? (
-                            popupData.popup_image?.url ? (
-                                <ImageBackground
-                                    source={{ uri: popupData.popup_image.url }}
-                                    style={styles.modalCardBackground}
-                                    contentFit="cover"
-                                >
-                                    <View style={styles.modalImageOverlay}>
+                            <TouchableOpacity
+                                style={{ flex: 1, width: "100%", height: "100%" }}
+                                activeOpacity={0.9}
+                                onPress={() => {
+                                    const ctaLink = (brandData as any)?.cta_button_link?.link || popupData.cta_button_link?.link || (brandData as any)?.cta_button_link?.url || popupData.cta_button_link?.url;
+                                    if (ctaLink) {
+                                        hasDismissedPopupSession = true;
+                                        setShowPopup(false);
+                                        if (ctaLink.startsWith('http')) {
+                                            openExternalLink(ctaLink);
+                                        } else {
+                                            router.push(ctaLink as any);
+                                        }
+                                    }
+                                }}
+                            >
+                                {popupData.popup_image?.url ? (
+                                    <ImageBackground
+                                        source={{ uri: popupData.popup_image.url }}
+                                        alt={(popupData as any)?.image_alt_text}
+                                        style={styles.modalCardBackground}
+                                        contentFit="cover"
+                                    >
+                                        <View style={styles.modalImageOverlay}>
+                                            {/* Close Button */}
+                                            <TouchableOpacity
+                                                style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
+                                                onPress={() => { hasDismissedPopupSession = true; setShowPopup(false); }}
+                                                activeOpacity={0.8}
+                                            >
+                                                <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
+                                            </TouchableOpacity>
+
+                                            {/* Dynamic content */}
+                                            {isValidData(popupData.popup_title) ? (
+                                                <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
+                                            ) : null}
+                                            {isValidData(popupData.popup_body_copy) ? (
+                                                <RenderHTML
+                                                    systemFonts={systemFonts}
+                                                    contentWidth={width * 0.95 - 48}
+                                                    source={{ html: popupData.popup_body_copy }}
+                                                    baseStyle={{
+                                                        fontFamily: 'OpenSans-Regular',
+                                                        fontSize: 14,
+                                                        color: "#E5E5E5",
+                                                        textAlign: "center",
+                                                        lineHeight: 18,
+                                                    }}
+                                                    tagsStyles={{
+                                                        p: { textAlign: "center", margin: 0, marginTop: 12 }
+                                                    }}
+                                                />
+                                            ) : null}
+                                        </View>
+                                    </ImageBackground>
+                                ) : (
+                                    <WireframePlaceholder style={styles.modalCard}>
                                         {/* Close Button */}
                                         <TouchableOpacity
                                             style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
@@ -347,17 +399,17 @@ export default function HomeScreen() {
 
                                         {/* Dynamic content */}
                                         {isValidData(popupData.popup_title) ? (
-                                            <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
+                                            <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
                                         ) : null}
                                         {isValidData(popupData.popup_body_copy) ? (
                                             <RenderHTML
                                                 systemFonts={systemFonts}
-                                                contentWidth={width * 0.95 - 48}
+                                                contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
                                                 source={{ html: popupData.popup_body_copy }}
                                                 baseStyle={{
                                                     fontFamily: 'OpenSans-Regular',
                                                     fontSize: 14,
-                                                    color: "#E5E5E5",
+                                                    color: colors.onSurfaceVariant,
                                                     textAlign: "center",
                                                     lineHeight: 18,
                                                 }}
@@ -366,42 +418,9 @@ export default function HomeScreen() {
                                                 }}
                                             />
                                         ) : null}
-                                    </View>
-                                </ImageBackground>
-                            ) : (
-                                <WireframePlaceholder style={styles.modalCard}>
-                                    {/* Close Button */}
-                                    <TouchableOpacity
-                                        style={[styles.closeButton, { backgroundColor: popupData.close_button_style?.toLowerCase() === 'light' ? '#FFFFFF' : '#000000' }]}
-                                        onPress={() => { hasDismissedPopupSession = true; setShowPopup(false); }}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Ionicons name="close" size={18} color={popupData.close_button_style?.toLowerCase() === 'light' ? '#000000' : '#FFFFFF'} />
-                                    </TouchableOpacity>
-
-                                    {/* Dynamic content */}
-                                    {isValidData(popupData.popup_title) ? (
-                                        <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
-                                    ) : null}
-                                    {isValidData(popupData.popup_body_copy) ? (
-                                        <RenderHTML
-                                            systemFonts={systemFonts}
-                                            contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
-                                            source={{ html: popupData.popup_body_copy }}
-                                            baseStyle={{
-                                                fontFamily: 'OpenSans-Regular',
-                                                fontSize: 14,
-                                                color: colors.onSurfaceVariant,
-                                                textAlign: "center",
-                                                lineHeight: 18,
-                                            }}
-                                            tagsStyles={{
-                                                p: { textAlign: "center", margin: 0, marginTop: 12 }
-                                            }}
-                                        />
-                                    ) : null}
-                                </WireframePlaceholder>
-                            )
+                                    </WireframePlaceholder>
+                                )}
+                            </TouchableOpacity>
                         ) : (
                             <View style={styles.modalLoadingContainer}>
                                 <ActivityIndicator size="large" color="#007AFF" />
