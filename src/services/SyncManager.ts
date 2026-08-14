@@ -51,10 +51,15 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
     const popup = d.popup_content as Record<string, unknown>;
     addImage(popup.popup_image, ['popup_content', 'popup_image']);
   }
-  // 2b. Plan Your Trip Hero
+  // 2b. Plan Your Trip Hero & Gallery
   if (d.plan_your_trip) {
     const trip = d.plan_your_trip as Record<string, unknown>;
     if (trip.hero_image) addImage(trip.hero_image, ['plan_your_trip', 'hero_image']);
+    if (Array.isArray(trip.image_gallery)) {
+      trip.image_gallery.forEach((img, idx) => {
+        addImage(img, ['plan_your_trip', 'image_gallery', String(idx)]);
+      });
+    }
   }
   // 2c. Tips Settings Icon
   if (d.tips_screen_settings) {
@@ -109,9 +114,9 @@ export class SyncManager {
       const lastSyncTime = appRepository.getMetadata('last_full_sync');
       const settingsMap = appRepository.getAllSettings();
 
-      // If lastSyncTime is missing, or critical settings like app_branding are corrupted (empty array from previous bug), force full sync
+      // If lastSyncTime is missing, or critical settings like app_branding are corrupted, force full sync
       if (!lastSyncTime || !settingsMap.app_branding || (Array.isArray(settingsMap.app_branding) && settingsMap.app_branding.length === 0)) {
-        console.log("[SyncManager] Missing or corrupt local data (empty arrays). Forcing FULL sync.");
+        console.log("[SyncManager] Missing or corrupt local data. Forcing FULL sync.");
         const res = await this.fetchAndStoreAll();
         console.log("[SyncManager] Background full sync completed. Result:", res);
         return res;
@@ -153,28 +158,68 @@ export class SyncManager {
     try {
       if (onProgress) onProgress(0.05, 'Downloading app content...');
 
-      console.log("[SyncManager] Fetching sync data from API...");
-      console.log("[SyncManager] Fetching sync data from API...");
-      let rootJson = await ApiService.fetchSyncData(isDelta, lastSyncTime);
-      let syncTime = typeof rootJson.sync_time === 'string' ? rootJson.sync_time : new Date().toISOString();
-      let json = rootJson;
-      if (json && json.data && typeof json.data === 'object' && !json.app_branding) {
-        json = json.data as Record<string, unknown>;
-        console.log("[SyncManager] Unwrapped data payload keys:", Object.keys(json || {}));
-      }
+      console.log("[SyncManager] Fetching split sync data from endpoints parallelly...");
+      const endpoints = ['pois', 'programs', 'events', 'trails', 'rentals', 'tips', 'cameras', 'settings'];
+      
+      const fetchPromises = endpoints.map(async (endpoint) => {
+        try {
+          const res = await ApiService.fetchEndpointData<any>(endpoint, isDelta, lastSyncTime);
+          return { endpoint, data: res };
+        } catch (err) {
+          console.error(`[SyncManager] Error fetching split endpoint ${endpoint}:`, err);
+          throw err;
+        }
+      });
+
+      const results = await Promise.all(fetchPromises);
+      
+      // Merge results into a unified structure for transaction parsing
+      const mergedJson: Record<string, any> = { deleted: {} };
+      let syncTime = new Date().toISOString();
+
+      results.forEach(({ endpoint, data }) => {
+        if (!data) return;
+
+        if (data.sync_time) {
+          syncTime = data.sync_time;
+        }
+
+        // Unwrap data property if wrapped by WP API
+        const payload = (data && data.data && typeof data.data === 'object') ? data.data : data;
+
+        if (endpoint === 'settings') {
+          console.log("[SyncManager] Received settings payload:", JSON.stringify(payload));
+          Object.keys(payload).forEach(key => {
+            mergedJson[key] = payload[key];
+          });
+        } else {
+          if (Array.isArray(payload)) {
+            mergedJson[endpoint] = payload;
+          } else if (payload && Array.isArray(payload[endpoint])) {
+            mergedJson[endpoint] = payload[endpoint];
+          } else if (payload && Array.isArray(payload.data)) {
+            mergedJson[endpoint] = payload.data;
+          }
+
+          const deletedIds = data.deleted || (payload && payload.deleted);
+          if (Array.isArray(deletedIds)) {
+            mergedJson.deleted[endpoint] = deletedIds;
+          }
+        }
+      });
 
       // Early save branding to SQLite so it can be loaded on the splash screen immediately
       try {
-        if (json.app_branding && (!Array.isArray(json.app_branding) || json.app_branding.length > 0)) {
+        if (mergedJson.app_branding && (!Array.isArray(mergedJson.app_branding) || mergedJson.app_branding.length > 0)) {
           console.log("[SyncManager] Saving app branding settings early...");
-          appRepository.upsertSetting('app_branding', JSON.stringify(json.app_branding));
+          appRepository.upsertSetting('app_branding', JSON.stringify(mergedJson.app_branding));
         }
       } catch (err) {
         console.warn('Failed to save branding early:', err);
       }
 
       if (onProgress) onProgress(0.2, 'Preparing app photos...');
-      const imagesToDownload = extractPreCacheUrls(json);
+      const imagesToDownload = extractPreCacheUrls(mergedJson);
       const totalImages = imagesToDownload.length;
       let downloadedCount = 0;
 
@@ -188,7 +233,6 @@ export class SyncManager {
             if (currentIndex >= totalImages) break;
             const item = imagesToDownload[currentIndex];
             try {
-              // Call cacheImageIfNeeded with a 15-second timeout
               await Promise.race([
                 cacheImageIfNeeded(item.url),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
@@ -226,21 +270,20 @@ export class SyncManager {
         ];
 
         for (const key of settingsKeys) {
-          const val = json[key];
-          // For settings, only upsert if present and not an empty array
+          const val = mergedJson[key];
           if (val && (!Array.isArray(val) || val.length > 0)) {
             appRepository.upsertSetting(key, JSON.stringify(val));
           }
         }
 
         const recordTypes = [
-          { type: 'programs', array: json.programs },
-          { type: 'events', array: json.events },
-          { type: 'trails', array: json.trails },
-          { type: 'rentals', array: json.rentals },
-          { type: 'tips', array: json.tips },
-          { type: 'pois', array: json.pois },
-          { type: 'cameras', array: json.cameras }
+          { type: 'programs', array: mergedJson.programs },
+          { type: 'events', array: mergedJson.events },
+          { type: 'trails', array: mergedJson.trails },
+          { type: 'rentals', array: mergedJson.rentals },
+          { type: 'tips', array: mergedJson.tips },
+          { type: 'pois', array: mergedJson.pois },
+          { type: 'cameras', array: mergedJson.cameras }
         ];
 
         for (const item of recordTypes) {
@@ -254,8 +297,8 @@ export class SyncManager {
         }
 
         // Process deletions if any
-        if (isDelta && json.deleted && typeof json.deleted === 'object') {
-          const deleted = json.deleted as Record<string, unknown[]>;
+        if (isDelta && mergedJson.deleted && typeof mergedJson.deleted === 'object') {
+          const deleted = mergedJson.deleted as Record<string, unknown[]>;
           for (const item of recordTypes) {
             if (deleted[item.type] && Array.isArray(deleted[item.type])) {
               deleted[item.type].forEach((idToDel: unknown) => {
@@ -289,7 +332,7 @@ export class SyncManager {
       const visibility = eventSettings.past_events_visibility;
       if (visibility?.toLowerCase() !== 'hide') return;
 
-      // 1. Purge from events table
+      // Purge from events table
       const records = appRepository.getAllRecords();
       if (records.events) {
         records.events.forEach((ev: any) => {
@@ -298,10 +341,6 @@ export class SyncManager {
           }
         });
       }
-
-      // 2. We do NOT purge from home_screen setting permanently in SQLite, 
-      // because we would lose the featured_event ID. Instead, we dynamically 
-      // cross-reference it in AppContentContext.tsx on load!
     } catch (e) {
       console.warn("Error cleaning up expired events from DB:", e);
     }

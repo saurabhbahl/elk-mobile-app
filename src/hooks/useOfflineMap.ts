@@ -603,17 +603,13 @@ export const useOfflineMap = () => {
   };
 
   const silentUpdateMap = async () => {
-    console.log(`[SilentSync] Starting map update check. isExpoGo: ${isExpoGo}, BASE_URL: ${!!BASE_URL}, isAnyDownloadActive: ${isAnyDownloadActive}`);
     if (isExpoGo || !BASE_URL || isAnyDownloadActive) return;
 
     const isDownloaded = await checkMapStatus();
-    console.log(`[SilentSync] checkMapStatus returned isDownloaded: ${isDownloaded}`);
 
     if (!isDownloaded) {
       const consent = await AsyncStorage.getItem(CONSENT_KEY);
-      console.log(`[SilentSync] Map not downloaded. User consent status: ${consent}`);
       if (consent === 'yes') {
-        console.log('[SilentSync] User has consented to offline maps. Triggering automatic map download...');
         downloadMap().catch(e => console.warn('[SilentSync] Auto-download failed:', e));
       }
       return;
@@ -623,13 +619,11 @@ export const useOfflineMap = () => {
       isAnyDownloadActive = true;
       const wpBase = BASE_URL.replace(/\/map-download\/?$/, '');
       const listRes = await fetch(`${wpBase}/map-files?t=${Date.now()}`);
-      console.log(`[SilentSync] Fetching map list from: ${wpBase}/map-files. Status: ${listRes.status}`);
       if (!listRes.ok) {
         isAnyDownloadActive = false;
         return;
       }
       const remoteFiles = await listRes.json();
-      console.log(`[SilentSync] Remote map files found:`, JSON.stringify(remoteFiles));
       if (!Array.isArray(remoteFiles) || remoteFiles.length === 0) {
         isAnyDownloadActive = false;
         return;
@@ -642,19 +636,16 @@ export const useOfflineMap = () => {
           storedMeta = JSON.parse(storedMetaStr);
         } catch (e) { }
       }
-      console.log(`[SilentSync] Local metadata stored:`, JSON.stringify(storedMeta));
 
       let updatesMade = false;
 
       for (const rf of remoteFiles) {
         const local = storedMeta[rf.filename];
         const needsUpdate = isMapFileOutdated(local, { url: rf.url, modified_at: rf.modified_at });
-        console.log(`[SilentSync] File ${rf.filename}: localMeta=${JSON.stringify(local)}, remoteMeta=${JSON.stringify({ url: rf.url, modified_at: rf.modified_at })}, needsUpdate: ${needsUpdate}`);
 
         if (needsUpdate) {
           const uri = docDir + rf.filename;
           const tmpUri = uri + '.tmp';
-          console.log(`[SilentSync] Downloading updated map: ${rf.filename}`);
 
           const tmpInfo = await FileSystem.getInfoAsync(tmpUri);
           if (tmpInfo.exists) {
@@ -677,7 +668,6 @@ export const useOfflineMap = () => {
                 modified_at: rf.modified_at,
               };
               updatesMade = true;
-              console.log(`[SilentSync] Successfully updated: ${rf.filename}`);
             } else {
               await FileSystem.deleteAsync(tmpUri, { idempotent: true });
             }

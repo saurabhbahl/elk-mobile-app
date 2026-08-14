@@ -14,9 +14,9 @@ import {
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -50,7 +50,6 @@ export default function PlanTripScreen() {
     const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
-
     const title = planTripData?.screen_title;
     const intro = planTripData?.intro_paragraph;
 
@@ -67,7 +66,8 @@ export default function PlanTripScreen() {
     const galleryImages = React.useMemo(() => {
         const gallery = planTripData?.image_gallery;
         if (!gallery || !Array.isArray(gallery)) return [];
-        return gallery.map((img: any) => img?.url).filter(Boolean);
+        const extracted = gallery.map((img: any) => img?.url).filter(Boolean);
+        return extracted;
     }, [planTripData?.image_gallery]);
 
     const sections = planTripData?.content_sections || [];

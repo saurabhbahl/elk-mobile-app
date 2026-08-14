@@ -17,7 +17,6 @@ export class ApiService {
       if (params) {
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
       }
-      console.log(url);
       const response = await this.fetchWithTimeout(url.toString(), {
         method: 'GET',
         headers: {
@@ -48,9 +47,9 @@ export class ApiService {
   }
 
   /**
-   * Specialized sync fetch
+   * Fetch data for a specific split endpoint (e.g. 'pois', 'events', 'settings')
    */
-  static async fetchSyncData(isDelta = false, lastSyncTime?: string): Promise<Record<string, unknown>> {
+  static async fetchEndpointData<T>(endpoint: string, isDelta = false, lastSyncTime?: string): Promise<T> {
     const params: Record<string, string> = { t: String(Date.now()) };
     if (isDelta && lastSyncTime) {
       params.sync = 'incremental';
@@ -58,6 +57,13 @@ export class ApiService {
     } else {
       params.sync = 'full';
     }
-    return this.get<Record<string, unknown>>('data', params);
+    return this.get<T>(endpoint, params);
+  }
+
+  /**
+   * Legacy sync fetch (fallback, points to monolithic data endpoint)
+   */
+  static async fetchSyncData(isDelta = false, lastSyncTime?: string): Promise<Record<string, unknown>> {
+    return this.fetchEndpointData<Record<string, unknown>>('data', isDelta, lastSyncTime);
   }
 }
