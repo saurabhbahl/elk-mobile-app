@@ -26,14 +26,16 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   // Migration for existing databases that lack duration/distance columns
   try { await db.execAsync('ALTER TABLE routes ADD COLUMN duration REAL DEFAULT 0'); } catch {}
   try { await db.execAsync('ALTER TABLE routes ADD COLUMN distance REAL DEFAULT 0'); } catch {}
+  try { await db.execAsync('ALTER TABLE routes ADD COLUMN from_coord TEXT DEFAULT ""'); } catch {}
+  try { await db.execAsync('ALTER TABLE routes ADD COLUMN to_coord TEXT DEFAULT ""'); } catch {}
   return db;
 }
 
-export async function saveRoute(fromId: number, toId: number, polyline: string, duration = 0, distance = 0): Promise<void> {
+export async function saveRoute(fromId: number, toId: number, polyline: string, duration = 0, distance = 0, fromCoord = "", toCoord = ""): Promise<void> {
   const database = await getDatabase();
   await database.runAsync(
-    `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance) VALUES (?, ?, ?, ?, ?)`,
-    [fromId, toId, polyline, duration, distance]
+    `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance, from_coord, to_coord) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [fromId, toId, polyline, duration, distance, fromCoord, toCoord]
   );
 }
 
@@ -51,8 +53,17 @@ export async function getRoute(fromId: number, toId: number): Promise<{ polyline
   };
 }
 
-export async function hasRoute(fromId: number, toId: number): Promise<boolean> {
+export async function hasRoute(fromId: number, toId: number, fromCoord = "", toCoord = ""): Promise<boolean> {
   const database = await getDatabase();
+  
+  if (fromCoord && toCoord) {
+    const row = await database.getFirstAsync<{ cnt: number }>(
+      `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ? AND from_coord = ? AND to_coord = ?`,
+      [fromId, toId, fromCoord, toCoord]
+    );
+    return (row?.cnt ?? 0) > 0;
+  }
+  
   const row = await database.getFirstAsync<{ cnt: number }>(
     `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ?`,
     [fromId, toId]

@@ -17,7 +17,7 @@ export class ApiService {
       if (params) {
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
       }
-
+      console.log(url);
       const response = await this.fetchWithTimeout(url.toString(), {
         method: 'GET',
         headers: {

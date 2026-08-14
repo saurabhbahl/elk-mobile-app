@@ -4,9 +4,9 @@
  * Fetches OSRM driving routes for every waypoint pair (N × N) and caches
  * the encoded polylines in SQLite for offline use.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useAppContent } from '../contexts/AppContentContext';
-import { saveRoute, hasRoute } from '../utils/routeDatabase';
+import { hasRoute, saveRoute } from '../utils/routeDatabase';
 
 export interface PreloadProgress {
   current: number;
@@ -16,10 +16,12 @@ export interface PreloadProgress {
 
 export async function fetchAndCacheRoute(from: any, to: any): Promise<boolean> {
   if (!from || !to) return false;
-  if (await hasRoute(from.id, to.id)) return true;
 
   const fromCoord = `${from.coordinate.longitude},${from.coordinate.latitude}`;
   const toCoord = `${to.coordinate.longitude},${to.coordinate.latitude}`;
+
+  if (await hasRoute(from.id, to.id, fromCoord, toCoord)) return true;
+
   const url = `https://router.project-osrm.org/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   try {
@@ -29,11 +31,11 @@ export async function fetchAndCacheRoute(from: any, to: any): Promise<boolean> {
     clearTimeout(timeout);
     const data = await res.json();
     if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-      await saveRoute(from.id, to.id, data.routes[0].geometry);
+      await saveRoute(from.id, to.id, data.routes[0].geometry, 0, 0, fromCoord, toCoord);
       return true;
     }
   } catch (err) {
-    console.warn(`[RoutePreloader] Failed to fetch route ${from.id}→${to.id}:`, err);
+    // console.warn(`[RoutePreloader] Failed to fetch route ${from.id}→${to.id}:`, err);
   }
   return false;
 }
@@ -41,7 +43,7 @@ export async function fetchAndCacheRoute(from: any, to: any): Promise<boolean> {
 export async function preloadAllRoutesHelper(waypoints: any[], onProgress?: (p: PreloadProgress) => void, abortRef?: { current: boolean }) {
   const total = waypoints.length * waypoints.length;
   if (total === 0) return { success: true, cached: 0, total: 0 };
-  
+
   let current = 0;
   let successCount = 0;
   let consecutiveFailures = 0;
@@ -94,12 +96,12 @@ export function useRoutePreloader() {
 
     setIsPreloading(true);
     abortRef.current = false;
-    
+
     const result = await preloadAllRoutesHelper(waypoints, (p) => {
-        setProgress(p);
-        onProgress?.(p);
+      setProgress(p);
+      onProgress?.(p);
     }, abortRef);
-    
+
     setIsPreloading(false);
     return result;
   }, [isPreloading, waypoints]);

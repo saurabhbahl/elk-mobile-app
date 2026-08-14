@@ -1022,8 +1022,6 @@ function MapScreen() {
   const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin;
   const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
 
-  // Detect if completely offline without map
-  const isOfflineWithoutMap = netInfo.isConnected === false && !hasMap;
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -1147,109 +1145,6 @@ function MapScreen() {
           ))}
         </Map>
 
-        {/* ── Offline without map: full-screen scrollable overlay ── */}
-        {isOfflineWithoutMap && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? colors.background : '#eef1e7', zIndex: 200 }]}>
-            <ScrollView
-              contentContainerStyle={{
-                paddingTop: insets.top + 16,
-                paddingBottom: insets.bottom + 32,
-                paddingHorizontal: 20,
-              }}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Header */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 }}>
-                <MaterialIcons name="wifi-off" size={26} color={brandPrimary} />
-                <AppText style={{ fontFamily: fonts.headingBold, fontSize: 22, color: isDark ? '#ffffff' : brandPrimary }}>
-                  Offline Mode
-                </AppText>
-              </View>
-
-              {/* GPS Coordinates Card */}
-              <View style={{
-                backgroundColor: isDark ? colors.surfaceContainer : '#ffffff',
-                borderRadius: 16, padding: 20, marginBottom: 20,
-                borderWidth: 1, borderColor: colors.outlineVariant + '40',
-                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
-              }}>
-                <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 }}>
-                  Your Current Coordinates
-                </AppText>
-                {location ? (
-                  <>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant }}>LAT</AppText>
-                      <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 12, color: isDark ? '#ffffff' : brandPrimary }}>
-                        {location.latitude.toFixed(6)}
-                      </AppText>
-                    </View>
-                    <View style={{ height: 1, backgroundColor: colors.outlineVariant + '40', marginBottom: 6 }} />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <AppText style={{ fontFamily: fonts.caption, fontSize: 11, color: colors.onSurfaceVariant }}>LNG</AppText>
-                      <AppText style={{ fontFamily: fonts.bodyMedium, fontSize: 12, color: isDark ? '#ffffff' : brandPrimary }}>
-                        {location.longitude.toFixed(6)}
-                      </AppText>
-                    </View>
-                  </>
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
-                    <ActivityIndicator size="small" color={brandPrimary} />
-                    <AppText style={{ fontFamily: fonts.body, fontSize: 14, color: colors.onSurfaceVariant }}>Acquiring GPS signal...</AppText>
-                  </View>
-                )}
-              </View>
-
-              {/* Notice */}
-              <View style={{
-                backgroundColor: isDark ? colors.surfaceContainer : '#fffbee',
-                borderRadius: 12, padding: 14, marginBottom: 20,
-                flexDirection: 'row', gap: 10, alignItems: 'flex-start',
-                borderWidth: 1, borderColor: colors.outlineVariant + '30',
-              }}>
-                <MaterialIcons name="info-outline" size={20} color={colors.onSurfaceVariant} style={{ marginTop: 1 }} />
-                <AppText style={{ fontFamily: fonts.body, fontSize: 13, color: colors.onSurfaceVariant, flex: 1, lineHeight: 20 }}>
-                  You are offline and the offline map has not been downloaded. Connect to the internet or download the map in Settings to use the full interactive map.
-                </AppText>
-              </View>
-
-              {/* Waypoints list */}
-              {waypoints.length > 0 && (
-                <>
-                  <AppText style={{ fontFamily: fonts.headingBold, fontSize: 16, color: isDark ? '#ffffff' : brandPrimary, marginBottom: 12 }}>
-                    Points of Interest
-                  </AppText>
-                  {waypoints.map(wp => (
-                    <TouchableOpacity
-                      key={wp.id}
-                      onPress={() => router.push(`/map/${wp.id}` as any)}
-                      style={{
-                        backgroundColor: isDark ? colors.surfaceContainer : '#ffffff',
-                        borderRadius: 12, padding: 16, marginBottom: 10,
-                        flexDirection: 'row', alignItems: 'center', gap: 12,
-                        borderWidth: 1, borderColor: colors.outlineVariant + '40',
-                        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
-                      }}
-                    >
-                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: (brandPrimary || colors.primary) + '22', justifyContent: 'center', alignItems: 'center' }}>
-                        <MaterialIcons name="place" size={20} color={brandPrimary || colors.primary} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        {isValidData(wp.title) ? (
-                          <AppText style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface }} numberOfLines={1}>{wp.title}</AppText>
-                        ) : null}
-                        {isValidData(wp.description) ? (
-                          <AppText style={{ fontFamily: fonts.body, fontSize: 12, color: colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{wp.description}</AppText>
-                        ) : null}
-                      </View>
-                      <MaterialIcons name="chevron-right" size={20} color={colors.onSurfaceVariant} />
-                    </TouchableOpacity>
-                  ))}
-                </>
-              )}
-            </ScrollView>
-          </View>
-        )}
 
         {/* ── Drop-pin mode: crosshair ── */}
         {isSelectingPin && (
@@ -1372,6 +1267,32 @@ function MapScreen() {
               </TouchableOpacity>
             </View>
           </>
+        )}
+
+        {/* ── Offline indicator with coordinates (Bottom-Left) ── */}
+        {netInfo.isConnected === false && !isNavigating && !showPointPicker && !isSelectingPin && (
+          <Reanimated.View
+            entering={FadeInDown.duration(300)}
+            exiting={FadeOutDown.duration(200)}
+            style={[
+              styles.offlineIndicatorContainer,
+              { bottom: (selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90) + (highlightedRoute ? 52 : 0) }
+            ]}
+          >
+            <View style={styles.offlineIndicatorCard}>
+              <MaterialIcons name="wifi-off" size={16} color={isDark ? '#ff6b6b' : '#d93838'} />
+              <View>
+                <AppText style={styles.offlineIndicatorTitle}>Offline Mode</AppText>
+                {location ? (
+                  <AppText style={styles.offlineIndicatorCoords}>
+                    {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+                  </AppText>
+                ) : (
+                  <AppText style={styles.offlineIndicatorCoords}>Acquiring GPS...</AppText>
+                )}
+              </View>
+            </View>
+          </Reanimated.View>
         )}
 
         {/* ── Route Tooltip (Custom Bottom-Left Message) ── */}
@@ -1689,6 +1610,40 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
       borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '40',
+    },
+
+    // Offline indicator
+    offlineIndicatorContainer: {
+      position: 'absolute',
+      left: 16,
+      zIndex: 90,
+    },
+    offlineIndicatorCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    offlineIndicatorTitle: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 12,
+      color: isDark ? '#ff6b6b' : '#d93838',
+    },
+    offlineIndicatorCoords: {
+      fontFamily: fonts.caption,
+      fontSize: 10,
+      color: colors.onSurfaceVariant,
+      marginTop: 1,
     },
 
     // Route Tooltip

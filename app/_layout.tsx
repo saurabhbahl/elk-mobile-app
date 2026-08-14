@@ -13,15 +13,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native
 import { Stack, usePathname, useSegments } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from "expo-status-bar";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, AppState, AppStateStatus, Platform, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
 
-import Navbar from "@/src/components/Navbar";
 import OfflinePopup from "@/src/components/OfflinePopup";
-import QuickLinks from "@/src/components/QuickLinks";
 
 import { useAppContentData, useAppContentSync } from "@/src/contexts/AppContentContext";
+import { preloadAllRoutesHelper } from "@/src/hooks/useRoutePreloader";
 
 import {
   EBGaramond_500Medium,
@@ -37,7 +35,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import "react-native-reanimated";
-import Animated, { SharedValue, useSharedValue, useAnimatedStyle, interpolate } from 'react-native-reanimated';
+import { interpolate, SharedValue, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { ThemeProvider as CustomThemeProvider, useTheme } from "@/src/context/ThemeContext";
 import { AppContentProvider } from "@/src/contexts/AppContentContext";
@@ -175,12 +173,21 @@ import BottomNavbar from "@/src/components/BottomNavbar";
 
 function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string | null | undefined, isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
-  const { brandData, apiStatus } = useAppContentData();
+  const { brandData, apiStatus, poisData } = useAppContentData();
   const { refreshData } = useAppContentSync();
   const pathname = usePathname();
   const segments = useSegments();
   const primaryColor = brandData?.brand_color_primary || "#000000";
   const { navbarVisibility } = useNavigationMode();
+
+  // Keep track of latest POIs for the foreground listener without causing re-renders
+  const latestPoisRef = useRef(poisData);
+  useEffect(() => {
+    latestPoisRef.current = poisData;
+  }, [poisData]);
+
+  // Track both IDs and coordinates so updates to existing POIs trigger preloading
+  const poisHash = poisData?.map(p => `${p.id}-${p.coordinate.latitude}-${p.coordinate.longitude}`).join('|') || '';
 
   const QUICKLINKS_HEIGHT = 114;
   const quickLinksStyle = useAnimatedStyle(() => {
@@ -191,22 +198,32 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
     };
   });
 
-  // Delta check on app resume or active timers
+  // 1. Initial & Delta Route Preloading (Fires when POIs or their coordinates change)
+  useEffect(() => {
+    if (apiStatus !== 'ready') return;
+    if (poisData && poisData.length > 0) {
+      preloadAllRoutesHelper(poisData).catch(e => console.warn("[Background Preload] Failed:", e));
+    }
+  }, [apiStatus, poisHash]);
+
+  // 2. Active Polling & Foreground Sync
   useEffect(() => {
     if (apiStatus !== 'ready') return;
 
-    // 30 minute active polling sync
+    // 30 minute active polling sync (30 * 60 * 1000)
     const timer = setInterval(() => {
       console.log("[Sync] Triggering scheduled 30m delta check.");
       refreshData();
     }, 30 * 1000);
 
     // Foreground listener
+    let lastState = AppState.currentState;
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
+      if (lastState.match(/inactive|background/) && nextAppState === 'active') {
         console.log("[Sync] App foregrounded. Triggering delta update check.");
         refreshData();
       }
+      lastState = nextAppState;
     };
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
@@ -288,13 +305,6 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
             options={{ headerShown: false, animation: 'none' }}
           />
           <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-              title: "Modal",
-            }}
-          />
-          <Stack.Screen
             name="tips/index"
             options={{ headerShown: false, animation: 'none' }}
           />
@@ -303,6 +313,7 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
       {shouldShowHeader && (
         <BottomNavbar />
       )}
+      <OfflinePopup />
     </View>
   );
 }

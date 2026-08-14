@@ -113,6 +113,7 @@ export const useOfflineMap = () => {
   const [downloadedMapFiles, setDownloadedMapFilesState] = useState(globalDownloadedMapFiles);
 
   const isPausedRef = useRef(false);
+  const isCancelledRef = useRef(false);
 
   // Helper setters that write to global variables and emit updates to all listeners
   const setHasMap = (val: boolean) => {
@@ -200,6 +201,12 @@ export const useOfflineMap = () => {
         }
       } catch (e) { }
 
+      if (expectedFiles.length === 0) {
+        setDownloadedMapFiles([]);
+        setHasMap(false);
+        return false;
+      }
+
       let allExist = true;
       const existingFiles: string[] = [];
 
@@ -285,6 +292,7 @@ export const useOfflineMap = () => {
       setIsDownloading(true);
       setIsPaused(false);
       isPausedRef.current = false;
+      isCancelledRef.current = false;
       setMbtilesError(false);
 
       // Try to fetch dynamic list from WP API
@@ -485,12 +493,13 @@ export const useOfflineMap = () => {
         return;
       }
       const err = error as Error;
-      if (err?.message && err.message.toLowerCase().includes('pause')) {
-        console.log('Download was paused.');
-        setIsPaused(true);
-      } else if (err?.message && err.message.toLowerCase().includes('cancel')) {
+      if (isCancelledRef.current || (err?.message && err.message.toLowerCase().includes('cancel'))) {
         console.log('Download was cancelled.');
         setIsPaused(false);
+        setMbtilesError(false);
+      } else if (err?.message && err.message.toLowerCase().includes('pause')) {
+        console.log('Download was paused.');
+        setIsPaused(true);
       } else {
         console.warn('Error downloading maps:', error);
         setMbtilesError(true);
@@ -505,6 +514,7 @@ export const useOfflineMap = () => {
   };
 
   const cancelDownload = async () => {
+    isCancelledRef.current = true;
     try {
       if (globalDownloadResumable) {
         await globalDownloadResumable.cancelAsync();
@@ -523,7 +533,7 @@ export const useOfflineMap = () => {
         const resumable = globalDownloadResumable;
         const currentFile = globalActiveDownloadingFile;
         const pauseState = await resumable.pauseAsync();
-        
+
         if (pauseState && pauseState.resumeData && currentFile) {
           await AsyncStorage.setItem(`@elk_map_resume_${currentFile}`, pauseState.resumeData);
           console.log(`[useOfflineMap] Manually paused download for ${currentFile}`);
@@ -593,10 +603,19 @@ export const useOfflineMap = () => {
   };
 
   const silentUpdateMap = async () => {
+    console.log(`[SilentSync] Starting map update check. isExpoGo: ${isExpoGo}, BASE_URL: ${!!BASE_URL}, isAnyDownloadActive: ${isAnyDownloadActive}`);
     if (isExpoGo || !BASE_URL || isAnyDownloadActive) return;
 
     const isDownloaded = await checkMapStatus();
+    console.log(`[SilentSync] checkMapStatus returned isDownloaded: ${isDownloaded}`);
+
     if (!isDownloaded) {
+      const consent = await AsyncStorage.getItem(CONSENT_KEY);
+      console.log(`[SilentSync] Map not downloaded. User consent status: ${consent}`);
+      if (consent === 'yes') {
+        console.log('[SilentSync] User has consented to offline maps. Triggering automatic map download...');
+        downloadMap().catch(e => console.warn('[SilentSync] Auto-download failed:', e));
+      }
       return;
     }
 
@@ -604,9 +623,17 @@ export const useOfflineMap = () => {
       isAnyDownloadActive = true;
       const wpBase = BASE_URL.replace(/\/map-download\/?$/, '');
       const listRes = await fetch(`${wpBase}/map-files?t=${Date.now()}`);
-      if (!listRes.ok) return;
+      console.log(`[SilentSync] Fetching map list from: ${wpBase}/map-files. Status: ${listRes.status}`);
+      if (!listRes.ok) {
+        isAnyDownloadActive = false;
+        return;
+      }
       const remoteFiles = await listRes.json();
-      if (!Array.isArray(remoteFiles) || remoteFiles.length === 0) return;
+      console.log(`[SilentSync] Remote map files found:`, JSON.stringify(remoteFiles));
+      if (!Array.isArray(remoteFiles) || remoteFiles.length === 0) {
+        isAnyDownloadActive = false;
+        return;
+      }
 
       const storedMetaStr = await AsyncStorage.getItem('@elk_downloaded_maps_meta');
       let storedMeta: Record<string, { url: string; modified_at?: string }> = {};
@@ -615,12 +642,14 @@ export const useOfflineMap = () => {
           storedMeta = JSON.parse(storedMetaStr);
         } catch (e) { }
       }
+      console.log(`[SilentSync] Local metadata stored:`, JSON.stringify(storedMeta));
 
       let updatesMade = false;
 
       for (const rf of remoteFiles) {
         const local = storedMeta[rf.filename];
         const needsUpdate = isMapFileOutdated(local, { url: rf.url, modified_at: rf.modified_at });
+        console.log(`[SilentSync] File ${rf.filename}: localMeta=${JSON.stringify(local)}, remoteMeta=${JSON.stringify({ url: rf.url, modified_at: rf.modified_at })}, needsUpdate: ${needsUpdate}`);
 
         if (needsUpdate) {
           const uri = docDir + rf.filename;
