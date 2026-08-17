@@ -53,12 +53,20 @@ export function createTables() {
       }
     }
 
-    // Self-healing: if events table exists but is empty, and sync_metadata has data, clear it to force a full sync.
+    // Self-healing: if critical relational tables (pois, programs, and events) are all empty,
+    // and sync_metadata has data, clear it to force a fresh full sync.
     if (metaCheck.length > 0) {
-      const eventsTableCheck = db.getAllSync("SELECT name FROM sqlite_master WHERE type='table' AND name='events';");
-      if (eventsTableCheck.length > 0) {
+      const poisTableCheck = db.getAllSync("SELECT name FROM sqlite_master WHERE type='table' AND name='pois';");
+      if (poisTableCheck.length > 0) {
+        const poiCount = db.getAllSync("SELECT COUNT(*) as count FROM pois;") as any[];
         const eventCount = db.getAllSync("SELECT COUNT(*) as count FROM events;") as any[];
-        if (eventCount[0] && eventCount[0].count === 0) {
+        const programCount = db.getAllSync("SELECT COUNT(*) as count FROM programs;") as any[];
+        
+        const poisEmpty = poiCount[0] && (poiCount[0] as any).count === 0;
+        const eventsEmpty = eventCount[0] && (eventCount[0] as any).count === 0;
+        const programsEmpty = programCount[0] && (programCount[0] as any).count === 0;
+
+        if (poisEmpty && eventsEmpty && programsEmpty) {
           console.log("Relational tables are empty. Clearing sync metadata to force fresh full sync...");
           db.execSync(`DELETE FROM sync_metadata;`);
         }

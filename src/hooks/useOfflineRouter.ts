@@ -5,8 +5,8 @@
  * Falls back to OSRM fetch when online and route not cached.
  * Falls back to straight-line distance if OSRM fails.
  */
-import { useCallback, useState } from 'react';
 import NetInfo from '@react-native-community/netinfo';
+import { useCallback, useState } from 'react';
 import { useAppContent } from '../contexts/AppContentContext';
 import { calcDistance, decodePolyline } from '../utils/mapUtils';
 import { getRoute, saveRoute } from '../utils/routeDatabase';
@@ -177,12 +177,17 @@ async function fetchFromOSRM(
 ): Promise<{ polyline: string; duration: number; distance: number } | null> {
   const fromCoord = `${from.longitude},${from.latitude}`;
   const toCoord = `${to.longitude},${to.latitude}`;
-  const osrmBase = 'https://router.project-osrm.org';
+  const osrmBase = process.env.EXPO_PUBLIC_OSRM_URL || '';
   const url = `${osrmBase.replace(/\/$/, '')}/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   console.log(`[OSRM] Fetching: ${url}`);
   try {
     const res = await fetch(url);
+    if (res.status === 429) {
+      console.warn('[OfflineRouter] OSRM Rate limit hit (429). Throttling...');
+      await new Promise(r => setTimeout(r, 2000));
+      return null;
+    }
     if (!res.ok) {
       console.warn(`[OSRM] HTTP error: ${res.status} ${res.statusText}`);
       return null;

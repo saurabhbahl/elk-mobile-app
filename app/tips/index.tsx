@@ -117,6 +117,7 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
         </Animated.View>
     );
 });
+TipCard.displayName = 'TipCard';
 
 export default function TipsScreen() {
     const { colors, fonts, isDark } = useTheme();

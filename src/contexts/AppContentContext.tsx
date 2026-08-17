@@ -7,12 +7,27 @@ import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 import {
-    AppBranding, PopupContent, HomeScreenData, ProgramsData,
-    EventsData, TrailsData, RentalsData, TipsData, PlanYourTripData,
-    CamerasData, VisitorsData, ProgramsSettingData, EventSettingsData,
-    LiveCamSettingsData, TrailSettingsData, RentalSettingsData,
-    TipsScreenSettingsData, MapSettingsData, NavigationData, PoisData,
-    MappedPoisData, AppContentData, AppContentDataContextType, AppContentSyncContextType
+    AppBranding,
+    AppContentDataContextType, AppContentSyncContextType,
+    CamerasData,
+    EventsData,
+    EventSettingsData,
+    HomeScreenData,
+    LiveCamSettingsData,
+    MappedPoisData,
+    MapSettingsData, NavigationData,
+    PlanYourTripData,
+    PoisData,
+    PopupContent,
+    ProgramsData,
+    ProgramsSettingData,
+    RentalsData,
+    RentalSettingsData,
+    TipsData,
+    TipsScreenSettingsData,
+    TrailsData,
+    TrailSettingsData,
+    VisitorsData
 } from '../types/app';
 export * from '../types/app';
 
@@ -171,9 +186,6 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         setSyncStatusText("Getting things ready...");
         setInitialSyncPhase('content');
 
-        // FORCE A FULL SYNC ONCE to recover the lost home_screen ID
-        // TODO: Remove this line after testing so it doesn't do a full sync every app boot!
-        appRepository.upsertMetadata('last_full_sync', '');
 
         try {
             const success = await SyncManager.fetchAndStoreAll((progress, status) => {

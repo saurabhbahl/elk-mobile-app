@@ -2,7 +2,7 @@ import AppText from "@/src/components/AppText";
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Platform, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
 import { useTheme } from '../../src/context/ThemeContext';
@@ -186,7 +186,7 @@ export default function SettingsScreen() {
         <View style={[styles.section, { marginTop: 20 }]}>
           <AppText style={styles.sectionTitle}>Refresh Data</AppText>
           <AppText style={styles.sectionDescription}>
-            Manually force a check for new content updates. Useful if you've been offline and want to make sure you have the latest information.
+            {"Manually force a check for new content updates. Useful if you've been offline and want to make sure you have the latest information."}
           </AppText>
 
           <TouchableOpacity
@@ -209,7 +209,7 @@ export default function SettingsScreen() {
         <View style={[styles.section, { marginTop: 20 }]}>
           <AppText style={styles.sectionTitle}>Offline Map</AppText>
           <AppText style={styles.sectionDescription}>
-            Download the map so you can use it even when you don't have a mobile signal or internet connection. The download uses about 307 MB of storage on your device.
+            {"Download the map so you can use it even when you don't have a mobile signal or internet connection. The download uses about 307 MB of storage on your device."}
           </AppText>
 
           {isInitializing ? (
@@ -352,7 +352,7 @@ export default function SettingsScreen() {
               onPress={() => {
                 Alert.alert(
                   'Clear Image Cache',
-                  'TThis will remove all downloaded images from your device. They will be downloaded again automatically when you use the app.',
+                  'This will remove all downloaded images from your device. They will be downloaded again automatically when you use the app.',
                   [
                     { text: 'Cancel', style: 'cancel' },
                     {
@@ -388,6 +388,25 @@ export default function SettingsScreen() {
               )}
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* ── Privacy Policy Section ─────────────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <AppText style={styles.sectionTitle}>Privacy Policy</AppText>
+          <AppText style={styles.sectionDescription}>
+            Read our Privacy Policy to understand how we collect, use, and protect your location and other data.
+          </AppText>
+          <TouchableOpacity
+            style={styles.downloadButton}
+            onPress={() => {
+              Linking.openURL('https://keystoneelkcountryalliance.com/privacy-policy/').catch(err =>
+                console.error("Couldn't open Privacy Policy URL", err)
+              );
+            }}
+          >
+            <MaterialIcons name="security" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
+            <AppText style={styles.downloadButtonText}>View Privacy Policy</AppText>
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 120 + safeBottom }} />

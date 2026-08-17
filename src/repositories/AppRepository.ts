@@ -29,7 +29,11 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
     ];
     tables.forEach(table => {
       try {
-        this.execute(`DELETE FROM ${table};`);
+        if (table === 'sync_metadata') {
+          this.execute(`DELETE FROM sync_metadata WHERE key != 'db_schema_version';`);
+        } else {
+          this.execute(`DELETE FROM ${table};`);
+        }
       } catch (e) {
         console.warn(`Failed to clear table ${table}:`, e);
       }

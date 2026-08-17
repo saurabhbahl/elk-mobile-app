@@ -23,7 +23,7 @@ export async function fetchAndCacheRoute(from: any, to: any): Promise<boolean> {
 
   if (await hasRoute(from.id, to.id, fromCoord, toCoord)) return true;
 
-  const osrmBase = 'https://router.project-osrm.org';
+  const osrmBase = process.env.EXPO_PUBLIC_OSRM_URL || '';
   const url = `${osrmBase.replace(/\/$/, '')}/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   try {

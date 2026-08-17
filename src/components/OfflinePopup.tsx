@@ -47,9 +47,9 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
             <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(139,30,30,0.08)' }]}>
                 <MaterialCommunityIcons name="wifi-off" size={32} color={primaryColor} />
             </View>
-            <AppText style={[styles.title, { color: colors.onSurface }]}>You're Offline</AppText>
+            <AppText style={[styles.title, { color: colors.onSurface }]}>{"You're Offline"}</AppText>
             <AppText style={[styles.message, { color: colors.onSurfaceVariant }]}>
-                No internet connection was detected. You're viewing the latest content saved on your device. Any new updates will be downloaded automatically once you're back online.
+                {"No internet connection was detected. You're viewing the latest content saved on your device. Any new updates will be downloaded automatically once you're back online."}
             </AppText>
 
             <View style={styles.buttonContainer}>

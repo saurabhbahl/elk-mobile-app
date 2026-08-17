@@ -1,3 +1,11 @@
+if (!__DEV__) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
+
 import { Lexend_500Medium } from '@expo-google-fonts/lexend';
 import {
   OpenSans_400Regular,
@@ -10,11 +18,11 @@ import {
   Roboto_700Bold,
 } from '@expo-google-fonts/roboto';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack, usePathname, useSegments } from "expo-router";
+import { Stack, usePathname, useSegments, router } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from "expo-status-bar";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native";
+import { ActivityIndicator, AppState, AppStateStatus, BackHandler, Platform, View } from "react-native";
 
 import OfflinePopup from "@/src/components/OfflinePopup";
 
@@ -223,6 +231,37 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
 
 
 
+  // Hardware Back Button Handler for Android
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const onBackPress = () => {
+      // 1. If currently navigating in Turn-by-Turn Map mode, let Map screen handle it
+      if (isNavigating) {
+        return false;
+      }
+
+      // 2. If the navigation stack can go back, pop to previous screen
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+
+      // 3. If on a secondary tab/screen with no stack, return to Home tab
+      const isHome = pathname === '/' || pathname === '/(home)' || pathname === '/index' || pathname === '/(home)/index';
+      if (!isHome) {
+        router.replace('/(home)');
+        return true;
+      }
+
+      // 4. On Home tab with empty stack -> default exit app behavior
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [pathname, isNavigating]);
+
   // Hide headers on splash (index) and modal routes
   const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
   const isModal = pathname === '/modal';
@@ -301,7 +340,6 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
       {shouldShowHeader && (
         <BottomNavbar />
       )}
-      <OfflinePopup />
     </View>
   );
 }

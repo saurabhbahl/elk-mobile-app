@@ -22,22 +22,20 @@ type UniversalCardProps = {
 };
 
 export default function UniversalCard({ type, item, variant, primaryColor, onPress, hideBadge }: UniversalCardProps) {
-    if (!item) return null;
-
     // Parse date for programs and events
     let badge = null;
 
-    if (type === 'program' && item.schedule_dates) {
+    if (item && type === 'program' && item.schedule_dates) {
         badge = formatDateBadge(item.schedule_dates);
-    } else if (type === 'event' && item["start_date_&_time"]) {
+    } else if (item && type === 'event' && item["start_date_&_time"]) {
         badge = formatDateBadge(item["start_date_&_time"]);
     }
 
-    const title = type === 'program' ? item.program_name : type === 'rental' ? item.rental_name : item.event_name;
-    const subtitle = type === 'rental' ? item.rental_type : item.short_description;
+    const title = item ? (type === 'program' ? item.program_name : type === 'rental' ? item.rental_name : item.event_name) : '';
+    const subtitle = item ? (type === 'rental' ? item.rental_type : item.short_description) : '';
 
-    let imageUrl = item.thumbnail_image?.url as string;
-    if (type === 'rental') {
+    let imageUrl = item?.thumbnail_image?.url as string;
+    if (item && type === 'rental') {
         // specific to Rentals (we use featured_image for cards now)
         if (item.featured_image && typeof item.featured_image === 'object' && 'url' in item.featured_image) {
             imageUrl = (item.featured_image as any).url;
@@ -70,6 +68,8 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
     };
 
     const [isImageLoading, setIsImageLoading] = React.useState(!!imageUrl);
+
+    if (!item) return null;
 
     return (
         <TouchableOpacity style={getCardStyle()} activeOpacity={0.85} onPress={handlePress}>

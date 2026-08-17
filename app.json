@@ -14,9 +14,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.elkApp",
+      "bundleIdentifier": "com.keystoneelk.explorer",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Your location is used to show your position on the Elk County map and help you navigate to trails, points of interest, and park features."
       }
     },
     "android": {
@@ -27,8 +28,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.elkApp"
+      "package": "com.keystoneelk.explorer"
     },
     "web": {
       "output": "static",
@@ -51,7 +51,8 @@
       "@maplibre/maplibre-react-native",
       "expo-asset",
       "expo-sqlite",
-      "expo-video"
+      "expo-video",
+      "./src/plugins/withCustomAndroidConfig.js"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -131,7 +131,7 @@ export default function LiveCameraScreen() {
                             baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                         }}
                         allowsInlineMediaPlayback={true}
-                        mediaPlaybackRequiresUserAction={false}
+                        mediaPlaybackRequiresUserAction={true}
                         allowsFullscreenVideo={true}
                         scrollEnabled={false}
                         onShouldStartLoadWithRequest={handleWebViewNavigation}
@@ -176,7 +176,7 @@ export default function LiveCameraScreen() {
                         baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                     }}
                     allowsInlineMediaPlayback={true}
-                    mediaPlaybackRequiresUserAction={false}
+                    mediaPlaybackRequiresUserAction={true}
                     scrollEnabled={false}
                     scalesPageToFit={true}
                     allowsFullscreenVideo={true}

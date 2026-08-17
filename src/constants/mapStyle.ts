@@ -8,7 +8,7 @@ export const OFFLINE_VECTOR_SOURCE_ID = 'elk-vector-source';
 export const ONLINE_FALLBACK_STYLE = {
   version: 8,
   name: 'Elk County Heritage Online',
-  glyphs: 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
+  glyphs: process.env.EXPO_PUBLIC_GLYPHS_URL || 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
   sources: {
     'osm-raster': {
       type: 'raster',
@@ -54,7 +54,7 @@ export const BASE_OFFLINE_STYLE = {
   version: 8,
   name: 'Elk County Heritage Offline',
   // Glyphs are cached by MapLibre after first online use, available offline.
-  glyphs: 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
+  glyphs: process.env.EXPO_PUBLIC_GLYPHS_URL || 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
   sources: {
     'osm-raster': {
       type: 'raster',

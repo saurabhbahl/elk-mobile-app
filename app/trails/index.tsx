@@ -90,6 +90,7 @@ const TrailCard = React.memo(({ item, index, styles }: {
         </Animated.View>
     );
 });
+TrailCard.displayName = 'TrailCard';
 
 export default function TrailsScreen() {
     const { colors, fonts, isDark } = useTheme();

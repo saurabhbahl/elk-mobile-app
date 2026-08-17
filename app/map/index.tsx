@@ -903,32 +903,37 @@ function MapScreen() {
   }, [isNavigating, handleExitNavigation]);
 
   // ── Memoized waypoint marker ────────────────────────────────────────────────
-  const WaypointMarker = useMemo(() => React.memo(({
-    waypoint, isSelected, onPress, Marker: MarkerComp
-  }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; Marker: any }) => (
-    <MarkerComp
-      key={`waypoint-${waypoint.id}`}
-      id={`waypoint-${waypoint.id}`}
-      lngLat={toLngLat(waypoint.coordinate)}
-      anchor="bottom"
-    >
-      <TouchableOpacity onPress={() => onPress(waypoint)}>
-        {waypoint.pin_icon_override ? (
-          <Image
-            source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : (waypoint.pin_icon_override as any).url }}
-            style={{ width: isSelected ? 32 : 24, height: isSelected ? 32 : 24 }}
-            contentFit="contain"
-          />
-        ) : (
-          <Image
-            source={require('../../assets/images/pin.png')}
-            style={{ width: isSelected ? 44 : 36, height: isSelected ? 44 : 36 }}
-            contentFit="contain"
-          />
-        )}
-      </TouchableOpacity>
-    </MarkerComp>
-  )), [styles, colors.primary]);
+  const WaypointMarker = useMemo(() => {
+    const WaypointMarkerComponent = ({
+      waypoint, isSelected, onPress, Marker: MarkerComp
+    }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; Marker: any }) => (
+      <MarkerComp
+        key={`waypoint-${waypoint.id}`}
+        id={`waypoint-${waypoint.id}`}
+        lngLat={toLngLat(waypoint.coordinate)}
+        anchor="bottom"
+      >
+        <TouchableOpacity onPress={() => onPress(waypoint)}>
+          {waypoint.pin_icon_override ? (
+            <Image
+              source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : (waypoint.pin_icon_override as any).url }}
+              style={{ width: isSelected ? 32 : 24, height: isSelected ? 32 : 24 }}
+              contentFit="contain"
+            />
+          ) : (
+            <Image
+              source={require('../../assets/images/pin.png')}
+              style={{ width: isSelected ? 44 : 36, height: isSelected ? 44 : 36 }}
+              contentFit="contain"
+            />
+          )}
+        </TouchableOpacity>
+      </MarkerComp>
+    );
+    const Memoized = React.memo(WaypointMarkerComponent);
+    Memoized.displayName = 'WaypointMarker';
+    return Memoized;
+  }, [styles, colors.primary]);
 
   // ── Waypoint card renderer ──────────────────────────────────────────────────
   const renderWaypointCard = useCallback(({ item }: { item: Waypoint }) => (
@@ -1037,8 +1042,6 @@ function MapScreen() {
           ref={mapRef}
           style={styles.map}
           mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
-          logo={false}
-          attribution={false}
           compass={false}
           onPress={(event: any) => {
             if (isTappingMarker.current) return;
@@ -1150,6 +1153,13 @@ function MapScreen() {
             />
           ))}
         </Map>
+
+        {/* OSM & CARTO Attribution Overlay */}
+        <View style={styles.attributionContainer} pointerEvents="none">
+          <AppText style={styles.attributionText}>
+            {"© OpenStreetMap contributors | © CARTO"}
+          </AppText>
+        </View>
 
 
         {/* ── Drop-pin mode: crosshair ── */}
@@ -1421,7 +1431,7 @@ function MapScreen() {
               <View style={styles.arrivalIconContainer}>
                 <MaterialIcons name="location-on" size={40} color={colors.onPrimary} />
               </View>
-              <AppText style={styles.arrivalTitle}>You've Reached Your Destination</AppText>
+              <AppText style={styles.arrivalTitle}>{"You've Reached Your Destination"}</AppText>
               <AppText style={styles.arrivalSubtitle}>
                 {destinationPoint?.title ?? 'Your destination'}
               </AppText>
@@ -2083,5 +2093,22 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       color: colors.onPrimary,
       fontFamily: fonts.bodyBold,
       fontSize: 18,
+    },
+    attributionContainer: {
+      position: 'absolute',
+      bottom: 8,
+      left: 12,
+      backgroundColor: isDark ? 'rgba(46, 59, 47, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+      zIndex: 10,
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + '33',
+    },
+    attributionText: {
+      fontSize: 9,
+      fontFamily: fonts.body,
+      color: isDark ? '#FFFFFF' : '#333333',
     },
   });
