@@ -5,10 +5,11 @@
  * Falls back to OSRM fetch when online and route not cached.
  * Falls back to straight-line distance if OSRM fails.
  */
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { useAppContent } from '../contexts/AppContentContext';
+import { calcDistance, decodePolyline } from '../utils/mapUtils';
 import { getRoute, saveRoute } from '../utils/routeDatabase';
-import { decodePolyline, calcDistance } from '../utils/mapUtils';
 
 interface OfflineRouteResult {
   coordinates: [number, number][] | null;
@@ -79,6 +80,11 @@ export function useOfflineRouter() {
           console.log(`[OfflineRouter] Using cached route ${segmentFrom.id}→${segmentTo.id} (${segmentDistance}m, ${segmentDuration}s)`);
         } else {
           fromCache = false;
+          const netState = await NetInfo.fetch();
+          if (!netState.isConnected) {
+            console.log(`[OfflineRouter] Route ${segmentFrom.id}→${segmentTo.id} not cached and user is offline.`);
+            throw new Error("offline_no_cache");
+          }
           console.log(`[OfflineRouter] Route ${segmentFrom.id}→${segmentTo.id} not cached, fetching from OSRM`);
           const osrmResult = await fetchFromOSRM(segmentFrom.coord, segmentTo.coord);
 
@@ -171,7 +177,8 @@ async function fetchFromOSRM(
 ): Promise<{ polyline: string; duration: number; distance: number } | null> {
   const fromCoord = `${from.longitude},${from.latitude}`;
   const toCoord = `${to.longitude},${to.latitude}`;
-  const url = `https://router.project-osrm.org/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
+  const osrmBase = 'https://router.project-osrm.org';
+  const url = `${osrmBase.replace(/\/$/, '')}/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   console.log(`[OSRM] Fetching: ${url}`);
   try {

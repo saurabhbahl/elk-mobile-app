@@ -1,4 +1,5 @@
 import { EventsData, ProgramsData } from '@/src/contexts/AppContentContext';
+import { formatDateBadge } from '@/src/utils/dateUtils';
 import { isValidData } from '@/src/utils/validation';
 import { ImageBackground } from 'expo-image';
 import { router } from 'expo-router';
@@ -26,51 +27,10 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
     // Parse date for programs and events
     let badge = null;
 
-    const parseDateStr = (dateStr: string) => {
-        // Matches: 20 July 2026
-        const match = dateStr.match(/(\d{1,2})\s+([A-Za-z]+)/);
-        // Matches: July 20, 2026
-        const matchUS = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})/);
-
-        if (match) {
-            return {
-                month: match[2].toUpperCase().slice(0, 3),
-                day: match[1]
-            };
-        } else if (matchUS) {
-            return {
-                month: matchUS[1].toUpperCase().slice(0, 3),
-                day: matchUS[2]
-            };
-        }
-
-        // Fallback standard parsing
-        const dateObj = new Date(dateStr);
-        if (!isNaN(dateObj.getTime())) {
-            const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            return { month: MONTHS[dateObj.getMonth()], day: dateObj.getDate().toString() };
-        }
-        return null;
-    };
-
-    const parseEventDateStr = (dateStr: string) => {
-        // Matches: 17/07/2026 1:00 am
-        const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-        if (match) {
-            const day = match[1];
-            const monthIndex = parseInt(match[2], 10) - 1;
-            const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-            if (monthIndex >= 0 && monthIndex < 12) {
-                return { month: MONTHS[monthIndex], day: day };
-            }
-        }
-        return null;
-    };
-
     if (type === 'program' && item.schedule_dates) {
-        badge = parseDateStr(item.schedule_dates);
+        badge = formatDateBadge(item.schedule_dates);
     } else if (type === 'event' && item["start_date_&_time"]) {
-        badge = parseEventDateStr(item["start_date_&_time"]);
+        badge = formatDateBadge(item["start_date_&_time"]);
     }
 
     const title = type === 'program' ? item.program_name : type === 'rental' ? item.rental_name : item.event_name;

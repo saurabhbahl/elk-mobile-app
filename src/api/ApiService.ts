@@ -17,6 +17,9 @@ export class ApiService {
       if (params) {
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
       }
+      if (endpoint == 'routes') {
+        console.log(url.toString());
+      }
       const response = await this.fetchWithTimeout(url.toString(), {
         method: 'GET',
         headers: {

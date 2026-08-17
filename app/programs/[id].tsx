@@ -13,8 +13,6 @@ import {
 } from "react-native";
 import Animated from "react-native-reanimated";
 import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -25,6 +23,8 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "../../src/utils/validation";
+
+const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -59,8 +59,6 @@ export default function ProgramDetailScreen() {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={primaryColor} />
                 </View>
@@ -72,8 +70,6 @@ export default function ProgramDetailScreen() {
         return (
             <SafeAreaView style={styles.container} edges={["left", "right"]}>
                 <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-
                 <View style={styles.errorContainer}>
                     <AppText style={styles.errorText}>Program not found.</AppText>
                     <TouchableOpacity
@@ -96,15 +92,13 @@ export default function ProgramDetailScreen() {
         >
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
-
-
-
             <Animated.ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
                 <Navbar />
                 <QuickLinks />
+
                 {/* Heading Row */}
                 {isValidData(program.program_name) ? (
                     <View style={{ paddingHorizontal: 16 }}>
@@ -143,14 +137,18 @@ export default function ProgramDetailScreen() {
                             {program.schedule_dates}
                         </AppText>
                     ) : null}
+
                     {/* Short Description */}
-                    <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 14, fontWeight: '700', color: colors.onSurface, marginBottom: 12 }}>
-                        {isValidData(program.short_description) ? program.short_description : "Elk Country Visitor Center"}
-                    </AppText>
+                    {isValidData(program.short_description) ? (
+                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 14, fontWeight: '700', color: colors.onSurface, marginBottom: 12 }}>
+                            {program.short_description}
+                        </AppText>
+                    ) : null}
 
                     {/* Description Paragraph */}
-                    {rawDescription ? (
-                        <RenderHTML systemFonts={systemFonts}
+                    {isValidData(rawDescription) ? (
+                        <RenderHTML
+                            systemFonts={systemFonts}
                             contentWidth={width - 32} // paddingHorizontal is 16 on each side
                             source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
                             baseStyle={{

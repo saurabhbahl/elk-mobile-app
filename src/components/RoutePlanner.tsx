@@ -88,11 +88,14 @@ function WaypointSelector({
           <ScrollView style={{ maxHeight: 420 }} keyboardShouldPersistTaps="handled">
             {currentLocationWP && (
               <TouchableOpacity
-                style={selectorStyles.item}
+                style={[selectorStyles.item, selected?.id === 999 && { backgroundColor: colors.primaryContainer, borderRadius: 10 }]}
                 onPress={() => { onSelect(currentLocationWP); setOpen(false); }}
               >
-                <MaterialIcons name="my-location" size={20} color={textColor} />
-                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }]}>Current Location</AppText>
+                <MaterialIcons name="my-location" size={20} color={selected?.id === 999 ? '#FFFFFF' : textColor} />
+                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: selected?.id === 999 ? '#FFFFFF' : colors.onSurface }, selected?.id === 999 && { fontFamily: fonts.bodyBold }]} numberOfLines={1}>Current Location</AppText>
+                {selected?.id === 999 && (
+                  <MaterialIcons name="check" size={18} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
             )}
             {waypoints.map(wp => (
@@ -101,10 +104,10 @@ function WaypointSelector({
                 style={[selectorStyles.item, selected?.id === wp.id && { backgroundColor: colors.primaryContainer, borderRadius: 10 }]}
                 onPress={() => { onSelect(wp); setOpen(false); }}
               >
-                <MaterialIcons name="place" size={20} color={textColor} />
-                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: colors.onSurface }, selected?.id === wp.id && { fontFamily: fonts.bodyBold, color: textColor }]} numberOfLines={1}>{wp.title}</AppText>
+                <MaterialIcons name="place" size={20} color={selected?.id === wp.id ? '#FFFFFF' : textColor} />
+                <AppText style={[selectorStyles.itemText, { fontFamily: fonts.body, fontSize: 13, color: selected?.id === wp.id ? '#FFFFFF' : colors.onSurface }, selected?.id === wp.id && { fontFamily: fonts.bodyBold }]} numberOfLines={1}>{wp.title}</AppText>
                 {selected?.id === wp.id && (
-                  <MaterialIcons name="check" size={18} color={textColor} />
+                  <MaterialIcons name="check" size={18} color="#FFFFFF" />
                 )}
               </TouchableOpacity>
             ))}

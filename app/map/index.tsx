@@ -27,7 +27,6 @@ import {
   Easing,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -636,8 +635,15 @@ function MapScreen() {
           fitRouteToCamera(coords, 1000);
         });
       }
-    } catch (error) {
-      console.error('CRASH PREVENTED in startActualNavigation:', error);
+    } catch (error: any) {
+      if (error?.message === "offline_no_cache") {
+        setTimeout(() => {
+          Alert.alert(
+            'Internet Required',
+            'Route cannot be calculated. This requires an internet connection.'
+          );
+        }, 300);
+      }
     } finally {
       setIsCalculatingRoute(false);
       setTimeout(() => { isNavInFlightRef.current = false; }, 1000);
@@ -1276,7 +1282,7 @@ function MapScreen() {
             exiting={FadeOutDown.duration(200)}
             style={[
               styles.offlineIndicatorContainer,
-              { bottom: (selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90) + (highlightedRoute ? 52 : 0) }
+              { bottom: (selectedWaypoint ? insets.bottom + 205 : insets.bottom + 90) + (highlightedRoute ? 52 : 0) }
             ]}
           >
             <View style={styles.offlineIndicatorCard}>
@@ -1300,7 +1306,7 @@ function MapScreen() {
           <Reanimated.View
             entering={FadeInDown.duration(300)}
             exiting={FadeOutDown.duration(200)}
-            style={[styles.routeTooltipContainer, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}
+            style={[styles.routeTooltipContainer, { bottom: selectedWaypoint ? insets.bottom + 205 : insets.bottom + 90 }]}
           >
             <View style={styles.routeTooltipCard}>
               <View style={[

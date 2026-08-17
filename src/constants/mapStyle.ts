@@ -1,4 +1,4 @@
-import { MBTILES_FILE_PATH, SECONDARY_MBTILES_FILE_PATH } from '../hooks/useOfflineMap';
+import { MBTILES_FILE_PATH } from '../hooks/useOfflineMap';
 
 export const OFFLINE_VECTOR_SOURCE_ID = 'elk-vector-source';
 
@@ -285,7 +285,7 @@ export const BASE_OFFLINE_STYLE = {
         'text-halo-width': 2,
       },
     },
-  
+
     // --- INDIA LAYERS (Optimized) ---
     {
       id: 'water-fill-india',
@@ -322,10 +322,10 @@ export const BASE_OFFLINE_STYLE = {
 
 export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: string[] = []) {
   const base = hasMap ? BASE_OFFLINE_STYLE : ONLINE_FALLBACK_STYLE;
-  
+
   // Deep clone the base style so we don't mutate static constants
   const style = JSON.parse(JSON.stringify(base));
-  
+
   // Inject/override vector sources using downloaded file paths.
   // secondary always falls back to primary (never references a file that may not exist).
   if (hasMap) {
@@ -340,11 +340,11 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       url: `mbtiles://${secondary}`,
     };
   }
-  
+
   if (!isDark) {
     return style;
   }
-  
+
   // Apply dark mode adjustments
   style.layers.forEach((layer: Record<string, unknown>) => {
     if (layer.id === 'background') {
@@ -383,6 +383,6 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       layer.paint = { 'text-color': '#a8d498', 'text-halo-color': '#111413', 'text-halo-width': 2, 'text-opacity': 0.55 };
     }
   });
-  
+
   return style;
 }

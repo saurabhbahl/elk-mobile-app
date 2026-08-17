@@ -49,8 +49,11 @@ function emit() {
   listeners.forEach(l => l());
 }
 
+import * as SQLite from 'expo-sqlite';
+
 /** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
 async function isValidMbtiles(uri: string): Promise<boolean> {
+  let tempDb: SQLite.SQLiteDatabase | null = null;
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
     if (!fileInfo.exists || fileInfo.size < 1024 * 1024) {
@@ -58,15 +61,19 @@ async function isValidMbtiles(uri: string): Promise<boolean> {
       return false;
     }
 
-    const header = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-      length: 16,
-      position: 0,
-    });
-    const decoded = atob(header);
-    return decoded.startsWith('SQLite format 3');
-  } catch {
+    const cleanPath = uri.replace('file://', '');
+    tempDb = SQLite.openDatabaseSync(cleanPath);
+    tempDb.execSync('SELECT count(*) FROM sqlite_master;');
+    return true;
+  } catch (e) {
+    console.warn(`[useOfflineMap] MBTiles database validation failed for ${uri}:`, e);
     return false;
+  } finally {
+    if (tempDb) {
+      try {
+        tempDb.closeSync();
+      } catch {}
+    }
   }
 }
 

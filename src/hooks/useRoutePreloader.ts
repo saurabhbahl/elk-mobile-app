@@ -15,23 +15,34 @@ export interface PreloadProgress {
 }
 
 export async function fetchAndCacheRoute(from: any, to: any): Promise<boolean> {
-  if (!from || !to) return false;
+  if (!from || !to || !from.coordinate || !to.coordinate) return false;
+  if (from.id === to.id) return true;
 
   const fromCoord = `${from.coordinate.longitude},${from.coordinate.latitude}`;
   const toCoord = `${to.coordinate.longitude},${to.coordinate.latitude}`;
 
   if (await hasRoute(from.id, to.id, fromCoord, toCoord)) return true;
 
-  const url = `https://router.project-osrm.org/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
+  const osrmBase = 'https://router.project-osrm.org';
+  const url = `${osrmBase.replace(/\/$/, '')}/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
+
+    if (res.status === 429) {
+      console.warn('[RoutePreloader] OSRM Rate limit hit (429). Throttling...');
+      await new Promise(r => setTimeout(r, 2000));
+      return false;
+    }
+
+    if (!res.ok) return false;
+
     const data = await res.json();
     if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-      await saveRoute(from.id, to.id, data.routes[0].geometry, 0, 0, fromCoord, toCoord);
+      await saveRoute(from.id, to.id, data.routes[0].geometry, data.routes[0].duration || 0, data.routes[0].distance || 0, fromCoord, toCoord);
       return true;
     }
   } catch (err) {
@@ -69,9 +80,8 @@ export async function preloadAllRoutesHelper(waypoints: any[], onProgress?: (p: 
       const p: PreloadProgress = { current, total, percentage: Math.round((current / total) * 100) };
       onProgress?.(p);
 
-      if (current % 10 === 0) {
-        await new Promise(r => setTimeout(r, 200));
-      }
+      // Throttling: 100ms delay between requests to avoid rate limits
+      await new Promise(r => setTimeout(r, 100));
     }
   }
 

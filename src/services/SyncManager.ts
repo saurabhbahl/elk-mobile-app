@@ -3,6 +3,7 @@ import { ApiService } from '../api/ApiService';
 import { db } from '../database/index';
 import { appRepository } from '../repositories/AppRepository';
 import { cacheImageIfNeeded, clearImageCache } from '../utils/imageCache';
+import { isDateExpired } from '../utils/dateUtils';
 
 // Helper to set nested object properties in-place
 function setNestedValue(obj: Record<string, unknown>, path: string[], value: unknown) {
@@ -108,6 +109,8 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
 }
 
 export class SyncManager {
+  private static activeSyncPromise: Promise<boolean> | null = null;
+
   static async triggerDeltaSync(): Promise<boolean> {
     console.log("[SyncManager] Triggering background delta sync");
     try {
@@ -150,10 +153,16 @@ export class SyncManager {
     isDelta = false,
     lastSyncTime?: string
   ): Promise<boolean> {
-    const netInfo = await NetInfo.fetch();
-    if (!netInfo.isConnected) {
-      throw new Error('No network connection available for initial sync');
+    if (SyncManager.activeSyncPromise) {
+      console.log("[SyncManager] Sync already in progress, awaiting active sync...");
+      return SyncManager.activeSyncPromise;
     }
+
+    const task = (async () => {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) {
+        throw new Error('No network connection available for initial sync');
+      }
 
     try {
       if (onProgress) onProgress(0.05, 'Downloading app content...');
@@ -317,6 +326,14 @@ export class SyncManager {
       console.error('Fetch and store error:', e);
       throw e;
     }
+    })();
+
+    SyncManager.activeSyncPromise = task;
+    try {
+      return await task;
+    } finally {
+      SyncManager.activeSyncPromise = null;
+    }
   }
 
   static cleanupExpiredEvents() {
@@ -349,38 +366,6 @@ export class SyncManager {
     const dateStr = event['end_date_&_time'] || event['start_date_&_time'];
     if (!dateStr || typeof dateStr !== 'string') return false;
 
-    try {
-      let cleanStr = dateStr.replace(' at ', ' ').trim();
-      const match = cleanStr.match(/(\d{2})\/(\d{2})\/(\d{4})(.*)/);
-      if (match) {
-        const day = parseInt(match[1], 10);
-        const month = parseInt(match[2], 10) - 1; // 0-indexed month
-        const year = parseInt(match[3], 10);
-        const timePart = match[4].trim();
-
-        let hours = 0;
-        let mins = 0;
-        const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
-        if (timeMatch) {
-          let h = parseInt(timeMatch[1], 10);
-          mins = parseInt(timeMatch[2], 10);
-          const isPM = timeMatch[3].toLowerCase() === 'pm';
-
-          if (isPM && h < 12) h += 12;
-          if (!isPM && h === 12) h = 0;
-          hours = h;
-        }
-
-        const eventTime = new Date(year, month, day, hours, mins, 0).getTime();
-
-        if (!isNaN(eventTime)) {
-          return eventTime < Date.now();
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to parse event date for expiration check", e);
-    }
-
-    return false;
+    return isDateExpired(dateStr);
   }
 }

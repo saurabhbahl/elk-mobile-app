@@ -10,7 +10,8 @@ export function isValidData(val: any): boolean {
   }
 
   if (typeof val === 'string') {
-    return val.trim() !== '';
+    const trimmed = val.trim().toLowerCase();
+    return trimmed !== '' && trimmed !== 'null' && trimmed !== 'undefined';
   }
 
   if (Array.isArray(val)) {

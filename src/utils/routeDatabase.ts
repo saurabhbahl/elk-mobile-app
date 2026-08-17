@@ -1,47 +1,36 @@
 /**
  * SQLite database for offline route storage.
+ * Integrated with central app.db database.
  *
  * Schema:
  *   routes(id INTEGER PRIMARY KEY, from_id INTEGER, to_id INTEGER, encoded_polyline TEXT, duration REAL, distance REAL)
  */
-import * as SQLite from 'expo-sqlite';
+import { db } from '../database/index';
 
-const DB_NAME = 'elk_routes.db';
-let db: SQLite.SQLiteDatabase | null = null;
-
-export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
-  if (db) return db;
-  db = await SQLite.openDatabaseAsync(DB_NAME);
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS routes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      from_id INTEGER NOT NULL,
-      to_id INTEGER NOT NULL,
-      encoded_polyline TEXT NOT NULL,
-      duration REAL DEFAULT 0,
-      distance REAL DEFAULT 0,
-      UNIQUE(from_id, to_id)
-    );
-  `);
-  // Migration for existing databases that lack duration/distance columns
-  try { await db.execAsync('ALTER TABLE routes ADD COLUMN duration REAL DEFAULT 0'); } catch {}
-  try { await db.execAsync('ALTER TABLE routes ADD COLUMN distance REAL DEFAULT 0'); } catch {}
-  try { await db.execAsync('ALTER TABLE routes ADD COLUMN from_coord TEXT DEFAULT ""'); } catch {}
-  try { await db.execAsync('ALTER TABLE routes ADD COLUMN to_coord TEXT DEFAULT ""'); } catch {}
+export async function getDatabase() {
   return db;
 }
 
-export async function saveRoute(fromId: number, toId: number, polyline: string, duration = 0, distance = 0, fromCoord = "", toCoord = ""): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync(
+export async function saveRoute(
+  fromId: number,
+  toId: number,
+  polyline: string,
+  duration = 0,
+  distance = 0,
+  fromCoord = "",
+  toCoord = ""
+): Promise<void> {
+  db.runSync(
     `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance, from_coord, to_coord) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [fromId, toId, polyline, duration, distance, fromCoord, toCoord]
   );
 }
 
-export async function getRoute(fromId: number, toId: number): Promise<{ polyline: string; duration: number; distance: number } | null> {
-  const database = await getDatabase();
-  const row = await database.getFirstAsync<{ encoded_polyline: string; duration: number; distance: number }>(
+export async function getRoute(
+  fromId: number,
+  toId: number
+): Promise<{ polyline: string; duration: number; distance: number } | null> {
+  const row = db.getFirstSync<{ encoded_polyline: string; duration: number; distance: number }>(
     `SELECT encoded_polyline, duration, distance FROM routes WHERE from_id = ? AND to_id = ?`,
     [fromId, toId]
   );
@@ -53,18 +42,21 @@ export async function getRoute(fromId: number, toId: number): Promise<{ polyline
   };
 }
 
-export async function hasRoute(fromId: number, toId: number, fromCoord = "", toCoord = ""): Promise<boolean> {
-  const database = await getDatabase();
-  
+export async function hasRoute(
+  fromId: number,
+  toId: number,
+  fromCoord = "",
+  toCoord = ""
+): Promise<boolean> {
   if (fromCoord && toCoord) {
-    const row = await database.getFirstAsync<{ cnt: number }>(
+    const row = db.getFirstSync<{ cnt: number }>(
       `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ? AND from_coord = ? AND to_coord = ?`,
       [fromId, toId, fromCoord, toCoord]
     );
     return (row?.cnt ?? 0) > 0;
   }
-  
-  const row = await database.getFirstAsync<{ cnt: number }>(
+
+  const row = db.getFirstSync<{ cnt: number }>(
     `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ?`,
     [fromId, toId]
   );
@@ -72,13 +64,11 @@ export async function hasRoute(fromId: number, toId: number, fromCoord = "", toC
 }
 
 export async function getAllCachedRoutes(): Promise<{ from_id: number; to_id: number; duration: number; distance: number }[]> {
-  const database = await getDatabase();
-  return database.getAllAsync<{ from_id: number; to_id: number; duration: number; distance: number }>(
+  return db.getAllSync<{ from_id: number; to_id: number; duration: number; distance: number }>(
     `SELECT from_id, to_id, duration, distance FROM routes`
   );
 }
 
 export async function clearAllRoutes(): Promise<void> {
-  const database = await getDatabase();
-  await database.runAsync(`DELETE FROM routes`);
+  db.runSync(`DELETE FROM routes`);
 }

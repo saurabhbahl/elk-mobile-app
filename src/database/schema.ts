@@ -1,3 +1,4 @@
+import * as SQLite from "expo-sqlite";
 import { db } from "./index";
 import { createCamerasTable } from "./tables/cameras";
 import { createEventsTable } from "./tables/events";
@@ -8,6 +9,24 @@ import { createRentalsTable } from "./tables/rentals";
 import { createSettingsTables } from "./tables/settings";
 import { createTipsTable } from "./tables/tips";
 import { createTrailsTable } from "./tables/trails";
+
+const CURRENT_SCHEMA_VERSION = "2";
+
+export function createRoutesTable(database: SQLite.SQLiteDatabase) {
+  database.execSync(`
+  CREATE TABLE IF NOT EXISTS routes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_id INTEGER NOT NULL,
+    to_id INTEGER NOT NULL,
+    encoded_polyline TEXT NOT NULL,
+    duration REAL DEFAULT 0,
+    distance REAL DEFAULT 0,
+    from_coord TEXT DEFAULT '',
+    to_coord TEXT DEFAULT '',
+    UNIQUE(from_id, to_id)
+  );
+  `);
+}
 
 export function createTables() {
   console.log("Creating tables...");
@@ -22,8 +41,19 @@ export function createTables() {
       db.execSync(`DROP TABLE IF EXISTS sync_metadata;`);
     }
 
-    // Self-healing: if events table exists but is empty, and sync_metadata has data, clear it to force a full sync.
+    // Check schema version for migrations
     const metaCheck = db.getAllSync("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_metadata';");
+    if (metaCheck.length > 0) {
+      const versionRow = db.getAllSync("SELECT value FROM sync_metadata WHERE key = 'db_schema_version';") as any[];
+      const savedVersion = versionRow && versionRow[0] ? versionRow[0].value : null;
+
+      if (savedVersion !== CURRENT_SCHEMA_VERSION) {
+        console.log(`Schema version mismatch (current: ${CURRENT_SCHEMA_VERSION}, saved: ${savedVersion}). Wiping sync metadata...`);
+        db.execSync(`DELETE FROM sync_metadata;`);
+      }
+    }
+
+    // Self-healing: if events table exists but is empty, and sync_metadata has data, clear it to force a full sync.
     if (metaCheck.length > 0) {
       const eventsTableCheck = db.getAllSync("SELECT name FROM sqlite_master WHERE type='table' AND name='events';");
       if (eventsTableCheck.length > 0) {
@@ -48,6 +78,12 @@ export function createTables() {
   createTipsTable(db);
   createCamerasTable(db);
   createSettingsTables(db);
+  createRoutesTable(db);
+
+  // Save current schema version
+  try {
+    db.execSync(`INSERT OR REPLACE INTO sync_metadata (key, value) VALUES ('db_schema_version', '${CURRENT_SCHEMA_VERSION}');`);
+  } catch {}
 
   console.log("All relational tables created successfully.");
 }

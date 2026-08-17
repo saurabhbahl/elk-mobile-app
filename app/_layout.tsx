@@ -19,7 +19,6 @@ import { ActivityIndicator, AppState, AppStateStatus, View } from "react-native"
 import OfflinePopup from "@/src/components/OfflinePopup";
 
 import { useAppContentData, useAppContentSync } from "@/src/contexts/AppContentContext";
-import { preloadAllRoutesHelper } from "@/src/hooks/useRoutePreloader";
 
 import {
   EBGaramond_500Medium,
@@ -186,9 +185,6 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
     latestPoisRef.current = poisData;
   }, [poisData]);
 
-  // Track both IDs and coordinates so updates to existing POIs trigger preloading
-  const poisHash = poisData?.map(p => `${p.id}-${p.coordinate.latitude}-${p.coordinate.longitude}`).join('|') || '';
-
   const QUICKLINKS_HEIGHT = 114;
   const quickLinksStyle = useAnimatedStyle(() => {
     return {
@@ -197,14 +193,6 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
       overflow: 'hidden',
     };
   });
-
-  // 1. Initial & Delta Route Preloading (Fires when POIs or their coordinates change)
-  useEffect(() => {
-    if (apiStatus !== 'ready') return;
-    if (poisData && poisData.length > 0) {
-      preloadAllRoutesHelper(poisData).catch(e => console.warn("[Background Preload] Failed:", e));
-    }
-  }, [apiStatus, poisHash]);
 
   // 2. Active Polling & Foreground Sync
   useEffect(() => {
