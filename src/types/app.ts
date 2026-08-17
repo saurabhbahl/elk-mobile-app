@@ -94,6 +94,7 @@ export interface RentalsData {
     id?: number;
     updated_at?: string;
     rental_name?: string;
+    featured_image?: boolean | Record<string, unknown>;
     additional_images?: any;
     short_description?: string;
     full_description?: string;

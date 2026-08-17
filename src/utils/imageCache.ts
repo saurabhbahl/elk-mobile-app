@@ -173,7 +173,28 @@ export async function cacheImageIfNeeded(url: string, forceRefresh: boolean = fa
     const filename = getSafeFilename(url);
     const localPath = CACHE_DIR + filename;
 
-    const result = await FileSystem.downloadAsync(url, localPath);
+    let result: FileSystem.FileSystemDownloadResult | null = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        result = await FileSystem.downloadAsync(url, localPath);
+        break; // Success, exit loop
+      } catch (err: any) {
+        attempts++;
+        console.warn(`[ImageCache] Attempt ${attempts} failed for ${url}: ${err.message}`);
+        
+        // Clean up any partially downloaded file before retrying
+        try { await FileSystem.deleteAsync(localPath, { idempotent: true }); } catch { /* ignore */ }
+        
+        if (attempts >= maxAttempts) {
+          throw err;
+        }
+        // Wait before retrying (exponential backoff)
+        await new Promise(res => setTimeout(res, attempts * 500));
+      }
+    }
 
     // CRITICAL: downloadAsync does NOT throw on HTTP errors (404, 403, etc.).
     // Must check status code explicitly — a non-200 response downloads an error HTML page.

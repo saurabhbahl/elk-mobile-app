@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractLink, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractPoiId } from './utils';
 
 export class SettingsRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -44,21 +44,19 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     const title = popup.popup_title || null;
     const body = popup.popup_body_copy || null;
     const img = helperExtractImage(popup.popup_image);
-    const label = popup.cta_button_label || null;
-    const link = popup.cta_button_link?.url || (typeof popup.cta_button_link === 'string' ? popup.cta_button_link : null);
+    const link = typeof popup.cta_button_link === 'object' ? JSON.stringify(popup.cta_button_link) : null;
     const closeStyle = popup.close_button_style || null;
 
     this.execute(`
-      INSERT OR REPLACE INTO popup_content (id, popup_enabled, popup_title, popup_body_copy, popup_image_url, cta_button_label, cta_button_link, close_button_style)
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?)
-    `, [enabled, title, body, img, label, link, closeStyle]);
+      INSERT OR REPLACE INTO popup_content (id, popup_enabled, popup_title, popup_body_copy, popup_image_url, cta_button_link, close_button_style)
+      VALUES (1, ?, ?, ?, ?, ?, ?)
+    `, [enabled, title, body, img, link, closeStyle]);
   }
 
   upsertHomeScreenSettings(hs: any) {
     const welcome = hs.hero_welcome_heading || null;
     const intro = hs.hero_intro_paragraph || null;
-    const ctaLabel = hs.hero_cta_button_label || null;
-    const ctaLink = hs.hero_cta_button_link?.url || (typeof hs.hero_cta_button_link === 'string' ? hs.hero_cta_button_link : null);
+    const ctaLink = typeof hs.hero_cta_button_link === 'object' ? JSON.stringify(hs.hero_cta_button_link) : null;
     const mapHeading = hs.map_block_heading || null;
     const mapViewLabel = hs.map_view_button_label || null;
     const programsHeading = hs.programs_block_heading || null;
@@ -83,9 +81,9 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     const trailsShow = hs.trail_links_to_show !== undefined ? parseInt(hs.trail_links_to_show, 10) : 3;
 
     this.execute(`
-      INSERT OR REPLACE INTO home_screen_settings (id, hero_welcome_heading, hero_intro_paragraph, hero_cta_button_label, hero_cta_button_link, map_block_heading, map_view_button_label, programs_block_heading, programs_to_display, event_block_heading, event_view_all_label, featured_event_id, trails_block_heading, trail_links_to_show)
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [welcome, intro, ctaLabel, ctaLink, mapHeading, mapViewLabel, programsHeading, programsDisplay, eventHeading, eventViewAll, featuredEventId, trailsHeading, trailsShow]);
+      INSERT OR REPLACE INTO home_screen_settings (id, hero_welcome_heading, hero_intro_paragraph, hero_cta_button_link, map_block_heading, map_view_button_label, programs_block_heading, programs_to_display, event_block_heading, event_view_all_label, featured_event_id, trails_block_heading, trail_links_to_show)
+      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [welcome, intro, ctaLink, mapHeading, mapViewLabel, programsHeading, programsDisplay, eventHeading, eventViewAll, featuredEventId, trailsHeading, trailsShow]);
   }
 
   upsertPlanYourTripSettings(pyt: any) {
@@ -101,14 +99,14 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     this.execute(`DELETE FROM plan_your_trip_sections;`);
     if (pyt.content_sections && Array.isArray(pyt.content_sections)) {
       pyt.content_sections.forEach((sec: any, idx: number) => {
-        const heading = sec.heading || null;
-        const icon = helperExtractImage(sec.section_icon || sec.icon);
-        const body = sec.section_body || sec.body || null;
+        const heading = sec.section_heading || null;
+        const icon = helperExtractImage(sec.section_icon);
+        const body = sec.section_body || null;
         const active = sec.section_active !== false ? 1 : 0;
         const order = sec.sort_order !== undefined ? parseInt(sec.sort_order, 10) : idx;
 
         this.execute(`
-          INSERT INTO plan_your_trip_sections (heading, icon_url, body, active, sort_order)
+          INSERT INTO plan_your_trip_sections (section_heading, section_icon_url, section_body, section_active, sort_order)
           VALUES (?, ?, ?, ?, ?)
         `, [heading, icon, body, active, order]);
       });
@@ -294,8 +292,10 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
           popup_title: row.popup_title,
           popup_body_copy: row.popup_body_copy,
           popup_image: row.popup_image_url ? { url: row.popup_image_url } : null,
-          cta_button_label: row.cta_button_label,
-          cta_button_link: row.cta_button_link ? { url: row.cta_button_link } : null,
+          cta_button_link: (function () {
+            if (!row.cta_button_link) return null;
+            try { return JSON.parse(row.cta_button_link); } catch (e) { return { url: row.cta_button_link }; }
+          })(),
           close_button_style: row.close_button_style
         };
       }
@@ -350,8 +350,10 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
         settingsMap.home_screen = {
           hero_welcome_heading: row.hero_welcome_heading,
           hero_intro_paragraph: row.hero_intro_paragraph,
-          hero_cta_button_label: row.hero_cta_button_label,
-          hero_cta_button_link: row.hero_cta_button_link ? { url: row.hero_cta_button_link } : null,
+          hero_cta_button_link: (function () {
+            if (!row.hero_cta_button_link) return null;
+            try { return JSON.parse(row.hero_cta_button_link); } catch (e) { return { url: row.hero_cta_button_link }; }
+          })(),
           map_block_heading: row.map_block_heading,
           map_view_button_label: row.map_view_button_label,
           programs_block_heading: row.programs_block_heading,
@@ -378,10 +380,10 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
           image_gallery: galleryRows.map(g => ({ url: g.image_url })),
           intro_paragraph: row.intro_paragraph,
           content_sections: sectionsRows.map(sec => ({
-            heading: sec.heading,
-            section_icon: sec.icon_url ? { url: sec.icon_url } : null,
-            section_body: sec.body,
-            section_active: sec.active === 1,
+            section_heading: sec.section_heading,
+            section_icon: sec.section_icon_url ? { url: sec.section_icon_url } : null,
+            section_body: sec.section_body,
+            section_active: sec.section_active === 1,
             sort_order: sec.sort_order
           }))
         };

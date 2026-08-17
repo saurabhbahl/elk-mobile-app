@@ -35,7 +35,6 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     popup_title TEXT,
     popup_body_copy TEXT,
     popup_image_url TEXT,
-    cta_button_label TEXT,
     cta_button_link TEXT,
     close_button_style TEXT
   );
@@ -47,7 +46,6 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     id INTEGER PRIMARY KEY CHECK (id = 1),
     hero_welcome_heading TEXT,
     hero_intro_paragraph TEXT,
-    hero_cta_button_label TEXT,
     hero_cta_button_link TEXT,
     map_block_heading TEXT,
     map_view_button_label TEXT,
@@ -75,10 +73,10 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
   db.execSync(`
   CREATE TABLE IF NOT EXISTS plan_your_trip_sections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    heading TEXT,
-    icon_url TEXT,
-    body TEXT,
-    active INTEGER DEFAULT 1,
+    section_heading TEXT,
+    section_icon_url TEXT,
+    section_body TEXT,
+    section_active INTEGER DEFAULT 1,
     sort_order INTEGER DEFAULT 9999
   );
   `);

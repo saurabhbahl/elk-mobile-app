@@ -1,13 +1,13 @@
 import { db } from "./index";
+import { createCamerasTable } from "./tables/cameras";
+import { createEventsTable } from "./tables/events";
 import { createMetadataTable } from "./tables/metadata";
 import { createPoisTable } from "./tables/pois";
 import { createProgramsTable } from "./tables/programs";
-import { createEventsTable } from "./tables/events";
-import { createTrailsTable } from "./tables/trails";
 import { createRentalsTable } from "./tables/rentals";
-import { createTipsTable } from "./tables/tips";
-import { createCamerasTable } from "./tables/cameras";
 import { createSettingsTables } from "./tables/settings";
+import { createTipsTable } from "./tables/tips";
+import { createTrailsTable } from "./tables/trails";
 
 export function createTables() {
   console.log("Creating tables...");
@@ -54,7 +54,7 @@ export function createTables() {
 
 export function inspectDatabaseSchema() {
   console.log("\n=========================================");
-  console.log("🔍 SQLITE DATABASE SCHEMA INSPECTION");
+  console.log("SQLITE DATABASE SCHEMA INSPECTION");
   console.log("=========================================");
   try {
     const tables = db.getAllSync(
@@ -69,7 +69,7 @@ export function inspectDatabaseSchema() {
         console.log("Columns:");
         columns.forEach(col => {
           console.log(
-            `  - ${col.name} (${col.type || "BLOB"}) ${col.pk ? "🔑 [PRIMARY KEY]" : ""}`
+            `  - ${col.name} (${col.type || "BLOB"}) ${col.pk ? " [PRIMARY KEY]" : ""}`
           );
         });
       } catch (colErr) {
@@ -77,7 +77,7 @@ export function inspectDatabaseSchema() {
       }
     });
   } catch (err) {
-    console.log("❌ Failed to inspect database schema:", (err as Error).message);
+    console.log("Failed to inspect database schema:", (err as Error).message);
   }
   console.log("=========================================\n");
 }

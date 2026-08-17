@@ -160,7 +160,7 @@ export class SyncManager {
 
       console.log("[SyncManager] Fetching split sync data from endpoints parallelly...");
       const endpoints = ['pois', 'programs', 'events', 'trails', 'rentals', 'tips', 'cameras', 'settings'];
-      
+
       const fetchPromises = endpoints.map(async (endpoint) => {
         try {
           const res = await ApiService.fetchEndpointData<any>(endpoint, isDelta, lastSyncTime);
@@ -172,7 +172,7 @@ export class SyncManager {
       });
 
       const results = await Promise.all(fetchPromises);
-      
+
       // Merge results into a unified structure for transaction parsing
       const mergedJson: Record<string, any> = { deleted: {} };
       let syncTime = new Date().toISOString();
@@ -188,7 +188,6 @@ export class SyncManager {
         const payload = (data && data.data && typeof data.data === 'object') ? data.data : data;
 
         if (endpoint === 'settings') {
-          console.log("[SyncManager] Received settings payload:", JSON.stringify(payload));
           Object.keys(payload).forEach(key => {
             mergedJson[key] = payload[key];
           });
@@ -224,7 +223,7 @@ export class SyncManager {
       let downloadedCount = 0;
 
       if (totalImages > 0) {
-        const CONCURRENCY = 4;
+        const CONCURRENCY = 2;
         let index = 0;
 
         const downloadWorker = async () => {
@@ -233,12 +232,9 @@ export class SyncManager {
             if (currentIndex >= totalImages) break;
             const item = imagesToDownload[currentIndex];
             try {
-              await Promise.race([
-                cacheImageIfNeeded(item.url),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
-              ]);
+              await cacheImageIfNeeded(item.url);
             } catch (err) {
-              console.warn(`Failed to pre-cache image (or timed out): ${item.url}`);
+              console.warn(`Failed to pre-cache image: `, err);
             }
 
             downloadedCount++;

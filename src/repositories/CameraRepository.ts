@@ -11,7 +11,7 @@ export class CameraRepository extends BaseRepository<Record<string, unknown>> {
     const camera_name = cam.camera_name || null;
     const stream_url = cam.stream_url || null;
     const stream_type = cam.stream_type || null;
-    const thumbnail_url = helperExtractImage(cam.thumbnail_poster);
+    const thumbnail_url = helperExtractImage(cam.thumbnail_poster || cam.thumbnail || cam.thumbnail_image || cam.thumbnail_url);
     const description = cam.description || null;
     const active = cam.active !== false ? 1 : 0;
     const sort_order = cam.sort_order !== undefined ? parseInt(cam.sort_order, 10) : 9999;

@@ -12,7 +12,7 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
     const thumbnail_image_url = helperExtractImage(prog.thumbnail_image);
     const short_description = prog.short_description || null;
     const full_description = prog.full_description || null;
-    const schedule_dates = prog.schedule_dates || null;
+    const schedule_dates = typeof prog.schedule_dates === 'object' ? JSON.stringify(prog.schedule_dates) : (prog.schedule_dates || null);
     const location_poi_id = helperExtractPoiId(prog.location);
     const registration_link = prog.registration_link || null;
     const category_tags = Array.isArray(prog.category_tag) ? prog.category_tag.join(',') : (prog.category_tag || null);

@@ -79,7 +79,6 @@ export default function HomeScreen() {
             setShowPopup(true);
         }
     }, [timerFinished, popupImageLoaded]);
-
     return (
         <SafeAreaView
             style={styles.container}
@@ -275,6 +274,7 @@ export default function HomeScreen() {
                                     item={eventObj}
                                     variant="featured"
                                     primaryColor={primaryColor}
+                                    hideBadge={true}
                                     onPress={() => router.push(`/events/${targetId}` as any)}
                                 />
                             );

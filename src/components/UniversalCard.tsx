@@ -17,9 +17,10 @@ type UniversalCardProps = {
     variant: 'horizontal' | 'grid' | 'featured' | 'list';
     primaryColor: string;
     onPress?: () => void;
+    hideBadge?: boolean;
 };
 
-export default function UniversalCard({ type, item, variant, primaryColor, onPress }: UniversalCardProps) {
+export default function UniversalCard({ type, item, variant, primaryColor, onPress, hideBadge }: UniversalCardProps) {
     if (!item) return null;
 
     // Parse date for programs and events
@@ -77,8 +78,9 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
 
     let imageUrl = item.thumbnail_image?.url as string;
     if (type === 'rental') {
-        if (item.additional_images && Array.isArray(item.additional_images) && item.additional_images.length > 0) {
-            imageUrl = item.additional_images[0]?.url;
+        // specific to Rentals (we use featured_image for cards now)
+        if (item.featured_image && typeof item.featured_image === 'object' && 'url' in item.featured_image) {
+            imageUrl = (item.featured_image as any).url;
         } else if (item.featured_image?.url) {
             imageUrl = item.featured_image.url;
         }
@@ -118,7 +120,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
                     contentFit="cover"
                     onLoadStateChange={setIsImageLoading}
                 />
-                {badge && (
+                {badge && !hideBadge && (
                     <View style={[styles.cardBadge, { backgroundColor: primaryColor }]}>
                         <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
                         <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
@@ -127,7 +129,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
             </View>
 
             <ImageBackground
-                source={require('../../assets/images/vectors.png')}
+                source={require('../../assets/images/topo.png')}
                 style={styles.bottomSection}
                 imageStyle={{ opacity: 1 }}
                 contentFit="cover"
