@@ -21,6 +21,7 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
+import { formatProgramScheduleDate } from "@/src/utils/dateUtils";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "../../src/utils/validation";
 
@@ -134,7 +135,7 @@ export default function ProgramDetailScreen() {
                     {/* Schedule / Date & Time */}
                     {isValidData(program.schedule_dates) ? (
                         <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
-                            {program.schedule_dates}
+                            {formatProgramScheduleDate(program.schedule_dates)}
                         </AppText>
                     ) : null}
 
