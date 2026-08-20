@@ -5,7 +5,7 @@ import Navbar from "@/src/components/Navbar";
 import PrimaryButton from "@/src/components/PrimaryButton";
 import QuickLinks from "@/src/components/QuickLinks";
 import SectionHeader from "@/src/components/SectionHeader";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
@@ -81,14 +81,24 @@ export default function WaypointDetailsScreen() {
                     <View style={{ flex: 1 }}>
                         {/* Title */}
                         {isValidData(waypoint.title) ? (
-                            <SectionHeader
-                                title={waypoint.title as string}
-                                iconSource={require("../../assets/images/mapicon.png")}
-                                primaryColor={brandPrimary || "#000000"}
-                                secondaryColor={brandSecondary || "#ea0b0b"}
-                                isDark={isDark}
-                                style={{ marginHorizontal: 0, marginBottom: 16 }}
-                            />
+                            <View style={styles.headerTitleRow}>
+                                <TouchableOpacity
+                                    onPress={() => router.back()}
+                                    style={styles.backIconButton}
+                                    activeOpacity={0.7}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (brandPrimary || "#000000")} />
+                                </TouchableOpacity>
+                                <SectionHeader
+                                    title={waypoint.title as string}
+                                    iconSource={require("../../assets/images/mapicon.png")}
+                                    primaryColor={brandPrimary || "#000000"}
+                                    secondaryColor={brandSecondary || "#ea0b0b"}
+                                    isDark={isDark}
+                                    style={{ marginLeft: 0, flex: 1 }}
+                                />
+                            </View>
                         ) : null}
 
                         {/* Featured Image / Gallery */}
@@ -189,9 +199,10 @@ export default function WaypointDetailsScreen() {
                                     fontSize: 13,
                                     lineHeight: 20,
                                     color: isDark ? colors.onSurfaceVariant : "#000000",
-                                    marginBottom: 16
+                                    marginBottom: 16,
+                                    textAlign: "left",
                                 }}
-                                tagsStyles={{ p: { marginVertical: 8 } }}
+                                tagsStyles={{ p: { textAlign: "left", marginVertical: 8 } }}
                             />
                         ) : null}
 
@@ -406,5 +417,16 @@ const styles = StyleSheet.create({
     },
     backButtonText: {
         fontSize: 13,
+    },
+    headerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8,
+    },
+    backIconButton: {
+        padding: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

@@ -45,6 +45,7 @@ export default function QuickLinks() {
 
                 const url = item.nav_link.url as string;
                 const isActive = pathname === url || (url !== '/' && pathname.startsWith(url));
+                const isExactActive = pathname === url;
                 return (
                     <TouchableOpacity
                         key={index}
@@ -56,7 +57,7 @@ export default function QuickLinks() {
                         ]}
                         activeOpacity={0.8}
                         onPress={() => {
-                            if (isActive) return;
+                            if (isExactActive) return;
                             if (isNavigating.current) return;
                             
                             isNavigating.current = true;

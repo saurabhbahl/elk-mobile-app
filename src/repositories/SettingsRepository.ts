@@ -60,7 +60,14 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     const mapHeading = hs.map_block_heading || null;
     const mapViewLabel = hs.map_view_button_label || null;
     const programsHeading = hs.programs_block_heading || null;
-    const programsDisplay = hs.programs_to_display !== undefined ? parseInt(hs.programs_to_display, 10) : 4;
+
+    let programsDisplay = 4;
+    if (hs.programs_to_display !== undefined && hs.programs_to_display !== null && !isNaN(parseInt(hs.programs_to_display, 10))) {
+      programsDisplay = parseInt(hs.programs_to_display, 10);
+    } else if (Array.isArray(hs.programs)) {
+      programsDisplay = hs.programs.length;
+    }
+
     const eventHeading = hs.event_block_heading || null;
     const eventViewAll = hs.event_view_all_label || null;
     let featuredEventId = null;
@@ -78,7 +85,13 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
       featuredEventId = null;
     }
     const trailsHeading = hs.trails_block_heading || null;
-    const trailsShow = hs.trail_links_to_show !== undefined ? parseInt(hs.trail_links_to_show, 10) : 3;
+
+    let trailsShow = 3;
+    if (hs.trail_links_to_show !== undefined && hs.trail_links_to_show !== null && !isNaN(parseInt(hs.trail_links_to_show, 10))) {
+      trailsShow = parseInt(hs.trail_links_to_show, 10);
+    } else if (Array.isArray(hs.trails)) {
+      trailsShow = hs.trails.length;
+    }
 
     this.execute(`
       INSERT OR REPLACE INTO home_screen_settings (id, hero_welcome_heading, hero_intro_paragraph, hero_cta_button_link, map_block_heading, map_view_button_label, programs_block_heading, programs_to_display, event_block_heading, event_view_all_label, featured_event_id, trails_block_heading, trail_links_to_show)
@@ -306,8 +319,11 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
         const row = hsRows[0];
 
         // Fetch home screen programs
-        const limitPrograms = row.programs_to_display || 4;
-        const homePrograms = this.query<any>(
+        const limitPrograms = (row.programs_to_display !== undefined && row.programs_to_display !== null && !isNaN(parseInt(row.programs_to_display, 10)))
+          ? parseInt(row.programs_to_display, 10)
+          : 4;
+
+        let homePrograms = this.query<any>(
           'SELECT * FROM programs WHERE active = 1 AND featured = 1 ORDER BY sort_order ASC LIMIT ?',
           [limitPrograms]
         ).map(p => ({
@@ -318,8 +334,24 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
           schedule_dates: p.schedule_dates
         }));
 
+        if (homePrograms.length === 0 && limitPrograms > 0) {
+          homePrograms = this.query<any>(
+            'SELECT * FROM programs WHERE active = 1 ORDER BY sort_order ASC LIMIT ?',
+            [limitPrograms]
+          ).map(p => ({
+            id: p.id,
+            program_name: p.program_name,
+            thumbnail_image: p.thumbnail_image_url ? { url: p.thumbnail_image_url } : null,
+            short_description: p.short_description,
+            schedule_dates: p.schedule_dates
+          }));
+        }
+
         // Fetch home screen trails
-        const limitTrails = row.trail_links_to_show || 3;
+        const limitTrails = (row.trail_links_to_show !== undefined && row.trail_links_to_show !== null && !isNaN(parseInt(row.trail_links_to_show, 10)))
+          ? parseInt(row.trail_links_to_show, 10)
+          : 3;
+
         const homeTrails = this.query<any>(
           'SELECT * FROM trails WHERE active = 1 ORDER BY sort_order ASC LIMIT ?',
           [limitTrails]

@@ -28,7 +28,7 @@ import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { EventsData, ProgramsData, TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { isValidData } from "@/src/utils/validation";
+import { formatTrailDistance, isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -59,7 +59,7 @@ export default function HomeScreen() {
         if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
             timeoutId = setTimeout(() => {
                 setTimerFinished(true);
-            }, 3000);
+            }, 10000);
         }
         return () => {
             if (timeoutId) {
@@ -310,7 +310,7 @@ export default function HomeScreen() {
                                             <AppText style={styles.trailName}>{trail.trail_name}</AppText>
                                         ) : null}
                                         {isValidData(trail.distance) ? (
-                                            <AppText style={styles.trailName}>{`    ${trail.distance}mi`}</AppText>
+                                            <AppText style={styles.trailName}>{`    ${formatTrailDistance(trail.distance)}mi`}</AppText>
                                         ) : null}
                                     </TouchableOpacity>
                                 ))}

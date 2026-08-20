@@ -68,12 +68,11 @@ export default function BottomNavbar() {
     ];
 
     const handleNavigation = (route: string) => {
-        // Prevent navigating to the same active route
-        const isActive = pathname === route ||
-            (route === '/(home)' && (pathname === '/' || pathname === '/(home)')) ||
-            (pathname.startsWith(route) && route !== '/(home)');
+        // Prevent navigating to the exact same active route
+        const isExactActive = pathname === route ||
+            (route === '/(home)' && (pathname === '/' || pathname === '/(home)'));
 
-        if (isActive) return;
+        if (isExactActive) return;
 
         requestAnimationFrame(() => {
             if (route === '/(home)') {

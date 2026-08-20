@@ -31,3 +31,20 @@ export function isValidData(val: any): boolean {
 
   return true;
 }
+
+/**
+ * Formats trail distance string or number from 3 decimal places (0.000) or raw input to 2 decimal places (0.00).
+ */
+export function formatTrailDistance(dist: string | number | undefined | null): string {
+  if (dist === undefined || dist === null || dist === '') return '';
+  const str = String(dist).trim();
+  const match = str.match(/^([0-9]+(?:\.[0-9]+)?)/);
+  if (match) {
+    const num = parseFloat(match[1]);
+    if (!isNaN(num)) {
+      return num.toFixed(2);
+    }
+  }
+  return str;
+}
+

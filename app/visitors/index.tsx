@@ -132,7 +132,13 @@ export default function VisitorsCenterScreen() {
                                             <TouchableOpacity
                                                 style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
                                                 activeOpacity={0.9}
-                                                onPress={() => handleOpenLink(visitorsData?.cta_1_link?.url)}
+                                                onPress={() => {
+                                                    if (isValidData(visitorsData?.phone_number)) {
+                                                        handleOpenLink(`tel:${visitorsData?.phone_number}`);
+                                                    } else {
+                                                        handleOpenLink(visitorsData?.cta_1_link?.url);
+                                                    }
+                                                }}
                                             >
                                                 <View style={styles.ctaImagePlaceholder}>
                                                     {isValidData(visitorsData?.cta_1_image?.url) ? (
@@ -200,9 +206,20 @@ export default function VisitorsCenterScreen() {
                                     </View>
                                 ) : null}
 
+                                {/* Phone Number Section */}
+                                {isValidData(visitorsData?.phone_number) ? (
+                                    <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 6 : 24 }}>
+                                        <TouchableOpacity activeOpacity={0.7} onPress={() => handleOpenLink(`tel:${visitorsData?.phone_number}`)}>
+                                            <AppText style={styles.phoneText}>
+                                                {visitorsData?.phone_number}
+                                            </AppText>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : null}
+
                                 {/* Body Copy Section */}
                                 {isValidData(visitorsData?.body_copy) ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 8 : 24 }}>
+                                    <View style={{ marginHorizontal: 16, marginTop: (isValidData(visitorsData?.address) || isValidData(visitorsData?.phone_number)) ? 8 : 24 }}>
                                         <RenderHTML
                                             systemFonts={systemFonts}
                                             contentWidth={width - 32}
@@ -215,9 +232,9 @@ export default function VisitorsCenterScreen() {
                                                 color: colors.onSurface,
                                                 lineHeight: 20,
                                                 letterSpacing: 0,
-                                                textAlign: "justify",
+                                                textAlign: "left",
                                             }}
-                                            tagsStyles={{ p: { textAlign: "justify", marginVertical: 4 } }}
+                                            tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                                         />
                                     </View>
                                 ) : null}
@@ -311,12 +328,21 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         letterSpacing: 0,
         color: colors.onSurface,
     },
+    phoneText: {
+        fontFamily: 'OpenSans-Bold',
+        fontWeight: '700',
+        fontStyle: 'normal',
+        fontSize: 14,
+        lineHeight: 18,
+        letterSpacing: 0,
+        color: colors.onSurface,
+    },
     bodyCopy: {
         fontSize: 13,
         color: colors.onSurface,
         lineHeight: 18,
         marginHorizontal: 16,
         marginTop: 24,
-        textAlign: "justify",
+        textAlign: "left",
     },
 });

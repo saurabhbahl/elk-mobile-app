@@ -38,16 +38,6 @@ export const MapFallback = ({
         }}
         showsUserLocation={true}
       >
-        <Polyline
-          coordinates={mainRouteCoordinates}
-          strokeColor={COLORS.tertiaryContainer}
-          strokeWidth={5}
-        />
-        <Polyline
-          coordinates={orangeRouteCoordinates}
-          strokeColor="#FF8C00"
-          strokeWidth={5}
-        />
         {waypoints.map((point) => (
           <Marker
             key={`waypoint-${point.id}`}

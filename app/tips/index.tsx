@@ -108,8 +108,9 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
                                 color: colors.onSurfaceVariant,
                                 lineHeight: 20,
                                 letterSpacing: 0,
+                                textAlign: "left",
                             }}
-                            tagsStyles={{ p: { marginVertical: 4 } }}
+                            tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                         />
                     ) : null}
                 </View>

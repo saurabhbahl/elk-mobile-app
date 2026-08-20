@@ -172,14 +172,24 @@ export default function EventDetailScreen() {
                 {/* Heading Row */}
                 {isValidData(event.event_name) ? (
                     <View style={{ paddingHorizontal: 16 }}>
-                        <SectionHeader
-                            title={event.event_name as string}
-                            iconSource={require("../../assets/images/eventicon.png")}
-                            primaryColor={primaryColor || "#000000"}
-                            secondaryColor={secondaryColor || "#ea0b0b"}
-                            isDark={isDark}
-                            style={{ marginLeft: 0 }}
-                        />
+                        <View style={styles.headerTitleRow}>
+                            <TouchableOpacity
+                                onPress={() => router.back()}
+                                style={styles.backIconButton}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (primaryColor || "#000000")} />
+                            </TouchableOpacity>
+                            <SectionHeader
+                                title={event.event_name as string}
+                                iconSource={require("../../assets/images/eventicon.png")}
+                                primaryColor={primaryColor || "#000000"}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginLeft: 0, flex: 1 }}
+                            />
+                        </View>
                     </View>
                 ) : null}
 
@@ -243,9 +253,10 @@ export default function EventDetailScreen() {
                                 lineHeight: 20,
                                 marginTop: 10,
                                 marginBottom: 20,
+                                textAlign: "left",
                             }}
                             tagsStyles={{
-                                p: { marginVertical: 8 }
+                                p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
                     ) : null}
@@ -393,5 +404,16 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     registerButtonText: {
         fontSize: 15,
         fontWeight: "bold",
+    },
+    headerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8,
+    },
+    backIconButton: {
+        padding: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

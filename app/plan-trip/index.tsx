@@ -137,8 +137,9 @@ export default function PlanTripScreen() {
                                     color: colors.onSurface,
                                     lineHeight: 20,
                                     fontWeight: "500",
+                                    textAlign: "left",
                                 }}
-                                tagsStyles={{ p: { marginVertical: 4 } }}
+                                tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                             />
                         </Animated.View>
                     ) : null}
@@ -187,8 +188,9 @@ export default function PlanTripScreen() {
                                                     color: colors.onSurface,
                                                     lineHeight: 20,
                                                     letterSpacing: 0,
+                                                    textAlign: "left",
                                                 }}
-                                                tagsStyles={{ p: { marginVertical: 4 } }}
+                                                tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                                             />
                                         ) : null}
                                     </View>

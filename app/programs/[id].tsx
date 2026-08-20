@@ -1,6 +1,7 @@
 import AppText from "@/src/components/AppText";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
@@ -103,14 +104,24 @@ export default function ProgramDetailScreen() {
                 {/* Heading Row */}
                 {isValidData(program.program_name) ? (
                     <View style={{ paddingHorizontal: 16 }}>
-                        <SectionHeader
-                            title={program.program_name as string}
-                            iconSource={require("../../assets/images/programicon.png")}
-                            primaryColor={primaryColor || "#000000"}
-                            secondaryColor={secondaryColor || "#ea0b0b"}
-                            isDark={isDark}
-                            style={{ marginLeft: 0 }}
-                        />
+                        <View style={styles.headerTitleRow}>
+                            <TouchableOpacity
+                                onPress={() => router.back()}
+                                style={styles.backIconButton}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (primaryColor || "#000000")} />
+                            </TouchableOpacity>
+                            <SectionHeader
+                                title={program.program_name as string}
+                                iconSource={require("../../assets/images/programicon.png")}
+                                primaryColor={primaryColor || "#000000"}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginLeft: 0, flex: 1 }}
+                            />
+                        </View>
                     </View>
                 ) : null}
 
@@ -157,9 +168,10 @@ export default function ProgramDetailScreen() {
                                 fontSize: 13,
                                 color: colors.onSurface,
                                 lineHeight: 20,
+                                textAlign: "left",
                             }}
                             tagsStyles={{
-                                p: { marginVertical: 8 }
+                                p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
                     ) : null}
@@ -262,5 +274,16 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 14,
         color: colors.onSurface,
         lineHeight: 22,
+    },
+    headerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8,
+    },
+    backIconButton: {
+        padding: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

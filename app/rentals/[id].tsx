@@ -9,6 +9,7 @@ import {
     InteractionManager,
     StatusBar,
     StyleSheet,
+    TouchableOpacity,
     View
 } from "react-native";
 import Animated from "react-native-reanimated";
@@ -113,15 +114,25 @@ export default function RentalDetailScreen() {
 
                 {/* Heading Row */}
                 {isValidData(rental.rental_name) ? (
-                    <View>
-                        <SectionHeader
-                            title={rental.rental_name as string}
-                            iconSource={require("../../assets/images/rentals.png")}
-                            primaryColor={primaryColor || "#000000"}
-                            secondaryColor={secondaryColor || "#ea0b0b"}
-                            isDark={isDark}
-                            isFeatured={true}
-                        />
+                    <View style={{ paddingHorizontal: 16 }}>
+                        <View style={styles.headerTitleRow}>
+                            <TouchableOpacity
+                                onPress={() => router.back()}
+                                style={styles.backIconButton}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (primaryColor || "#000000")} />
+                            </TouchableOpacity>
+                            <SectionHeader
+                                title={rental.rental_name as string}
+                                iconSource={require("../../assets/images/rentals.png")}
+                                primaryColor={primaryColor || "#000000"}
+                                secondaryColor={secondaryColor || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginLeft: 0, flex: 1 }}
+                            />
+                        </View>
                     </View>
                 ) : null}
 
@@ -172,9 +183,10 @@ export default function RentalDetailScreen() {
                                 color: colors.onSurface,
                                 lineHeight: 20,
                                 letterSpacing: 0,
+                                textAlign: "left",
                             }}
                             tagsStyles={{
-                                p: { marginVertical: 8 }
+                                p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
                     ) : null}
@@ -325,5 +337,16 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     ctaButtonOutlineText: {
         fontSize: 14,
         fontWeight: "700",
+    },
+    headerTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        gap: 8,
+    },
+    backIconButton: {
+        padding: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });

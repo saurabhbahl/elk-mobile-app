@@ -454,7 +454,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         lineHeight: 20,
         letterSpacing: 0,
         color: colors.onSurface,
-        textAlign: "justify",
+        textAlign: "left",
         marginBottom: 16,
     },
 });

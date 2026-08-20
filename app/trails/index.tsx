@@ -22,7 +22,7 @@ import SectionHeader from "@/src/components/SectionHeader";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { TrailsData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { isValidData } from "@/src/utils/validation";
+import { formatTrailDistance, isValidData } from "@/src/utils/validation";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 
 const getValidColor = (color: string | undefined) => {
@@ -57,7 +57,7 @@ const TrailCard = React.memo(({ item, index, styles }: {
                             <AppText style={styles.trailName}>{item.trail_name}</AppText>
                         ) : null}
                         {isValidData(item.distance) ? (
-                            <AppText style={styles.trailDistance}>{item.distance} miles</AppText>
+                            <AppText style={styles.trailDistance}>{formatTrailDistance(item.distance)} miles</AppText>
                         ) : null}
                     </View>
                 ) : null}
@@ -69,8 +69,9 @@ const TrailCard = React.memo(({ item, index, styles }: {
                             fontSize: 13,
                             color: "#555555",
                             lineHeight: 18,
+                            textAlign: "left",
                         }}
-                        tagsStyles={{ p: { marginVertical: 4 } }}
+                        tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                     />
                 ) : null}
 

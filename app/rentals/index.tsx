@@ -90,8 +90,9 @@ export default function RentalsScreen() {
                             fontSize: 14,
                             color: isDark ? "#E5E5E5" : "#333",
                             lineHeight: 20,
+                            textAlign: "left",
                         }}
-                        tagsStyles={{ p: { marginVertical: 4 } }}
+                        tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                     />
                 </Animated.View>
             ) : null}
