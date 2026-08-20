@@ -1,4 +1,5 @@
 import AppText from "@/src/components/AppText";
+import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,13 +49,35 @@ export default function RentalDetailScreen() {
 
     const rawDescription = rental?.full_description || "";
 
+    const featuredImageUrl = React.useMemo(() => {
+        if (!rental?.featured_image) return null;
+        if (typeof rental.featured_image === "string") return rental.featured_image;
+        if (typeof rental.featured_image === "object" && rental.featured_image !== null && "url" in rental.featured_image) {
+            return (rental.featured_image as any).url || null;
+        }
+        return null;
+    }, [rental?.featured_image]);
+
     const additionalImages = React.useMemo(() => {
         const addImgs = rental?.additional_images;
         if (!addImgs || !Array.isArray(addImgs)) return [];
         return addImgs.map((img: any) => img?.url).filter(Boolean);
     }, [rental?.additional_images]);
 
-    const finalImages = additionalImages;
+    const finalImages = React.useMemo(() => {
+        const images: string[] = [];
+        if (featuredImageUrl) {
+            images.push(featuredImageUrl);
+        }
+        if (additionalImages && additionalImages.length > 0) {
+            additionalImages.forEach(imgUrl => {
+                if (imgUrl && !images.includes(imgUrl)) {
+                    images.push(imgUrl);
+                }
+            });
+        }
+        return images;
+    }, [featuredImageUrl, additionalImages]);
 
     const handlePressLink = React.useCallback((url: string | undefined) => {
         if (url) {
@@ -88,12 +111,10 @@ export default function RentalDetailScreen() {
 
     if (!rental) {
         return (
-            <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                <View style={styles.errorContainer}>
-                    <AppText style={styles.errorText}>Rental not found.</AppText>
-                </View>
-            </SafeAreaView>
+            <ItemNotFoundScreen
+                title="Rental Location Not Found"
+                message="This rental location is no longer available or may have been deleted."
+            />
         );
     }
 
@@ -154,15 +175,6 @@ export default function RentalDetailScreen() {
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
 
-                    {isValidData(rental.capacity) ? (
-                        <View style={styles.infoRow}>
-                            <Ionicons name="people-outline" size={16} color="#555" style={styles.infoIcon} />
-                            <AppText style={[styles.capacityText, { color: colors.onSurfaceVariant }]}>
-                                Capacity: {rental.capacity}
-                            </AppText>
-                        </View>
-                    ) : null}
-
                     {/* Short Description */}
                     {isValidData(rental.short_description) ? (
                         <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 20, fontWeight: '700', color: colors.onSurface }}>
@@ -189,20 +201,6 @@ export default function RentalDetailScreen() {
                                 p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
-                    ) : null}
-
-                    {isValidData(rental.availability_notes) ? (
-                        <AppText style={styles.notesText}>
-                            <AppText style={{ fontWeight: "700" }}>Availability: </AppText>
-                            {rental.availability_notes}
-                        </AppText>
-                    ) : null}
-
-                    {isValidData(rental.pricing_notes) ? (
-                        <AppText style={styles.notesText}>
-                            <AppText style={{ fontWeight: "700" }}>Pricing: </AppText>
-                            {rental.pricing_notes}
-                        </AppText>
                     ) : null}
 
                     {/* CTAs */}

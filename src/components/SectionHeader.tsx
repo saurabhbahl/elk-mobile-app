@@ -39,7 +39,7 @@ export default function SectionHeader({
                     <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                         <Image source={iconSource} style={styles.sectionIconImgLg} contentFit="contain" />
                     </View>
-                    <TitleComponent onPress={onPress}>
+                    <TitleComponent onPress={onPress} style={styles.titleWrapper}>
                         <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                             {title}
                         </AppText>
@@ -61,7 +61,7 @@ export default function SectionHeader({
             <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                 <Image source={iconSource} style={styles.sectionIconImg} contentFit="contain" />
             </View>
-            <TitleComponent onPress={onPress}>
+            <TitleComponent onPress={onPress} style={styles.titleWrapper}>
                 <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                     {title}
                 </AppText>
@@ -77,10 +77,17 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginVertical: 8,
         gap: 6,
+        flex: 1,
+        flexShrink: 1,
+    },
+    titleWrapper: {
+        flex: 1,
+        flexShrink: 1,
     },
     subSectionTitle: {
         fontSize: width < 380 ? 16 : 18,
         fontFamily: 'Roboto-Medium',
+        flexShrink: 1,
     },
     sectionIconCircle: {
         width: 32,
@@ -88,6 +95,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
+        flexShrink: 0,
     },
     sectionIconImg: {
         width: 16,
@@ -104,15 +112,20 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginTop: 8,
         marginBottom: 10,
+        flex: 1,
+        flexShrink: 1,
     },
     featuredTitleContainer: {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
+        flex: 1,
+        flexShrink: 1,
     },
     featuredSectionTitle: {
         fontSize: width < 380 ? 16 : 18,
         fontFamily: 'Roboto-Medium',
+        flexShrink: 1,
     },
     viewAllEventsText: {
         fontSize: 12,

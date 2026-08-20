@@ -335,6 +335,10 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
             name="tips/index"
             options={{ headerShown: false, animation: 'none' }}
           />
+          <Stack.Screen
+            name="+not-found"
+            options={{ headerShown: false, animation: 'none' }}
+          />
         </Stack>
       </View>
       {shouldShowHeader && (

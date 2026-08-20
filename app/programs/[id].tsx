@@ -1,4 +1,5 @@
 import AppText from "@/src/components/AppText";
+import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
@@ -70,18 +71,10 @@ export default function ProgramDetailScreen() {
 
     if (!program) {
         return (
-            <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                <View style={styles.errorContainer}>
-                    <AppText style={styles.errorText}>Program not found.</AppText>
-                    <TouchableOpacity
-                        style={[styles.backTextButton, { backgroundColor: primaryColor }]}
-                        onPress={() => router.back()}
-                    >
-                        <AppText style={styles.backTextButtonText}>Go Back</AppText>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <ItemNotFoundScreen
+                title="Program Not Found"
+                message="This program is no longer available or may have been deleted."
+            />
         );
     }
 

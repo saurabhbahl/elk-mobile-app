@@ -23,7 +23,7 @@ import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { CamerasData, useAppContentData } from "@/src/contexts/AppContentContext";
-import { isValidData } from "@/src/utils/validation";
+import { isValidData, isValidStreamUrl } from "@/src/utils/validation";
 import { useNetInfo } from "@react-native-community/netinfo";
 
 const getValidColor = (color: string | undefined) => {
@@ -32,6 +32,15 @@ const getValidColor = (color: string | undefined) => {
 };
 
 function NativeVideoPlayer({ source }: { source: string }) {
+    if (!isValidStreamUrl(source)) {
+        return (
+            <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
+                <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
+                <AppText style={{ color: "#CCCCCC", marginTop: 8 }}>Video stream not found.</AppText>
+            </View>
+        );
+    }
+
     const player = useVideoPlayer(source, player => {
         player.loop = true;
         player.play();
@@ -59,6 +68,8 @@ export default function LiveCameraScreen() {
     const [activeCamIndex, setActiveCamIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
+    const [hasStreamError, setHasStreamError] = useState(false);
+
     const cameras = (camerasData || []).filter((cam: CamerasData) => cam.active !== false);
     const activeCamera = cameras[activeCamIndex];
 
@@ -69,14 +80,12 @@ export default function LiveCameraScreen() {
             return activeCamera.thumbnail_poster.url as string;
         }
 
-        if (activeCamera.stream_url) {
+        if (activeCamera.stream_url && isValidStreamUrl(activeCamera.stream_url, activeCamera.stream_type)) {
             const match = activeCamera.stream_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([^&?/"']{11})/);
             if (match && match[1]) {
                 return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
             }
         }
-
-
 
         return null;
     };
@@ -86,6 +95,7 @@ export default function LiveCameraScreen() {
     const handleTabChange = (index: number) => {
         setActiveCamIndex(index);
         setIsPlaying(false);
+        setHasStreamError(false);
     };
 
     const handlePlayStream = async () => {
@@ -93,8 +103,7 @@ export default function LiveCameraScreen() {
     };
 
     const handleWebViewNavigation = (event: any) => {
-        if (event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
-            Linking.openURL(event.url).catch(err => console.error("Couldn't open YouTube link", err));
+        if (event.url && event.url.includes("youtube.com") && !event.url.includes("/embed/")) {
             return false;
         }
         return true;
@@ -106,11 +115,11 @@ export default function LiveCameraScreen() {
         const streamType = activeCamera.stream_type;
         const streamUrl = activeCamera.stream_url;
 
-        if (!streamUrl) {
+        if (!streamUrl || !isValidStreamUrl(streamUrl, streamType) || hasStreamError) {
             return (
-                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16 }]}>
+                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16, justifyContent: "center", alignItems: "center" }]}>
                     <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
-                    <AppText style={styles.noCameraText}>Invalid stream URL.</AppText>
+                    <AppText style={styles.noCameraText}>Video stream not found.</AppText>
                 </View>
             );
         }
@@ -127,13 +136,17 @@ export default function LiveCameraScreen() {
                     <WebView
                         style={{ flex: 1, backgroundColor: "#000" }}
                         source={{
-                            html: `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe></body></html>`,
+                            html: `<html><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&enablejsapi=1" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe></body></html>`,
                             baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                         }}
                         allowsInlineMediaPlayback={true}
-                        mediaPlaybackRequiresUserAction={true}
+                        mediaPlaybackRequiresUserAction={false}
                         allowsFullscreenVideo={true}
                         scrollEnabled={false}
+                        onError={() => setHasStreamError(true)}
+                        onHttpError={(e) => {
+                            if (e.nativeEvent.statusCode >= 400) setHasStreamError(true);
+                        }}
                         onShouldStartLoadWithRequest={handleWebViewNavigation}
                     />
                 );
@@ -143,7 +156,12 @@ export default function LiveCameraScreen() {
                         style={{ flex: 1, backgroundColor: "#000" }}
                         source={{ uri: streamUrl }}
                         allowsInlineMediaPlayback={true}
+                        mediaPlaybackRequiresUserAction={false}
                         allowsFullscreenVideo={true}
+                        onError={() => setHasStreamError(true)}
+                        onHttpError={(e) => {
+                            if (e.nativeEvent.statusCode >= 400) setHasStreamError(true);
+                        }}
                         onShouldStartLoadWithRequest={handleWebViewNavigation}
                     />
                 );
@@ -161,6 +179,9 @@ export default function LiveCameraScreen() {
                     if (!newUrl.includes('playsinline=1')) {
                         newUrl += '&playsinline=1';
                     }
+                    if (!newUrl.includes('enablejsapi=1')) {
+                        newUrl += '&enablejsapi=1';
+                    }
                     return `src="${newUrl}"`;
                 });
             }
@@ -176,10 +197,14 @@ export default function LiveCameraScreen() {
                         baseUrl: process.env.EXPO_PUBLIC_SITE_URL
                     }}
                     allowsInlineMediaPlayback={true}
-                    mediaPlaybackRequiresUserAction={true}
+                    mediaPlaybackRequiresUserAction={false}
                     scrollEnabled={false}
                     scalesPageToFit={true}
                     allowsFullscreenVideo={true}
+                    onError={() => setHasStreamError(true)}
+                    onHttpError={(e) => {
+                        if (e.nativeEvent.statusCode >= 400) setHasStreamError(true);
+                    }}
                 />
             );
         }
@@ -193,6 +218,10 @@ export default function LiveCameraScreen() {
                 style={{ flex: 1, backgroundColor: "#000" }}
                 source={{ uri: streamUrl }}
                 allowsFullscreenVideo={true}
+                onError={() => setHasStreamError(true)}
+                onHttpError={(e) => {
+                    if (e.nativeEvent.statusCode >= 400) setHasStreamError(true);
+                }}
             />
         );
     };
@@ -283,6 +312,11 @@ export default function LiveCameraScreen() {
                                     <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
                                         {liveCamSettingsData?.offline_message}
                                     </AppText>
+                                </View>
+                            ) : (!activeCamera.stream_url || !isValidStreamUrl(activeCamera.stream_url, activeCamera.stream_type) || hasStreamError) ? (
+                                <View style={[styles.playerImage, styles.playerPlaceholder, { borderRadius: 16, justifyContent: "center", alignItems: "center" }]}>
+                                    <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
+                                    <AppText style={styles.noCameraText}>Video stream not found.</AppText>
                                 </View>
                             ) : isPlaying ? (
                                 renderPlayer()

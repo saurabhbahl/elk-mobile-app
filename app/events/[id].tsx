@@ -1,4 +1,5 @@
 import AppText from "@/src/components/AppText";
+import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
@@ -141,18 +142,10 @@ export default function EventDetailScreen() {
 
     if (!event) {
         return (
-            <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                <View style={styles.errorContainer}>
-                    <AppText style={styles.errorText}>Event not found.</AppText>
-                    <TouchableOpacity
-                        style={[styles.backTextButton, { backgroundColor: primaryColor }]}
-                        onPress={() => router.back()}
-                    >
-                        <AppText style={styles.backTextButtonText}>Go Back</AppText>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <ItemNotFoundScreen
+                title="Event Not Found"
+                message="This event is no longer available or may have been deleted."
+            />
         );
     }
 

@@ -48,3 +48,62 @@ export function formatTrailDistance(dist: string | number | undefined | null): s
   return str;
 }
 
+/**
+ * Validates stream URLs and iframe embed snippets against their configured stream type.
+ * Supports YouTube, HLS (.m3u8), RTMP, and embed code / iframe snippets.
+ */
+export function isStreamUrlValidForType(url?: string | null, type?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (trimmed.length < 5) return false;
+
+  const typeLower = (type || '').toLowerCase();
+
+  // 1. YouTube stream type
+  if (typeLower === 'youtube') {
+    const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/))([^&?/"']{11})/i);
+    return !!ytMatch;
+  }
+
+  // 2. HLS stream type
+  if (typeLower === 'hls') {
+    if (trimmed.includes('<iframe') || trimmed.includes('<embed')) return false;
+    if (/youtube\.com|youtu\.be/i.test(trimmed)) return false;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return /^https?:\/\/[^\s\/$.?#].[^\s]*/i.test(trimmed);
+    }
+    return false;
+  }
+
+  // 3. RTMP stream type
+  if (typeLower === 'rtmp') {
+    if (trimmed.includes('<iframe') || trimmed.includes('<embed')) return false;
+    if (/youtube\.com|youtu\.be/i.test(trimmed)) return false;
+    if (trimmed.startsWith('rtmp://') || trimmed.startsWith('rtmps://') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return true;
+    }
+    return false;
+  }
+
+  // 4. Embed code / iframe type
+  if (typeLower === 'embed_code' || typeLower === 'embed') {
+    if (trimmed.includes('<iframe') || trimmed.includes('<embed')) return true;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return /^https?:\/\/[^\s\/$.?#].[^\s]*/i.test(trimmed);
+    }
+    return false;
+  }
+
+  // General fallback check
+  if (trimmed.includes('<iframe') || trimmed.includes('<embed')) return true;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return /^https?:\/\/[^\s\/$.?#].[^\s]*/i.test(trimmed);
+  }
+
+  return false;
+}
+
+export function isValidStreamUrl(url?: string | null, type?: string | null): boolean {
+  return isStreamUrlValidForType(url, type);
+}
+

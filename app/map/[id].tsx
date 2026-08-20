@@ -1,4 +1,5 @@
 import AppText from "@/src/components/AppText";
+import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import CachedImage from "@/src/components/CachedImage";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
 import Navbar from "@/src/components/Navbar";
@@ -48,16 +49,10 @@ export default function WaypointDetailsScreen() {
 
     if (!waypoint) {
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["left", "right"]}>
-
-                <View style={styles.errorContainer}>
-                    <MaterialIcons name="error-outline" size={48} color={colors.error} />
-                    <AppText style={[styles.errorText, { fontFamily: fonts.bodyMedium }]}>Viewing area not found.</AppText>
-                    <TouchableOpacity style={[styles.backButton, { backgroundColor: brandPrimary || colors.primary }]} onPress={() => router.back()}>
-                        <AppText style={[styles.backButtonText, { color: colors.onPrimary, fontFamily: fonts.bodyBold }]}>Go Back</AppText>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <ItemNotFoundScreen
+                title="Viewing Area Not Found"
+                message="This location is no longer available or may have been deleted."
+            />
         );
     }
 
