@@ -1,4 +1,4 @@
-import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContentData } from "@/src/contexts/AppContentContext";
 import React from "react";

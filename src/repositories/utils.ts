@@ -1,3 +1,5 @@
+import { db } from '../database/index';
+
 // Helper: Safely parse integer with fallback, preventing NaN SQLite bindings
 export function safeParseInt(val: any, fallback: number = 9999): number {
   if (val === undefined || val === null || val === '') return fallback;
@@ -19,8 +21,6 @@ export function helperExtractLink(field: any): { title: string | null, url: stri
   if (typeof field === 'string') return { title: null, url: field };
   return { title: field.title || null, url: field.url || null };
 }
-
-import { db } from '../database/index';
 
 // Helper: Extract POI relation ID, ensuring referenced POI exists to satisfy SQLite foreign keys
 export function helperExtractPoiId(field: any): number | null {

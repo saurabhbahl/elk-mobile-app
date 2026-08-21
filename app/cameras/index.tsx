@@ -32,7 +32,19 @@ const getValidColor = (color: string | undefined) => {
 };
 
 function NativeVideoPlayer({ source }: { source: string }) {
-    if (!isValidStreamUrl(source)) {
+    const isValid = isValidStreamUrl(source);
+    const player = useVideoPlayer(isValid ? source : '', player => {
+        player.loop = true;
+        player.play();
+    });
+
+    React.useEffect(() => {
+        if (isValid && player) {
+            player.play();
+        }
+    }, [isValid, player]);
+
+    if (!isValid) {
         return (
             <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
                 <Ionicons name="videocam-off-outline" size={48} color="#CCCCCC" />
@@ -40,17 +52,6 @@ function NativeVideoPlayer({ source }: { source: string }) {
             </View>
         );
     }
-
-    const player = useVideoPlayer(source, player => {
-        player.loop = true;
-        player.play();
-    });
-
-    React.useEffect(() => {
-        if (player) {
-            player.play();
-        }
-    }, [player]);
 
     return (
         <VideoView style={{ flex: 1, width: "100%", height: "100%" }} player={player} allowsPictureInPicture />
