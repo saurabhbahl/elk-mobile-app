@@ -26,6 +26,7 @@ import {
   BackHandler,
   Easing,
   FlatList,
+  PanResponder,
   Pressable,
   StyleSheet,
   TextInput,
@@ -34,7 +35,7 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
-import Reanimated, { FadeInDown, FadeOutDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Reanimated, { Easing as ReanimatedEasing, FadeInDown, FadeOutDown, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addOpacity, normalizeHex } from '../../src/utils/colorUtils';
 
@@ -91,30 +92,60 @@ export default function MapScreenWrapper() {
 // ── MapScreen ─────────────────────────────────────────────────────────────────
 function MapScreen() {
   const insets = useSafeAreaInsets();
+  // North America map view restriction array: [swLng, swLat, neLng, neLat] (online and offline)
+  const AMERICA_MAX_BOUNDS: [number, number, number, number] = [-170.0, 14.0, -52.0, 72.0];
+
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { poisData, mapSettingsData, brandData } = useAppContent();
   const waypoints = poisData || [];
   const netInfo = useNetInfo();
 
   const [showHeader, setShowHeader] = useState(true);
-  const headerOpacity = useSharedValue(1);
+  const headerProgress = useSharedValue(1);
 
   useEffect(() => {
-    headerOpacity.value = withTiming(showHeader ? 1 : 0, { duration: 250 });
-  }, [showHeader, headerOpacity]);
+    headerProgress.value = withTiming(showHeader ? 1 : 0, {
+      duration: 420,
+      easing: ReanimatedEasing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  }, [showHeader, headerProgress]);
 
   const navAreaAnimatedStyle = useAnimatedStyle(() => {
     return {
-      maxHeight: withTiming(showHeader ? 500 : 0, { duration: 250 }),
-      opacity: withTiming(showHeader ? 1 : 0, { duration: 250 }),
+      maxHeight: interpolate(headerProgress.value, [0, 1], [0, 300]),
+      opacity: headerProgress.value,
+      transform: [
+        {
+          translateY: interpolate(headerProgress.value, [0, 1], [-12, 0]),
+        },
+      ],
     };
   });
 
   const headerContainerAnimatedStyle = useAnimatedStyle(() => {
     return {
-      paddingTop: withTiming(showHeader ? 0 : insets.top, { duration: 250 }),
+      paddingTop: interpolate(headerProgress.value, [0, 1], [insets.top, 0]),
     };
   });
+
+  const headerPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Detect vertical swipe instantly with minimal threshold
+        return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy < -5) {
+          // Slide UP -> Hide navbar & quicklinks
+          setShowHeader(false);
+        } else if (gestureState.dy > 5) {
+          // Slide DOWN -> Show navbar & quicklinks
+          setShowHeader(true);
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     isAvailableAsync()
@@ -1053,10 +1084,22 @@ function MapScreen() {
             setShowHeader(prev => !prev);
           }}
           onRegionDidChange={(feature: any) => {
-            // Track map center for drop-pin crosshair
+            // Track map center for drop-pin crosshair & enforce North America bounds
             const center = feature?.nativeEvent?.center ?? feature?.center;
             if (Array.isArray(center) && center.length === 2) {
               const [lng, lat] = center;
+              // Enforce boundary clamp [-170, 14, -52, 72]
+              const clampedLng = Math.min(-52.0, Math.max(-170.0, lng));
+              const clampedLat = Math.min(72.0, Math.max(14.0, lat));
+
+              if (clampedLng !== lng || clampedLat !== lat) {
+                cameraRef.current?.easeTo({
+                  center: [clampedLng, clampedLat],
+                  duration: 300,
+                });
+                return;
+              }
+
               setMapCenter({ lng, lat });
               if (isSelectingPin) {
                 setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
@@ -1065,7 +1108,13 @@ function MapScreen() {
           }}
         >
           {currentRegion && (
-            <Camera ref={cameraRef} zoom={mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9} center={[currentRegion.longitude, currentRegion.latitude]} />
+            <Camera
+              ref={cameraRef}
+              zoom={mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9}
+              center={[currentRegion.longitude, currentRegion.latitude]}
+              maxBounds={AMERICA_MAX_BOUNDS}
+              minZoom={3.5}
+            />
           )}
           {/* Built-in dot — hidden during navigation so our custom arrow takes over */}
           {!isNavigating && (
@@ -1199,7 +1248,7 @@ function MapScreen() {
 
 
               {!isSearching ? (
-                <View style={styles.fullWidthHeaderRow}>
+                <View style={styles.fullWidthHeaderRow} {...headerPanResponder.panHandlers}>
                   <View style={{ flex: 1, marginTop: 4 }}>
                     <SectionHeader
                       title={isValidData(mapSettingsData?.screen_title) ? (mapSettingsData?.screen_title ?? "") : ""}
@@ -1207,6 +1256,9 @@ function MapScreen() {
                       primaryColor={brandPrimary || "#000000"}
                       secondaryColor={brandSecondary || "#ea0b0b"}
                       isDark={isDark}
+                      showToggleArrow={true}
+                      isCollapsed={!showHeader}
+                      onPress={() => setShowHeader(prev => !prev)}
                     />
                     {/* ── Processing Indicator removed from here ── */}
                   </View>

@@ -5,10 +5,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const scale = width / 600;
 const r = (size: number) => Math.min(size * scale, size * 1.5);
@@ -26,6 +23,22 @@ export default function Navbar() {
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
 
+    const logoPrimaryUri = typeof brandData?.logo_primary === 'string' 
+        ? brandData.logo_primary 
+        : (brandData?.logo_primary as any)?.url;
+
+    const logoSecondaryUri = typeof brandData?.logo_secondary === 'string' 
+        ? brandData.logo_secondary 
+        : (brandData?.logo_secondary as any)?.url;
+
+    const logoPrimarySource = React.useMemo(() => {
+        return logoPrimaryUri ? { uri: logoPrimaryUri } : null;
+    }, [logoPrimaryUri]);
+
+    const logoSecondarySource = React.useMemo(() => {
+        return logoSecondaryUri ? { uri: logoSecondaryUri } : null;
+    }, [logoSecondaryUri]);
+
     return (
         <View style={[
             styles.header,
@@ -40,24 +53,26 @@ export default function Navbar() {
                     onPress={() => router.navigate("/(home)")}
                     activeOpacity={0.8}
                 >
-                    {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
-                        <AnimatedImage
-                            source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
+                    {logoPrimarySource ? (
+                        <Image
+                            source={logoPrimarySource}
                             style={styles.headerLogo}
                             contentFit="contain"
-                            entering={FadeIn.duration(800)}
+                            cachePolicy="memory-disk"
+                            transition={0}
                         />
                     ) : null}
                 </TouchableOpacity>
             </View>
 
             <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'flex-end', pointerEvents: 'none', marginLeft: r(55), marginTop: 170 }]}>
-                {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
-                    <AnimatedImage
-                        source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
+                {logoSecondarySource ? (
+                    <Image
+                        source={logoSecondarySource}
                         style={styles.headerExplorer}
                         contentFit="contain"
-                        entering={FadeIn.duration(800)}
+                        cachePolicy="memory-disk"
+                        transition={0}
                     />
                 ) : null}
             </View>

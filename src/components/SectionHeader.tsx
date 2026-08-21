@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from './AppText';
@@ -15,6 +16,8 @@ type SectionHeaderProps = {
     actionLabel?: string;
     onActionPress?: () => void;
     style?: any;
+    showToggleArrow?: boolean;
+    isCollapsed?: boolean;
 };
 
 export default function SectionHeader({
@@ -27,7 +30,9 @@ export default function SectionHeader({
     isFeatured,
     actionLabel,
     onActionPress,
-    style
+    style,
+    showToggleArrow,
+    isCollapsed,
 }: SectionHeaderProps) {
 
     const TitleComponent = onPress ? TouchableOpacity : View;
@@ -39,7 +44,7 @@ export default function SectionHeader({
                     <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                         <Image source={iconSource} style={styles.sectionIconImgLg} contentFit="contain" />
                     </View>
-                    <TitleComponent onPress={onPress} style={styles.titleWrapper}>
+                    <TitleComponent onPress={onPress} style={styles.titleWrapper} activeOpacity={0.7}>
                         <AppText style={[styles.featuredSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                             {title}
                         </AppText>
@@ -61,11 +66,20 @@ export default function SectionHeader({
             <View style={[styles.sectionIconCircle, { backgroundColor: secondaryColor || "#ea0b0b" }]}>
                 <Image source={iconSource} style={styles.sectionIconImg} contentFit="contain" />
             </View>
-            <TitleComponent onPress={onPress} style={styles.titleWrapper}>
+            <TitleComponent onPress={onPress} style={styles.titleWrapper} activeOpacity={0.7}>
                 <AppText style={[styles.subSectionTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                     {title}
                 </AppText>
             </TitleComponent>
+            {showToggleArrow && (
+                <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.toggleArrowButton}>
+                    <MaterialIcons
+                        name={isCollapsed ? "keyboard-arrow-down" : "keyboard-arrow-up"}
+                        size={24}
+                        color={isDark ? "#FFFFFF" : primaryColor}
+                    />
+                </TouchableOpacity>
+            )}
         </View>
     );
 }
@@ -79,6 +93,12 @@ const styles = StyleSheet.create({
         gap: 6,
         flex: 1,
         flexShrink: 1,
+    },
+    toggleArrowButton: {
+        padding: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexShrink: 0,
     },
     titleWrapper: {
         flex: 1,

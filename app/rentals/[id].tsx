@@ -167,7 +167,7 @@ export default function RentalDetailScreen() {
                         <CachedImage
                             uri={finalImages[0] as string}
                             style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
-                            contentFit="contain"
+                            contentFit="cover"
                         />
                     </View>
                 ) : null)}

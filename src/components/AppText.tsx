@@ -52,7 +52,7 @@ export default function AppText(props: TextProps) {
   const resolvedFont = resolveFontFamily(props.style);
   
   return (
-    <Text {...props} style={[styles.defaultText, props.style, resolvedFont ? { fontFamily: resolvedFont } : {}]}>
+    <Text {...props} style={[styles.defaultText, props.style, resolvedFont ? { fontFamily: resolvedFont, fontWeight: 'normal' } : {}]}>
       {props.children}
     </Text>
   );
@@ -61,6 +61,5 @@ export default function AppText(props: TextProps) {
 const styles = StyleSheet.create({
   defaultText: {
     fontFamily: 'OpenSans-Regular',
-    textTransform: 'capitalize'
   },
 });

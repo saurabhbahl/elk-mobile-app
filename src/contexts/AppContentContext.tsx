@@ -291,6 +291,23 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // Network Reconnection Listener: Immediately trigger delta sync when internet returns after being offline
+    const wasOfflineRef = React.useRef(false);
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(state => {
+            const isOnline = !!(state.isConnected && state.isInternetReachable !== false);
+            if (!isOnline) {
+                console.log("[Sync] Device went offline.");
+                wasOfflineRef.current = true;
+            } else if (wasOfflineRef.current) {
+                console.log("[Sync] Network reconnected after being offline! Immediately triggering delta check.");
+                wasOfflineRef.current = false;
+                refreshData();
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
     // Boot Logic
     useEffect(() => {
         preloadManifestCache().catch(e => console.warn('[AppContent] Failed to preload manifest:', e));

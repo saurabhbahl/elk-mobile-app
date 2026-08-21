@@ -1,16 +1,26 @@
 import AppText from "@/src/components/AppText";
-import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
+
+const MENU_PADDING = 16;
+const MENU_GAP = 12;
+const MAX_CARD_WIDTH = 175;
 
 export default function QuickLinks() {
     const { colors, fonts, isDark } = useTheme();
+    const { width: screenWidth } = useWindowDimensions();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+
+    // Calculate dynamic card width so 2 full cards and 1/10th of 3rd card (2.1 cards) fit on phone screens,
+    // capped at MAX_CARD_WIDTH on wider screens like iPads/tablets.
+    const calculatedWidth = (screenWidth - MENU_PADDING - 2 * MENU_GAP) / 2.1;
+    const cardWidth = Math.min(MAX_CARD_WIDTH, Math.max(120, calculatedWidth));
 
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();
@@ -29,12 +39,8 @@ export default function QuickLinks() {
     // Compute initial scroll position to render perfectly on first frame
     const getInitialScrollOffset = () => {
         if (activeIndex === -1) return 0;
-        const itemWidth = 120;
-        const gap = 12;
-        const padding = 16;
-        const itemX = padding + activeIndex * (itemWidth + gap);
-        const W = width;
-        const scrollToX = itemX - (W / 2) + (itemWidth / 2);
+        const itemX = MENU_PADDING + activeIndex * (cardWidth + MENU_GAP);
+        const scrollToX = itemX - (screenWidth / 2) + (cardWidth / 2);
         return Math.max(0, scrollToX);
     };
 
@@ -51,6 +57,7 @@ export default function QuickLinks() {
                         key={index}
                         style={[
                             styles.menuCard,
+                            { width: cardWidth },
                             isActive && {
                                 borderBottomColor: secondaryColor,
                             }
@@ -75,6 +82,7 @@ export default function QuickLinks() {
                                 source={{ uri: typeof item.nav_image === 'string' ? item.nav_image : (item.nav_image as Record<string, string>)?.url }}
                                 style={styles.menuCardImage}
                                 contentFit="cover"
+                                transition={0}
                             />
                         ) : (
                             <WireframePlaceholder style={styles.menuCardImage} />
@@ -110,13 +118,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         backgroundColor: colors.surface,
     },
     horizontalMenu: {
-        paddingHorizontal: 16,
+        paddingHorizontal: MENU_PADDING,
         paddingVertical: 12,
-        gap: 12,
+        gap: MENU_GAP,
         alignItems: 'stretch',
     },
     menuCard: {
-        width: 120,
         borderRadius: 12,
         borderBottomWidth: 4,
         borderBottomColor: 'transparent',
@@ -128,7 +135,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         elevation: 2,
     },
     menuCardImage: {
-        height: 70,
+        height: 88,
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
         overflow: 'hidden',
@@ -138,16 +145,16 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         justifyContent: "center",
         alignItems: "center",
         backgroundColor: colors.surface,
-        paddingHorizontal: 4,
+        paddingHorizontal: 6,
         paddingVertical: 8,
         borderBottomLeftRadius: 8,
         borderBottomRightRadius: 8,
-        overflow: 'hidden',
     },
     menuCardTitle: {
         fontSize: 11,
         fontFamily: 'OpenSans-SemiBold',
         color: colors.onSurface,
         textAlign: 'center',
+        width: '100%',
     },
 });
