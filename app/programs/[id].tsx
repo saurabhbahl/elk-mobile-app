@@ -14,7 +14,6 @@ import {
     View
 } from "react-native";
 import Animated from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -24,10 +23,9 @@ import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { formatProgramScheduleDate } from "@/src/utils/dateUtils";
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "../../src/utils/validation";
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -152,19 +150,15 @@ export default function ProgramDetailScreen() {
 
                     {/* Description Paragraph */}
                     {isValidData(rawDescription) ? (
-                        <RenderHTML
-                            systemFonts={systemFonts}
-                            contentWidth={width - 32} // paddingHorizontal is 16 on each side
-                            source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
+                        <AppRenderHTML
+                            html={typeof rawDescription === "string" ? rawDescription : ""}
+                            contentWidth={width - 32}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
                                 fontSize: 13,
                                 color: colors.onSurface,
                                 lineHeight: 20,
                                 textAlign: "left",
-                            }}
-                            tagsStyles={{
-                                p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
                     ) : null}

@@ -88,7 +88,7 @@ export default function QuickLinks() {
                             <WireframePlaceholder style={styles.menuCardImage} />
                         )}
                         <View style={styles.menuCardTitleContainer}>
-                            <AppText style={[styles.menuCardTitle, isActive && { color: primaryColor }]} numberOfLines={2}>{item.nav_item_label}</AppText>
+                            <AppText style={[styles.menuCardTitle, isActive && { color: isDark ? "#FFFFFF" : (primaryColor || colors.primary) }]} numberOfLines={2}>{item.nav_item_label}</AppText>
                         </View>
                     </TouchableOpacity>
                 );

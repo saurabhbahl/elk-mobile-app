@@ -17,7 +17,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
-import CachedImage from "@/src/components/CachedImage";
+import { Image } from "expo-image";
 import SectionHeader from "@/src/components/SectionHeader";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
@@ -253,14 +253,13 @@ export default function LiveCameraScreen() {
                     </View>
                     {/* Header Row */}
                     {isValidData(liveCamSettingsData?.screen_title) ? (
-                        <View style={{ paddingHorizontal: 16 }}>
+                        <View>
                             <SectionHeader
                                 title={liveCamSettingsData?.screen_title as string}
                                 iconSource={require("../../assets/images/clapperboard-play.png")}
                                 primaryColor={bgColor || "#000000"}
                                 secondaryColor={secColor || "#ea0b0b"}
                                 isDark={isDark}
-                                style={{ marginLeft: 0 }}
                             />
                         </View>
                     ) : null}
@@ -303,10 +302,11 @@ export default function LiveCameraScreen() {
                         {activeCamera ? (
                             isConnected === false && isValidData(liveCamSettingsData?.offline_message) ? (
                                 <View style={[styles.playerImage, { borderRadius: 16, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }]}>
-                                    <CachedImage
-                                        uri={cameraThumbnail}
+                                    <Image
+                                        source={{ uri: cameraThumbnail || undefined }}
                                         style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
                                         contentFit="cover"
+                                        transition={150}
                                     />
                                     <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
                                     <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
@@ -327,10 +327,11 @@ export default function LiveCameraScreen() {
                                     onPress={handlePlayStream}
                                 >
                                     <View style={styles.playerImage}>
-                                        <CachedImage
-                                            uri={cameraThumbnail}
+                                        <Image
+                                            source={{ uri: cameraThumbnail || undefined }}
                                             style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
+                                            transition={150}
                                         />
                                         <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: secColor ? `${secColor}40` : 'rgba(0, 0, 0, 0.4)' }]}>
                                             <View style={{ width: 44, height: 44, borderRadius: 32, backgroundColor: '#E22B2B', borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
@@ -383,6 +384,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         alignItems: "center",
     },
     scrollContent: {
+        flexGrow: 1,
         paddingBottom: 32,
     },
     headerRow: {
@@ -425,7 +427,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 13,
         lineHeight: 20,
         letterSpacing: 0,
-        color: primaryColor,
+        color: isDark ? colors.onSurfaceVariant : primaryColor,
     },
     tabButtonTextActive: {
         color: colors.onSurface,

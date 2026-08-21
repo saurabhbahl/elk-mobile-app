@@ -14,10 +14,8 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -153,10 +151,10 @@ export default function VisitorsCenterScreen() {
                                                     )}
                                                 </View>
                                                 <View style={styles.ctaContent}>
-                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_1_link?.title}
                                                     </AppText>
-                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to call
                                                     </AppText>
                                                 </View>
@@ -184,10 +182,10 @@ export default function VisitorsCenterScreen() {
                                                     )}
                                                 </View>
                                                 <View style={styles.ctaContent}>
-                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: secondaryColor } : undefined]} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
                                                         {visitorsData?.cta_2_link?.title}
                                                     </AppText>
-                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: bgColor } : undefined]} numberOfLines={1}>
+                                                    <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
                                                         Click here to email us
                                                     </AppText>
                                                 </View>
@@ -220,21 +218,17 @@ export default function VisitorsCenterScreen() {
                                 {/* Body Copy Section */}
                                 {isValidData(visitorsData?.body_copy) ? (
                                     <View style={{ marginHorizontal: 16, marginTop: (isValidData(visitorsData?.address) || isValidData(visitorsData?.phone_number)) ? 8 : 24 }}>
-                                        <RenderHTML
-                                            systemFonts={systemFonts}
+                                        <AppRenderHTML
+                                            html={visitorsData?.body_copy || ""}
                                             contentWidth={width - 32}
-                                            source={{ html: visitorsData?.body_copy || "" }}
                                             baseStyle={{
                                                 fontFamily: 'OpenSans-Regular',
-                                                fontWeight: '400',
-                                                fontStyle: 'normal',
                                                 fontSize: 13,
                                                 color: colors.onSurface,
                                                 lineHeight: 20,
                                                 letterSpacing: 0,
                                                 textAlign: "left",
                                             }}
-                                            tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                                         />
                                     </View>
                                 ) : null}

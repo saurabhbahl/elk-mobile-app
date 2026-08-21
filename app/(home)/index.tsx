@@ -17,10 +17,8 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
@@ -106,7 +104,7 @@ export default function HomeScreen() {
                 {/* Welcome Message */}
                 {isValidData(homeData?.hero_welcome_heading) ? (
                     <Animated.View entering={FadeInUp.duration(300)}>
-                        <AppText style={[styles.welcomeTitle, { color: primaryColor }]}>
+                        <AppText style={[styles.welcomeTitle, { color: isDark ? "#FFFFFF" : primaryColor }]}>
                             {homeData?.hero_welcome_heading}
                         </AppText>
                     </Animated.View>
@@ -152,10 +150,9 @@ export default function HomeScreen() {
                                     {/* Bottom Left Text Overlay: Conserving & Enhancing... */}
                                     {isValidData(homeData?.hero_intro_paragraph) ? (
                                         <View style={styles.welcomeIntroContainer}>
-                                            <RenderHTML
-                                                systemFonts={systemFonts}
+                                            <AppRenderHTML
+                                                html={homeData?.hero_intro_paragraph || ""}
                                                 contentWidth={width}
-                                                source={{ html: homeData?.hero_intro_paragraph || "" }}
                                                 baseStyle={styles.welcomeIntroText as any}
                                                 tagsStyles={{
                                                     p: { marginVertical: 0, padding: 0 }
@@ -368,10 +365,9 @@ export default function HomeScreen() {
                                                 <AppText style={styles.modalTitleDynamic}>{popupData.popup_title}</AppText>
                                             ) : null}
                                             {isValidData(popupData.popup_body_copy) ? (
-                                                <RenderHTML
-                                                    systemFonts={systemFonts}
+                                                <AppRenderHTML
+                                                    html={popupData.popup_body_copy}
                                                     contentWidth={width * 0.95 - 48}
-                                                    source={{ html: popupData.popup_body_copy }}
                                                     baseStyle={{
                                                         fontFamily: 'OpenSans-Regular',
                                                         fontSize: 14,
@@ -402,10 +398,9 @@ export default function HomeScreen() {
                                             <AppText style={styles.modalTitle}>{popupData.popup_title}</AppText>
                                         ) : null}
                                         {isValidData(popupData.popup_body_copy) ? (
-                                            <RenderHTML
-                                                systemFonts={systemFonts}
+                                            <AppRenderHTML
+                                                html={popupData.popup_body_copy}
                                                 contentWidth={width * 0.95 - 40} // paddingHorizontal: 20 -> 40
-                                                source={{ html: popupData.popup_body_copy }}
                                                 baseStyle={{
                                                     fontFamily: 'OpenSans-Regular',
                                                     fontSize: 14,

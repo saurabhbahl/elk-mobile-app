@@ -262,46 +262,57 @@ export class SyncManager {
 
       if (onProgress) onProgress(0.95, 'Finalizing offline setup...');
 
-      db.withTransactionSync(() => {
-        if (!isDelta) {
+      if (!isDelta) {
+        db.withTransactionSync(() => {
           appRepository.clearAll();
-        }
+        });
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
 
-        const settingsKeys = [
-          'app_branding', 'popup_content', 'home_screen', 'plan_your_trip',
-          'visitors', 'programs_setting', 'event_settings', 'live_cam_settings',
-          'trail_settings', 'rental_settings', 'tips_screen_settings',
-          'map_settings', 'navigation'
-        ];
+      // 1. Write settings in a dedicated transaction block
+      const settingsKeys = [
+        'app_branding', 'popup_content', 'home_screen', 'plan_your_trip',
+        'visitors', 'programs_setting', 'event_settings', 'live_cam_settings',
+        'trail_settings', 'rental_settings', 'tips_screen_settings',
+        'map_settings', 'navigation'
+      ];
 
+      db.withTransactionSync(() => {
         for (const key of settingsKeys) {
           const val = mergedJson[key];
           if (val && (!Array.isArray(val) || val.length > 0)) {
             appRepository.upsertSetting(key, JSON.stringify(val));
           }
         }
+      });
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-        const recordTypes = [
-          { type: 'programs', array: mergedJson.programs },
-          { type: 'events', array: mergedJson.events },
-          { type: 'trails', array: mergedJson.trails },
-          { type: 'rentals', array: mergedJson.rentals },
-          { type: 'tips', array: mergedJson.tips },
-          { type: 'pois', array: mergedJson.pois },
-          { type: 'cameras', array: mergedJson.cameras }
-        ];
+      // 2. Write record types in chunked transaction blocks yielding to UI thread
+      const recordTypes = [
+        { type: 'pois', array: mergedJson.pois },
+        { type: 'programs', array: mergedJson.programs },
+        { type: 'events', array: mergedJson.events },
+        { type: 'trails', array: mergedJson.trails },
+        { type: 'rentals', array: mergedJson.rentals },
+        { type: 'tips', array: mergedJson.tips },
+        { type: 'cameras', array: mergedJson.cameras }
+      ];
 
-        for (const item of recordTypes) {
-          if (item.array && Array.isArray(item.array)) {
+      for (const item of recordTypes) {
+        if (item.array && Array.isArray(item.array) && item.array.length > 0) {
+          db.withTransactionSync(() => {
             (item.array as Record<string, unknown>[]).forEach((rec: Record<string, unknown>) => {
               const id = rec.id ? String(rec.id) : String(Math.random());
               const lastModified = rec.updated_at ? String(rec.updated_at) : hashString(JSON.stringify(rec));
               appRepository.upsertRecord(id, item.type, JSON.stringify(rec), lastModified);
             });
-          }
+          });
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
+      }
 
-        // Process deletions if any
+      // 3. Deletions, cleanup, and metadata finalization block
+      db.withTransactionSync(() => {
         if (isDelta && mergedJson.deleted && typeof mergedJson.deleted === 'object') {
           const deleted = mergedJson.deleted as Record<string, unknown[]>;
           for (const item of recordTypes) {

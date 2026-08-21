@@ -93,6 +93,7 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
       }
     } catch (e) {
       console.error(`Failed to route relational upsert record of type ${type}:`, e);
+      throw e;
     }
   }
 
@@ -168,6 +169,7 @@ export class AppRepository extends BaseRepository<Record<string, unknown>> {
       }
     } catch (e) {
       console.error(`Failed to route relational upsert setting ${key}:`, e);
+      throw e;
     }
   }
 

@@ -11,10 +11,8 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
@@ -83,16 +81,15 @@ export default function RentalsScreen() {
             ) : null}
             {isValidData(rentalSettingsData?.intro_text) ? (
                 <Animated.View entering={FadeInUp.duration(200).delay(40)} style={{ paddingBottom: 16 }}>
-                    <RenderHTML systemFonts={systemFonts}
+                    <AppRenderHTML
+                        html={rentalSettingsData?.intro_text || ""}
                         contentWidth={width - 32}
-                        source={{ html: rentalSettingsData?.intro_text || "" }}
                         baseStyle={{
                             fontSize: 14,
                             color: isDark ? "#E5E5E5" : "#333",
                             lineHeight: 20,
                             textAlign: "left",
                         }}
-                        tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                     />
                 </Animated.View>
             ) : null}

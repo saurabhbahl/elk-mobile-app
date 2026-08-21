@@ -16,7 +16,8 @@ export function createEventsTable(db: SQLite.SQLiteDatabase) {
     registration_ticket_link TEXT,
     category_tags TEXT,
     featured INTEGER DEFAULT 0,
-    active INTEGER DEFAULT 1
+    active INTEGER DEFAULT 1,
+    FOREIGN KEY (location_poi_id) REFERENCES pois(id) ON DELETE SET NULL
   );
   `);
 

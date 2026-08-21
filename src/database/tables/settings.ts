@@ -106,7 +106,8 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     cta_2_image_url TEXT,
     cta_2_link_title TEXT,
     cta_2_link_url TEXT,
-    map_poi_link_id INTEGER
+    map_poi_link_id INTEGER,
+    FOREIGN KEY (map_poi_link_id) REFERENCES pois(id) ON DELETE SET NULL
   );
   `);
 

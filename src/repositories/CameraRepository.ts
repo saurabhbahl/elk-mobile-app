@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage } from './utils';
+import { helperExtractImage, safeParseInt } from './utils';
 
 export class CameraRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -14,7 +14,7 @@ export class CameraRepository extends BaseRepository<Record<string, unknown>> {
     const thumbnail_url = helperExtractImage(cam.thumbnail_poster || cam.thumbnail || cam.thumbnail_image || cam.thumbnail_url);
     const description = cam.description || null;
     const active = cam.active !== false ? 1 : 0;
-    const sort_order = cam.sort_order !== undefined ? parseInt(cam.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(cam.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO cameras (id, camera_name, stream_url, stream_type, thumbnail_url, description, active, sort_order)

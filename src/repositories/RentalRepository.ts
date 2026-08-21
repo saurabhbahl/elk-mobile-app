@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractLink, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractLink, helperExtractPoiId, safeParseInt } from './utils';
 
 export class RentalRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -20,7 +20,7 @@ export class RentalRepository extends BaseRepository<Record<string, unknown>> {
     const link2 = helperExtractLink(rent.cta_2_link);
     const map_poi_link_id = helperExtractPoiId(rent.map_poi_link);
     const active = rent.active !== false ? 1 : 0;
-    const sort_order = rent.sort_order !== undefined ? parseInt(rent.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(rent.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO rentals (id, rental_name, featured_image_url, short_description, full_description, capacity, rental_type, availability_notes, pricing_notes, cta_1_label, cta_1_link_url, cta_2_label, cta_2_link_url, map_poi_link_id, active, sort_order)

@@ -91,8 +91,6 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginVertical: 8,
         gap: 6,
-        flex: 1,
-        flexShrink: 1,
     },
     toggleArrowButton: {
         padding: 4,
@@ -132,8 +130,6 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
         marginTop: 8,
         marginBottom: 10,
-        flex: 1,
-        flexShrink: 1,
     },
     featuredTitleContainer: {
         flexDirection: "row",

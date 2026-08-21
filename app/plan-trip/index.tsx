@@ -13,10 +13,8 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -129,9 +127,9 @@ export default function PlanTripScreen() {
 
                     {isValidData(intro) ? (
                         <Animated.View entering={FadeInUp.duration(200).delay(40)} style={styles.introContainer}>
-                            <RenderHTML systemFonts={systemFonts}
+                            <AppRenderHTML
+                                html={intro || ""}
                                 contentWidth={width - 32}
-                                source={{ html: intro || "" }}
                                 baseStyle={{
                                     fontSize: 14,
                                     color: colors.onSurface,
@@ -139,7 +137,6 @@ export default function PlanTripScreen() {
                                     fontWeight: "500",
                                     textAlign: "left",
                                 }}
-                                tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                             />
                         </Animated.View>
                     ) : null}
@@ -177,20 +174,17 @@ export default function PlanTripScreen() {
                                             </View>
                                         ) : null}
                                         {isValidData(sec.section_body) ? (
-                                            <RenderHTML systemFonts={systemFonts}
+                                            <AppRenderHTML
+                                                html={sec.section_body as string}
                                                 contentWidth={width - 32}
-                                                source={{ html: sec.section_body as string }}
                                                 baseStyle={{
                                                     fontFamily: 'OpenSans-Regular',
-                                                    fontWeight: '400',
-                                                    fontStyle: 'normal',
                                                     fontSize: 13,
                                                     color: colors.onSurface,
                                                     lineHeight: 20,
                                                     letterSpacing: 0,
                                                     textAlign: "left",
                                                 }}
-                                                tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                                             />
                                         ) : null}
                                     </View>

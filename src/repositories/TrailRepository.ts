@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractPoiId, safeParseInt } from './utils';
 
 export class TrailRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -16,7 +16,7 @@ export class TrailRepository extends BaseRepository<Record<string, unknown>> {
     const seasonal_closure = trail.seasonal_closure || null;
     const location_poi_link = helperExtractPoiId(trail.location_poi_link);
     const active = trail.active !== false ? 1 : 0;
-    const sort_order = trail.sort_order !== undefined ? parseInt(trail.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(trail.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO trails (id, trail_name, featured_image_url, description, trailhead_address, distance, seasonal_closure, location_poi_link_id, active, sort_order)

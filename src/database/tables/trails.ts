@@ -12,7 +12,8 @@ export function createTrailsTable(db: SQLite.SQLiteDatabase) {
     seasonal_closure TEXT,
     location_poi_link_id INTEGER,
     active INTEGER DEFAULT 1,
-    sort_order INTEGER DEFAULT 9999
+    sort_order INTEGER DEFAULT 9999,
+    FOREIGN KEY (location_poi_link_id) REFERENCES pois(id) ON DELETE SET NULL
   );
   `);
 

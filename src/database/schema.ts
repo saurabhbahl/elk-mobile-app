@@ -67,8 +67,12 @@ export function createTables() {
         const programsEmpty = programCount[0] && (programCount[0] as any).count === 0;
 
         if (poisEmpty && eventsEmpty && programsEmpty) {
-          console.log("Relational tables are empty. Clearing sync metadata to force fresh full sync...");
-          db.execSync(`DELETE FROM sync_metadata;`);
+          const syncDoneRow = db.getAllSync("SELECT value FROM sync_metadata WHERE key = 'initial_sync_complete';") as any[];
+          const isSyncComplete = syncDoneRow && syncDoneRow[0] && syncDoneRow[0].value === 'true';
+          if (!isSyncComplete) {
+            console.log("Relational tables are empty and initial sync incomplete. Clearing sync metadata to force fresh full sync...");
+            db.execSync(`DELETE FROM sync_metadata;`);
+          }
         }
       }
     }

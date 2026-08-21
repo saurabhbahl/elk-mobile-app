@@ -160,15 +160,9 @@ export default function RootLayout() {
       <CustomThemeProvider>
         <MapResetContext.Provider value={{ mapKey, resetMap }}>
           <NavigationModeContext.Provider value={{ isNavigating, setIsNavigating, isBottomNavbarHidden, setIsBottomNavbarHidden, navbarVisibility }}>
-            <ThemeProvider
-              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-            >
-              <RootLayoutContent
-                colorScheme={colorScheme}
-                isNavigating={isNavigating}
-              />
-              <StatusBar style="light" backgroundColor="#0F0F0F" />
-            </ThemeProvider>
+            <RootLayoutContent
+              isNavigating={isNavigating}
+            />
           </NavigationModeContext.Provider>
         </MapResetContext.Provider>
       </CustomThemeProvider>
@@ -178,7 +172,7 @@ export default function RootLayout() {
 
 import BottomNavbar from "@/src/components/BottomNavbar";
 
-function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string | null | undefined, isNavigating: boolean }) {
+function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
   const { brandData, apiStatus, poisData } = useAppContentData();
   const { refreshData } = useAppContentSync();
@@ -269,81 +263,84 @@ function RootLayoutContent({ colorScheme, isNavigating }: { colorScheme: string 
   const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
-      <OfflinePopup />
-      <View style={{ flex: 1 }}>
-        <Stack>
-          <Stack.Screen
-            name="index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="(home)"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="programs/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="programs/[id]"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="events/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="events/[id]"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="trails/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="rentals/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="plan-trip/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="map/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="map/[id]"
-            options={{ headerShown: false, animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="map/settings"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="visitors/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="cameras/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="tips/index"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-          <Stack.Screen
-            name="+not-found"
-            options={{ headerShown: false, animation: 'none' }}
-          />
-        </Stack>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
+        <OfflinePopup />
+        <View style={{ flex: 1 }}>
+          <Stack>
+            <Stack.Screen
+              name="index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="(home)"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="programs/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="programs/[id]"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="events/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="events/[id]"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="trails/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="rentals/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="plan-trip/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="map/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="map/[id]"
+              options={{ headerShown: false, animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="map/settings"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="visitors/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="cameras/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="tips/index"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+            <Stack.Screen
+              name="+not-found"
+              options={{ headerShown: false, animation: 'none' }}
+            />
+          </Stack>
+        </View>
+        {shouldShowHeader && (
+          <BottomNavbar />
+        )}
       </View>
-      {shouldShowHeader && (
-        <BottomNavbar />
-      )}
-    </View>
+    </ThemeProvider>
   );
 }

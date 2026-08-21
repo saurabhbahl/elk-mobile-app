@@ -175,14 +175,25 @@ function MapScreen() {
           GeoJSONSource: ML.GeoJSONSource, Layer: ML.Layer,
           Marker: ML.Marker, UserLocation: ML.UserLocation,
         };
-      } else {
+      }
+    } catch {
+      // Handled in mount useEffect
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (isExpoGo || mapComponents) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ML = require('@maplibre/maplibre-react-native');
+      if (!ML.Map || !ML.Camera) {
         setMapEngineError(`Required components missing. Keys: ${Object.keys(ML).join(', ')}`);
       }
     } catch (e: any) {
       setMapEngineError(e.message || 'Failed to load MapLibre module');
     }
-    return null;
-  });
+  }, [mapComponents]);
 
 
 
@@ -334,25 +345,30 @@ function MapScreen() {
 
   // ── GPS tracking ────────────────────────────────────────────────────────────
   useEffect(() => {
+    let isMounted = true;
     let posSubscription: Location.LocationSubscription | null = null;
     let headingSubscription: Location.LocationSubscription | null = null;
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
+      if (!isMounted || status !== 'granted') return;
 
       // Position — throttled (30m / 10s) to avoid re-render storms
-      posSubscription = await Location.watchPositionAsync(
+      const pos = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 30, timeInterval: 10000 },
         (loc) => {
-          setLocation(loc.coords);
-          // Removed automatic map center on first GPS fix; map should remain on the CMS default center
-          // until the user explicitly taps the "my location" button.
+          if (isMounted) setLocation(loc.coords);
         }
       );
+      if (!isMounted) {
+        pos.remove();
+        return;
+      }
+      posSubscription = pos;
 
       // Heading — fires on every compass change, animates smoothly via Animated.Value
-      headingSubscription = await Location.watchHeadingAsync((headingData) => {
+      const heading = await Location.watchHeadingAsync((headingData) => {
+        if (!isMounted) return;
         const deg = headingData.trueHeading >= 0
           ? headingData.trueHeading
           : headingData.magHeading;
@@ -378,9 +394,15 @@ function MapScreen() {
           setHeadingCardinal(headingToCardinal(deg));
         }
       });
+      if (!isMounted) {
+        heading.remove();
+        return;
+      }
+      headingSubscription = heading;
     })();
 
     return () => {
+      isMounted = false;
       posSubscription?.remove();
       headingSubscription?.remove();
     };

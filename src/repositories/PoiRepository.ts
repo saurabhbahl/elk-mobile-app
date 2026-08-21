@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage } from './utils';
+import { helperExtractImage, safeParseInt } from './utils';
 
 export class PoiRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -11,8 +11,8 @@ export class PoiRepository extends BaseRepository<Record<string, unknown>> {
     const poi_name = poi.poi_name || null;
     const pin_popup_summary = poi.pin_popup_summary || null;
     const full_description = poi.full_description || null;
-    const latitude = poi.latitude !== undefined ? parseFloat(poi.latitude) : null;
-    const longitude = poi.longitude !== undefined ? parseFloat(poi.longitude) : null;
+    const latitude = poi.latitude !== undefined && !isNaN(parseFloat(poi.latitude)) ? parseFloat(poi.latitude) : null;
+    const longitude = poi.longitude !== undefined && !isNaN(parseFloat(poi.longitude)) ? parseFloat(poi.longitude) : null;
     const featured_image_url = helperExtractImage(poi.featured_image);
     const address = poi.address || null;
     const handicap_accessible = poi.handicap_accessible ? 1 : 0;
@@ -21,7 +21,7 @@ export class PoiRepository extends BaseRepository<Record<string, unknown>> {
     const external_link = poi.external_link || null;
     const pin_icon_override = helperExtractImage(poi.pin_icon_override);
     const active = poi.active !== false ? 1 : 0;
-    const sort_order = poi.sort_order !== undefined ? parseInt(poi.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(poi.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO pois (id, poi_name, pin_popup_summary, full_description, latitude, longitude, featured_image_url, address, handicap_accessible, open_year_round, seasonal_notes, external_link, pin_icon_override, active, sort_order)

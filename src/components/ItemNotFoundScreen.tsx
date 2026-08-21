@@ -51,7 +51,7 @@ export default function ItemNotFoundScreen({
 
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
-                            style={[styles.button, styles.outlineButton, { borderColor: primaryColor }]}
+                            style={[styles.button, styles.outlineButton, { borderColor: isDark ? "#FFFFFF" : primaryColor }]}
                             activeOpacity={0.7}
                             onPress={() => {
                                 if (router.canGoBack()) {
@@ -66,12 +66,12 @@ export default function ItemNotFoundScreen({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.button, styles.filledButton, { backgroundColor: primaryColor }]}
+                            style={[styles.button, styles.filledButton, { backgroundColor: isDark ? "#FFFFFF" : primaryColor }]}
                             activeOpacity={0.8}
                             onPress={() => router.replace("/(home)")}
                         >
-                            <Ionicons name="home" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                            <AppText style={[styles.buttonText, { color: "#FFFFFF" }]}>Go to Home</AppText>
+                            <Ionicons name="home" size={18} color={isDark ? "#000000" : "#FFFFFF"} style={{ marginRight: 6 }} />
+                            <AppText style={[styles.buttonText, { color: isDark ? "#000000" : "#FFFFFF" }]}>Go to Home</AppText>
                         </TouchableOpacity>
                     </View>
                 </View>

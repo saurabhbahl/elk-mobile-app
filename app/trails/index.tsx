@@ -11,9 +11,7 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -62,16 +60,10 @@ const TrailCard = React.memo(({ item, index, styles }: {
                     </View>
                 ) : null}
                 {isValidData(item.description) ? (
-                    <RenderHTML systemFonts={systemFonts}
+                    <AppRenderHTML
+                        html={item.description || ""}
                         contentWidth={width - 32}
-                        source={{ html: item.description || "" }}
-                        baseStyle={{
-                            fontSize: 13,
-                            color: "#555555",
-                            lineHeight: 18,
-                            textAlign: "left",
-                        }}
-                        tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
+                        baseStyle={styles.trailDescription}
                     />
                 ) : null}
 
@@ -215,22 +207,23 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     trailName: {
         fontSize: 15,
         fontWeight: "700",
-        color: primaryColor,
+        color: isDark ? colors.onSurface : primaryColor,
         marginRight: 8,
     },
 
     trailDistance: {
         fontFamily: 'OpenSans-Regular',
         fontSize: 12,
-        color: primaryColor,
+        color: isDark ? colors.onSurfaceVariant : primaryColor,
     },
 
 
     trailDescription: {
         fontFamily: 'OpenSans-Regular',
-        fontSize: 12,
-        color: "#555555",
+        fontSize: 13,
+        color: isDark ? colors.onSurfaceVariant : "#555555",
         lineHeight: 18,
+        textAlign: "left",
     },
 
     emptyText: {

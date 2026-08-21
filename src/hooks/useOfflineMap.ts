@@ -366,32 +366,39 @@ export const useOfflineMap = () => {
         let savedResume = await AsyncStorage.getItem(resumeKey);
 
         if (savedResume) {
-          const metaStr = await AsyncStorage.getItem('@elk_downloaded_maps_meta');
-          let metaMatches = true;
-          if (metaStr) {
-            try {
-              const meta = JSON.parse(metaStr);
-              const localMeta = meta[file.name];
-              if (isMapFileOutdated(localMeta, { url: file.downloadUrl, modified_at: file.modified_at })) {
-                metaMatches = false;
-              }
-            } catch (e) {
-              metaMatches = false;
-            }
-          } else {
-            metaMatches = false;
-          }
-
-          if (!metaMatches) {
-            console.log(`[useOfflineMap] Remote map file has been updated on the server. Discarding resume state and starting fresh.`);
+          const tmpInfo = await FileSystem.getInfoAsync(tmpUri);
+          if (!tmpInfo.exists) {
+            console.log(`[useOfflineMap] Temporary file missing from disk. Discarding resume state and starting fresh.`);
             await AsyncStorage.removeItem(resumeKey);
             savedResume = null;
           } else {
-            const rangeSupported = await checkRangeSupport(file.downloadUrl);
-            if (!rangeSupported) {
-              console.log(`[useOfflineMap] Server does not support HTTP Range requests. Discarding resume state and starting fresh.`);
+            const metaStr = await AsyncStorage.getItem('@elk_downloaded_maps_meta');
+            let metaMatches = true;
+            if (metaStr) {
+              try {
+                const meta = JSON.parse(metaStr);
+                const localMeta = meta[file.name];
+                if (isMapFileOutdated(localMeta, { url: file.downloadUrl, modified_at: file.modified_at })) {
+                  metaMatches = false;
+                }
+              } catch (e) {
+                metaMatches = false;
+              }
+            } else {
+              metaMatches = false;
+            }
+
+            if (!metaMatches) {
+              console.log(`[useOfflineMap] Remote map file has been updated on the server. Discarding resume state and starting fresh.`);
               await AsyncStorage.removeItem(resumeKey);
               savedResume = null;
+            } else {
+              const rangeSupported = await checkRangeSupport(file.downloadUrl);
+              if (!rangeSupported) {
+                console.log(`[useOfflineMap] Server does not support HTTP Range requests. Discarding resume state and starting fresh.`);
+                await AsyncStorage.removeItem(resumeKey);
+                savedResume = null;
+              }
             }
           }
         }

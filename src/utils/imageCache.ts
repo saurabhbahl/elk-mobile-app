@@ -69,13 +69,18 @@ async function readManifest(): Promise<CacheManifest> {
   }
 }
 
+let manifestWritePromise: Promise<void> = Promise.resolve();
+
 async function writeManifest(manifest: CacheManifest): Promise<void> {
   manifestCache = manifest;
-  try {
-    await FileSystem.writeAsStringAsync(MANIFEST_PATH, JSON.stringify(manifest));
-  } catch (e) {
-    console.warn('[ImageCache] Failed to write manifest:', e);
-  }
+  manifestWritePromise = manifestWritePromise.then(async () => {
+    try {
+      await FileSystem.writeAsStringAsync(MANIFEST_PATH, JSON.stringify(manifest));
+    } catch (e) {
+      console.warn('[ImageCache] Failed to write manifest:', e);
+    }
+  });
+  return manifestWritePromise;
 }
 
 // ─── Directory ───────────────────────────────────────────────────────────────
@@ -184,10 +189,10 @@ export async function cacheImageIfNeeded(url: string, forceRefresh: boolean = fa
       } catch (err: any) {
         attempts++;
         console.warn(`[ImageCache] Attempt ${attempts} failed for ${url}: ${err.message}`);
-        
+
         // Clean up any partially downloaded file before retrying
         try { await FileSystem.deleteAsync(localPath, { idempotent: true }); } catch { /* ignore */ }
-        
+
         if (attempts >= maxAttempts) {
           throw err;
         }
@@ -209,7 +214,7 @@ export async function cacheImageIfNeeded(url: string, forceRefresh: boolean = fa
     let sizeBytes = 0;
     try {
       const info = await FileSystem.getInfoAsync(localPath);
-      sizeBytes = ((info as {size?: number}).size) || 0;
+      sizeBytes = ((info as { size?: number }).size) || 0;
     } catch { /* size is a nice-to-have */ }
 
     manifest[url] = {

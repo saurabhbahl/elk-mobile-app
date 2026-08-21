@@ -332,9 +332,9 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                 <MaterialIcons
                   name="navigation"
                   size={20}
-                  color={canStart ? colors.onPrimary : colors.onSurfaceVariant}
+                  color={canStart ? '#FFFFFF' : colors.onSurfaceVariant}
                 />
-                <AppText style={[plannerStyles.startNavText, { fontFamily: fonts.bodyBold, fontSize: 13, color: canStart ? colors.onPrimary : colors.onSurfaceVariant }]}>
+                <AppText style={[plannerStyles.startNavText, { fontFamily: fonts.bodyBold, fontSize: 13, color: canStart ? '#FFFFFF' : colors.onSurfaceVariant }]}>
                   Start Navigation
                 </AppText>
               </>

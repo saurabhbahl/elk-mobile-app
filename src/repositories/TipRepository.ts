@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage } from './utils';
+import { helperExtractImage, safeParseInt } from './utils';
 
 export class TipRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -13,7 +13,7 @@ export class TipRepository extends BaseRepository<Record<string, unknown>> {
     const tip_icon_url = helperExtractImage(tip.tip_icon_image);
     const category_tag = tip.category_tag || null;
     const active = tip.active !== false ? 1 : 0;
-    const sort_order = tip.sort_order !== undefined ? parseInt(tip.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(tip.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO tips (id, tip_title, tip_body, tip_icon_url, category_tag, active, sort_order)

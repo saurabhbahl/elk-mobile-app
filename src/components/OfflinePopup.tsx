@@ -26,14 +26,16 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     // do NOT use it to trigger offline mode — avoids false "offline" on strong WiFi.
     const isOffline = forceShowForTesting || netInfo.isConnected === false;
     const [visible, setVisible] = useState(false);
+    const [hasDismissed, setHasDismissed] = useState(false);
 
     useEffect(() => {
-        if (isOffline) {
+        if (isOffline && !hasDismissed) {
             setVisible(true);
-        } else {
+        } else if (!isOffline) {
             setVisible(false);
+            setHasDismissed(false); // Reset dismissal on reconnect
         }
-    }, [isOffline]);
+    }, [isOffline, hasDismissed]);
 
     const Content = (
         <View style={[
@@ -45,7 +47,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
             }
         ]}>
             <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(139,30,30,0.08)' }]}>
-                <MaterialCommunityIcons name="wifi-off" size={32} color={primaryColor} />
+                <MaterialCommunityIcons name="wifi-off" size={32} color={isDark ? '#FFFFFF' : primaryColor} />
             </View>
             <AppText style={[styles.title, { color: colors.onSurface }]}>{"You're Offline"}</AppText>
             <AppText style={[styles.message, { color: colors.onSurfaceVariant }]}>
@@ -54,14 +56,17 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                    style={[styles.primaryButton, { backgroundColor: primaryColor }]}
+                    style={[styles.primaryButton, { backgroundColor: isDark ? '#FFFFFF' : primaryColor }]}
                     activeOpacity={0.8}
-                    onPress={() => setVisible(false)}
+                    onPress={() => {
+                        setVisible(false);
+                        setHasDismissed(true);
+                    }}
                 >
-                    <AppText style={[styles.primaryButtonText, { color: '#ffffff' }]}>Continue</AppText>
+                    <AppText style={[styles.primaryButtonText, { color: isDark ? '#000000' : '#ffffff' }]}>Continue</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.secondaryButton, { borderColor: primaryColor }]}
+                    style={[styles.secondaryButton, { borderColor: isDark ? '#FFFFFF' : primaryColor }]}
                     activeOpacity={0.8}
                     onPress={async () => {
                         // Optimistically hide the popup
@@ -79,7 +84,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                         }
                     }}
                 >
-                    <AppText style={[styles.secondaryButtonText, { color: primaryColor }]}>Retry</AppText>
+                    <AppText style={[styles.secondaryButtonText, { color: isDark ? '#FFFFFF' : primaryColor }]}>Retry</AppText>
                 </TouchableOpacity>
             </View>
         </View>

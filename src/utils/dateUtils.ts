@@ -60,16 +60,14 @@ export function parseFlexibleDate(dateStr: string | null | undefined): Date | nu
     const year = parseInt(slashMatch[3], 10);
     const timePart = slashMatch[4].trim();
 
-    let day = part1;
-    let month = part2 - 1;
+    // Default to US format (MM/DD/YYYY) as CMS standard
+    let month = part1 - 1;
+    let day = part2;
 
-    // Detect if part1 is month (e.g. 12/25/2026 where month > 12 is impossible)
+    // If part1 > 12 and part2 <= 12, it is explicitly DD/MM/YYYY
     if (part1 > 12 && part2 <= 12) {
       day = part1;
       month = part2 - 1;
-    } else if (part2 > 12 && part1 <= 12) {
-      month = part1 - 1;
-      day = part2;
     }
 
     let hours = 0;

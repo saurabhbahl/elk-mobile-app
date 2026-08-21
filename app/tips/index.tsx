@@ -13,9 +13,7 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
@@ -97,20 +95,17 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
                     ) : null}
 
                     {isValidData(item.tip_body) ? (
-                        <RenderHTML systemFonts={systemFonts}
+                        <AppRenderHTML
+                            html={item.tip_body as string}
                             contentWidth={width - 64}
-                            source={{ html: item.tip_body as string }}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
-                                fontWeight: '400',
-                                fontStyle: 'normal',
                                 fontSize: 13,
                                 color: colors.onSurfaceVariant,
                                 lineHeight: 20,
                                 letterSpacing: 0,
                                 textAlign: "left",
                             }}
-                            tagsStyles={{ p: { textAlign: "left", marginVertical: 4 } }}
                         />
                     ) : null}
                 </View>
@@ -187,16 +182,15 @@ export default function TipsScreen() {
 
                         {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
                             <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                                <RenderHTML systemFonts={systemFonts}
+                                <AppRenderHTML
+                                    html={tipsScreenSettingsData?.intro_paragraph || ""}
                                     contentWidth={width - 32}
-                                    source={{ html: tipsScreenSettingsData?.intro_paragraph || "" }}
                                     baseStyle={{
                                         fontSize: 14,
                                         color: isDark ? "#E5E5E5" : "#333",
                                         lineHeight: 20,
                                         textAlign: "center"
                                     }}
-                                    tagsStyles={{ p: { textAlign: "center", marginVertical: 4 } }}
                                 />
                             </View>
                         ) : null}

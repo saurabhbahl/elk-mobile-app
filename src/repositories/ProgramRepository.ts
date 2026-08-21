@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractPoiId, safeParseInt } from './utils';
 
 export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -18,7 +18,7 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
     const category_tags = Array.isArray(prog.category_tag) ? prog.category_tag.join(',') : (prog.category_tag || null);
     const featured = prog.featured ? 1 : 0;
     const active = prog.active !== false ? 1 : 0;
-    const sort_order = prog.sort_order !== undefined ? parseInt(prog.sort_order, 10) : 9999;
+    const sort_order = safeParseInt(prog.sort_order, 9999);
 
     this.execute(`
       INSERT OR REPLACE INTO programs (id, program_name, thumbnail_image_url, short_description, full_description, schedule_dates, location_poi_id, registration_link, category_tags, featured, active, sort_order)

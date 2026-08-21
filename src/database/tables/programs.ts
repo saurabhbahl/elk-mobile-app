@@ -14,7 +14,8 @@ export function createProgramsTable(db: SQLite.SQLiteDatabase) {
     category_tags TEXT,
     featured INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1,
-    sort_order INTEGER DEFAULT 9999
+    sort_order INTEGER DEFAULT 9999,
+    FOREIGN KEY (location_poi_id) REFERENCES pois(id) ON DELETE SET NULL
   );
   `);
 

@@ -14,9 +14,7 @@ import {
     View
 } from "react-native";
 import Animated from "react-native-reanimated";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import CachedImage from "@/src/components/CachedImage";
@@ -236,9 +234,9 @@ export default function EventDetailScreen() {
 
                     {/* Description Paragraph */}
                     {isValidData(rawDescription) ? (
-                        <RenderHTML systemFonts={systemFonts}
-                            contentWidth={width - 32} // paddingHorizontal is 16 on each side
-                            source={{ html: typeof rawDescription === "string" ? rawDescription : "" }}
+                        <AppRenderHTML
+                            html={typeof rawDescription === "string" ? rawDescription : ""}
+                            contentWidth={width - 32}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
                                 fontSize: 13,
@@ -247,9 +245,6 @@ export default function EventDetailScreen() {
                                 marginTop: 10,
                                 marginBottom: 20,
                                 textAlign: "left",
-                            }}
-                            tagsStyles={{
-                                p: { textAlign: "left", marginVertical: 8 }
                             }}
                         />
                     ) : null}

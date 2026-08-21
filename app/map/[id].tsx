@@ -11,9 +11,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
-
-const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, { FadeInUp } from "react-native-reanimated";
@@ -186,9 +184,9 @@ export default function WaypointDetailsScreen() {
 
                         {/* Description Paragraph */}
                         {isValidData(waypoint.full_description || waypoint.description) ? (
-                            <RenderHTML systemFonts={systemFonts}
+                            <AppRenderHTML
+                                html={(waypoint.full_description || waypoint.description) as string}
                                 contentWidth={windowWidth - 40}
-                                source={{ html: waypoint.full_description || waypoint.description }}
                                 baseStyle={{
                                     fontFamily: 'OpenSans-Regular',
                                     fontSize: 13,
@@ -197,7 +195,6 @@ export default function WaypointDetailsScreen() {
                                     marginBottom: 16,
                                     textAlign: "left",
                                 }}
-                                tagsStyles={{ p: { textAlign: "left", marginVertical: 8 } }}
                             />
                         ) : null}
 
@@ -206,16 +203,15 @@ export default function WaypointDetailsScreen() {
                         <View style={[styles.cautionContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFF3E0', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                             <MaterialIcons name="info-outline" size={20} color={colors.tertiary} style={{ marginRight: 8, marginTop: 2 }} />
                             <View style={{ flex: 1 }}>
-                                <RenderHTML systemFonts={systemFonts}
+                                <AppRenderHTML
                                     contentWidth={windowWidth - 40 - 24 - 28} // padding 20*2 + container padding 12*2 + icon 28
-                                    source={{ html: waypoint.seasonal_notes || "" }}
+                                    html={waypoint.seasonal_notes || ""}
                                     baseStyle={{
                                         fontFamily: 'OpenSans-SemiBold',
                                         fontSize: 12,
                                         color: isDark ? colors.onSurface : '#000',
                                         lineHeight: 18
                                     }}
-                                    tagsStyles={{ p: { margin: 0, padding: 0 } }}
                                 />
                             </View>
                         </View>

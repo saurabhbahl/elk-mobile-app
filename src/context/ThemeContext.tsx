@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useColorScheme, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Appearance, useColorScheme, LayoutAnimation, Platform, UIManager } from 'react-native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load theme once on mount
+  // Load saved theme preference on mount
   useEffect(() => {
     let isMounted = true;
     const loadTheme = async () => {
@@ -36,8 +36,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (isMounted) {
           if (savedTheme === 'light' || savedTheme === 'dark') {
             setThemeState(savedTheme);
-          } else if (systemColorScheme === 'dark') {
-            setThemeState('dark');
+          } else if (systemColorScheme) {
+            setThemeState(systemColorScheme === 'dark' ? 'dark' : 'light');
           }
         }
       } catch (e) {
@@ -50,6 +50,52 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
     loadTheme();
     return () => { isMounted = false; };
+  }, []);
+
+  // Dynamically respond to phone light/dark mode changes in real time when no manual override exists
+  useEffect(() => {
+    let isMounted = true;
+    const syncSystemTheme = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(THEME_KEY);
+        if (isMounted && !savedTheme && systemColorScheme) {
+          const nextTheme: Theme = systemColorScheme === 'dark' ? 'dark' : 'light';
+          setThemeState(prev => {
+            if (prev !== nextTheme) {
+              if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              }
+              return nextTheme;
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    };
+    syncSystemTheme();
+    return () => { isMounted = false; };
+  }, [systemColorScheme]);
+
+  // Listen to native Appearance API changes for instant real-time theme updates
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(async ({ colorScheme }) => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(THEME_KEY);
+        if (!savedTheme && colorScheme) {
+          const nextTheme: Theme = colorScheme === 'dark' ? 'dark' : 'light';
+          setThemeState(prev => {
+            if (prev !== nextTheme) {
+              if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              }
+              return nextTheme;
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    });
+    return () => subscription.remove();
   }, []);
 
   const setTheme = useCallback(async (newTheme: Theme) => {
