@@ -177,17 +177,35 @@ export default function HomeScreen() {
                             isDark={isDark}
                         />
                         <View style={styles.mapCardContainer}>
-                            <ImageBackground source={require("../../assets/images/map-preview.jpg")} style={styles.mapCard} imageStyle={{ borderRadius: 10.69 }}>
-                                {isValidData(homeData?.map_view_button_label) ? (
-                                    <TouchableOpacity
-                                        style={styles.viewMapButton}
-                                        activeOpacity={0.9}
-                                        onPress={() => router.push("/map")}
-                                    >
-                                        <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
-                                    </TouchableOpacity>
-                                ) : null}
-                            </ImageBackground>
+                            {isValidData(homeData?.map_preview_image?.url) ? (
+                                <ImageBackground
+                                    source={{ uri: homeData?.map_preview_image?.url as string }}
+                                    style={styles.mapCard}
+                                    imageStyle={{ borderRadius: 10.69 }}
+                                >
+                                    {isValidData(homeData?.map_view_button_label) ? (
+                                        <TouchableOpacity
+                                            style={styles.viewMapButton}
+                                            activeOpacity={0.9}
+                                            onPress={() => router.push("/map")}
+                                        >
+                                            <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </ImageBackground>
+                            ) : (
+                                <View style={[styles.mapCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#262626', borderRadius: 10.69, justifyContent: 'flex-end' }]}>
+                                    {isValidData(homeData?.map_view_button_label) ? (
+                                        <TouchableOpacity
+                                            style={styles.viewMapButton}
+                                            activeOpacity={0.9}
+                                            onPress={() => router.push("/map")}
+                                        >
+                                            <AppText style={styles.viewMapButtonText}>{homeData?.map_view_button_label}</AppText>
+                                        </TouchableOpacity>
+                                    ) : null}
+                                </View>
+                            )}
                         </View>
                     </Animated.View>
                 ) : null}

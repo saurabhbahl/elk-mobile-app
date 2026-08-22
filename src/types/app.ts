@@ -31,6 +31,7 @@ export interface HomeScreenData {
     hero_cta_button_link?: any;
     map_block_heading?: string;
     map_view_button_label?: string;
+    map_preview_image?: { url: string } | null;
     programs_block_heading?: string;
     programs_to_display?: number | string;
     programs?: ProgramsData[];

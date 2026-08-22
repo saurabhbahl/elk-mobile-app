@@ -57,12 +57,14 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     trails_block_heading TEXT,
     trail_links_to_show INTEGER DEFAULT 3,
     grant_logo_url TEXT,
-    grant_details TEXT
+    grant_details TEXT,
+    map_preview_image_url TEXT
   );
   `);
 
   try { db.execSync(`ALTER TABLE home_screen_settings ADD COLUMN grant_logo_url TEXT;`); } catch { }
   try { db.execSync(`ALTER TABLE home_screen_settings ADD COLUMN grant_details TEXT;`); } catch { }
+  try { db.execSync(`ALTER TABLE home_screen_settings ADD COLUMN map_preview_image_url TEXT;`); } catch { }
 
   // Plan Your Trip Settings
   db.execSync(`
