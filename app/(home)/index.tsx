@@ -20,6 +20,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import CachedImage from "@/src/components/CachedImage";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
@@ -51,7 +52,6 @@ export default function HomeScreen() {
     const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark, primaryColor, secondaryColor), [colors, fonts, isDark, primaryColor, secondaryColor]);
-
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout>;
         if (isFocused && popupData && popupData.popup_enabled && !hasDismissedPopupSession) {
@@ -315,6 +315,74 @@ export default function HomeScreen() {
                         </View>
                     </Animated.View>
                 ) : null}
+
+                {/* Sponsorship / Grant Information Section */}
+                {(() => {
+                    const grantLogoUrl = typeof homeData?.sponsorship_information?.grant_logo === 'string'
+                        ? homeData?.sponsorship_information?.grant_logo
+                        : homeData?.sponsorship_information?.grant_logo?.url;
+                    const grantDetailsHtml = homeData?.sponsorship_information?.grant_details;
+
+                    if (!isValidData(grantDetailsHtml) && !isValidData(grantLogoUrl)) {
+                        return null;
+                    }
+
+                    return (
+                        <Animated.View
+                            entering={FadeInUp.duration(300).delay(200)}
+                            style={{
+                                width: '100%',
+                                marginTop: 28,
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F7F4F4',
+                                paddingTop: 20,
+                                paddingBottom: 20,
+                                paddingHorizontal: 8,
+                                alignItems: 'center',
+                                borderTopWidth: 1,
+                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E8E5E5',
+                            }}
+                        >
+                            {isValidData(grantLogoUrl) ? (
+                                <View style={{ width: '100%', height: 64, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
+                                    <Image
+                                        source={{ uri: grantLogoUrl as string }}
+                                        style={{ width: '100%', height: '100%' }}
+                                        contentFit="contain"
+                                        cachePolicy="disk"
+                                    />
+                                </View>
+                            ) : null}
+
+                            {isValidData(grantDetailsHtml) ? (
+                                <AppRenderHTML
+                                    html={grantDetailsHtml || ""}
+                                    contentWidth={width - 16}
+                                    baseStyle={{
+                                        fontFamily: 'Inter-Regular',
+                                        fontSize: 11,
+                                        fontWeight: '400',
+                                        color: isDark ? colors.onSurfaceVariant : '#333333',
+                                        lineHeight: 16,
+                                        letterSpacing: -0.1,
+                                        textAlign: 'center',
+                                    }}
+                                    tagsStyles={{
+                                        p: {
+                                            fontFamily: 'Inter-Regular',
+                                            fontSize: 11,
+                                            fontWeight: '400',
+                                            lineHeight: 16,
+                                            letterSpacing: -0.1,
+                                            textAlign: 'center',
+                                            margin: 0,
+                                            padding: 0,
+                                        }
+                                    }}
+                                />
+                            ) : null}
+                        </Animated.View>
+                    );
+                })()}
             </Animated.ScrollView>
 
             {/* Elk Smart Modal Popup */}
@@ -487,7 +555,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     scrollContent: {
-        paddingBottom: 24,
+        paddingBottom: 0,
     },
 
     horizontalMenu: {

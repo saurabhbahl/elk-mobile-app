@@ -79,6 +79,12 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
       addImage(prog.thumbnail_image, ['home_screen', 'programs', String(idx), 'thumbnail_image']);
     });
   }
+  if (hs?.sponsorship_information) {
+    const sp = hs.sponsorship_information as Record<string, unknown>;
+    if (sp.grant_logo) {
+      addImage(sp.grant_logo, ['home_screen', 'sponsorship_information', 'grant_logo']);
+    }
+  }
 
   // General Arrays
   const checkArray = (key: string) => {

@@ -93,10 +93,13 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
       trailsShow = hs.trails.length;
     }
 
+    const grantLogoUrl = hs.sponsorship_information?.grant_logo?.url || (typeof hs.sponsorship_information?.grant_logo === 'string' ? hs.sponsorship_information?.grant_logo : null) || null;
+    const grantDetails = hs.sponsorship_information?.grant_details || null;
+
     this.execute(`
-      INSERT OR REPLACE INTO home_screen_settings (id, hero_welcome_heading, hero_intro_paragraph, hero_cta_button_link, map_block_heading, map_view_button_label, programs_block_heading, programs_to_display, event_block_heading, event_view_all_label, featured_event_id, trails_block_heading, trail_links_to_show)
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [welcome, intro, ctaLink, mapHeading, mapViewLabel, programsHeading, programsDisplay, eventHeading, eventViewAll, featuredEventId, trailsHeading, trailsShow]);
+      INSERT OR REPLACE INTO home_screen_settings (id, hero_welcome_heading, hero_intro_paragraph, hero_cta_button_link, map_block_heading, map_view_button_label, programs_block_heading, programs_to_display, event_block_heading, event_view_all_label, featured_event_id, trails_block_heading, trail_links_to_show, grant_logo_url, grant_details)
+      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [welcome, intro, ctaLink, mapHeading, mapViewLabel, programsHeading, programsDisplay, eventHeading, eventViewAll, featuredEventId, trailsHeading, trailsShow, grantLogoUrl, grantDetails]);
   }
 
   upsertPlanYourTripSettings(pyt: any) {
@@ -398,7 +401,11 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
           featured_event: featuredEvent,
           trails_block_heading: row.trails_block_heading,
           trail_links_to_show: row.trail_links_to_show,
-          trails: homeTrails
+          trails: homeTrails,
+          sponsorship_information: {
+            grant_logo: row.grant_logo_url ? { url: row.grant_logo_url } : null,
+            grant_details: row.grant_details || null,
+          }
         };
       }
 

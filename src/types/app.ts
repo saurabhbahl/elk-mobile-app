@@ -40,6 +40,10 @@ export interface HomeScreenData {
     trails_block_heading?: string;
     trail_links_to_show?: number | string;
     trails?: TrailsData[];
+    sponsorship_information?: {
+        grant_logo?: { url: string } | null;
+        grant_details?: string | null;
+    };
 }
 
 export interface ProgramsData {

@@ -55,9 +55,14 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     event_view_all_label TEXT,
     featured_event_id INTEGER,
     trails_block_heading TEXT,
-    trail_links_to_show INTEGER DEFAULT 3
+    trail_links_to_show INTEGER DEFAULT 3,
+    grant_logo_url TEXT,
+    grant_details TEXT
   );
   `);
+
+  try { db.execSync(`ALTER TABLE home_screen_settings ADD COLUMN grant_logo_url TEXT;`); } catch { }
+  try { db.execSync(`ALTER TABLE home_screen_settings ADD COLUMN grant_details TEXT;`); } catch { }
 
   // Plan Your Trip Settings
   db.execSync(`
