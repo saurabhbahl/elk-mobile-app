@@ -157,28 +157,67 @@ export default function RentalDetailScreen() {
 
                 {/* Banner / Gallery Image */}
                 {finalImages.length > 1 ? (
-                    <View style={styles.bannerContainer}>
+                    <View style={[styles.bannerContainer, { position: 'relative' }]}>
                         <ImageGallerySlider images={finalImages} width={width - 32} height={220} />
+                        {isValidData(rental.capacity) ? (
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 28,
+                                    backgroundColor: 'rgba(0,0,0,0.72)',
+                                    paddingVertical: 5,
+                                    paddingHorizontal: 10,
+                                    borderRadius: 20,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    zIndex: 25,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(255,255,255,0.2)',
+                                }}
+                            >
+                                <Ionicons name="people" size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
+                                <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 12, color: '#FFFFFF' }}>
+                                    {rental.capacity}
+                                </AppText>
+                            </View>
+                        ) : null}
                     </View>
                 ) : (finalImages.length === 1 && finalImages[0] ? (
-                    <View style={styles.bannerContainer}>
+                    <View style={[styles.bannerContainer, { position: 'relative' }]}>
                         <CachedImage
                             uri={finalImages[0] as string}
                             style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
                             contentFit="cover"
                         />
+                        {isValidData(rental.capacity) ? (
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 28,
+                                    backgroundColor: 'rgba(0,0,0,0.72)',
+                                    paddingVertical: 5,
+                                    paddingHorizontal: 10,
+                                    borderRadius: 20,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    zIndex: 25,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(255,255,255,0.2)',
+                                }}
+                            >
+                                <Ionicons name="people" size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
+                                <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 12, color: '#FFFFFF' }}>
+                                    {rental.capacity}
+                                </AppText>
+                            </View>
+                        ) : null}
                     </View>
                 ) : null)}
 
                 {/* Details Section */}
                 <View style={styles.detailsContent}>
-
-                    {/* Short Description */}
-                    {isValidData(rental.short_description) ? (
-                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 20, fontWeight: '700', color: colors.onSurface }}>
-                            {rental.short_description}
-                        </AppText>
-                    ) : null}
 
                     {/* Description Paragraph */}
                     {isValidData(rawDescription) ? (
@@ -193,6 +232,46 @@ export default function RentalDetailScreen() {
                                 textAlign: "left",
                             }}
                         />
+                    ) : null}
+
+                    {/* Pricing Notes Section */}
+                    {isValidData(rental.pricing_notes) ? (
+                        <View style={{ marginTop: 14 }}>
+                            <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, color: colors.onSurface, marginBottom: 4 }}>
+                                Pricing Notes:
+                            </AppText>
+                            <AppRenderHTML
+                                html={rental.pricing_notes || ""}
+                                contentWidth={width - 32}
+                                baseStyle={{
+                                    fontFamily: 'OpenSans-Regular',
+                                    fontSize: 13,
+                                    color: colors.onSurfaceVariant,
+                                    lineHeight: 20,
+                                    textAlign: "left",
+                                }}
+                            />
+                        </View>
+                    ) : null}
+
+                    {/* Availability Notes Section */}
+                    {isValidData(rental.availability_notes) ? (
+                        <View style={{ marginTop: 14 }}>
+                            <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, color: colors.onSurface, marginBottom: 4 }}>
+                                Availability Notes:
+                            </AppText>
+                            <AppRenderHTML
+                                html={rental.availability_notes || ""}
+                                contentWidth={width - 32}
+                                baseStyle={{
+                                    fontFamily: 'OpenSans-Regular',
+                                    fontSize: 13,
+                                    color: colors.onSurfaceVariant,
+                                    lineHeight: 20,
+                                    textAlign: "left",
+                                }}
+                            />
+                        </View>
                     ) : null}
 
                     {/* CTAs */}

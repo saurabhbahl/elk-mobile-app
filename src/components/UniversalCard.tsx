@@ -23,10 +23,15 @@ type UniversalCardProps = {
 
 export default function UniversalCard({ type, item, variant, primaryColor, onPress, hideBadge }: UniversalCardProps) {
     // Parse date for programs and events
-    let badge = null;
+    let badge: { month?: string; day?: string; text?: string } | null = null;
 
     if (item && type === 'program' && item.schedule_dates) {
-        badge = formatDateBadge(item.schedule_dates);
+        const parsedBadge = formatDateBadge(item.schedule_dates);
+        if (parsedBadge) {
+            badge = parsedBadge;
+        } else {
+            badge = { text: item.schedule_dates };
+        }
     } else if (item && type === 'event' && item["start_date_&_time"]) {
         badge = formatDateBadge(item["start_date_&_time"]);
     }
@@ -82,8 +87,16 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
                 />
                 {badge && !hideBadge && (
                     <View style={[styles.cardBadge, { backgroundColor: primaryColor }]}>
-                        <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
-                        <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
+                        {badge.text ? (
+                            <AppText style={styles.cardBadgeText} numberOfLines={2}>
+                                {badge.text}
+                            </AppText>
+                        ) : (
+                            <>
+                                <AppText style={styles.cardBadgeMonth}>{badge.month}</AppText>
+                                <AppText style={styles.cardBadgeDay}>{badge.day}</AppText>
+                            </>
+                        )}
                     </View>
                 )}
             </View>
@@ -235,6 +248,15 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         color: '#FFFFFF',
         marginTop: -4,
         textAlign: 'center',
+    },
+    cardBadgeText: {
+        fontSize: 9,
+        fontFamily: 'OpenSans-Bold',
+        color: '#FFFFFF',
+        letterSpacing: 0.3,
+        textAlign: 'center',
+        textTransform: 'uppercase',
+        maxWidth: 70,
     },
     cardViewButton: {
         paddingHorizontal: 20,

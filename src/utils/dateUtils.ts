@@ -141,14 +141,14 @@ export function formatProgramScheduleDate(dateStr: string | null | undefined): s
   const clean = dateStr.trim();
   if (!clean) return '';
 
-  // Handle range if separated by ' - ' or ' to '
+  // Handle range if separated by ' - ' or ' to ' (for range of two full dates)
   if (clean.includes(' - ') || clean.toLowerCase().includes(' to ')) {
     const separator = clean.includes(' - ') ? ' - ' : (clean.includes(' To ') ? ' To ' : ' to ');
     const parts = clean.split(separator);
-    if (parts.length === 2) {
+    if (parts.length === 2 && parseFlexibleDate(parts[0]) && parseFlexibleDate(parts[1])) {
       const formattedStart = formatProgramScheduleDate(parts[0]);
       const formattedEnd = formatProgramScheduleDate(parts[1]);
-      if (formattedStart && formattedEnd && formattedStart !== parts[0] && formattedEnd !== parts[1]) {
+      if (formattedStart && formattedEnd) {
         return `${formattedStart}${separator}${formattedEnd}`;
       }
     }
@@ -161,10 +161,12 @@ export function formatProgramScheduleDate(dateStr: string | null | undefined): s
     const year = parsed.getFullYear();
     let formatted = `${monthName} ${day}, ${year}`;
 
-    // Extract time if input string has time component (e.g. 10:00 AM)
-    const timeMatch = clean.match(/(\d{1,2}:\d{2}\s*(?:am|pm)?)/i);
-    if (timeMatch) {
-      formatted += ` ${timeMatch[1]}`;
+    // Extract any time or text suffix after the date component (e.g. "1pm- 5pm", "10:00 AM - 4:00 PM")
+    const datePattern = /^(?:[A-Za-z]+\s+\d{1,2},?\s*\d{4}?|\d{1,2}\s+[A-Za-z]+\s*\d{4}?|\d{4}[-/.]\d{1,2}[-/.]\d{1,2})/i;
+    const remainder = clean.replace(datePattern, '').trim();
+
+    if (remainder) {
+      formatted += ` ${remainder}`;
     }
 
     return formatted;

@@ -291,7 +291,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // Network Reconnection Listener: Immediately trigger delta sync when internet returns after being offline
+    // Network Reconnection Listener: Immediately trigger sync when internet returns after being offline
     const wasOfflineRef = React.useRef(false);
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -300,9 +300,15 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 console.log("[Sync] Device went offline.");
                 wasOfflineRef.current = true;
             } else if (wasOfflineRef.current) {
-                console.log("[Sync] Network reconnected after being offline! Immediately triggering delta check.");
+                console.log("[Sync] Network reconnected after being offline!");
                 wasOfflineRef.current = false;
-                refreshData();
+                if (!SyncManager.isSyncComplete()) {
+                    console.log("[Sync] Initial sync incomplete, triggering performInitialSync on reconnection.");
+                    performInitialSync();
+                } else {
+                    console.log("[Sync] Initial sync complete, triggering background delta check.");
+                    refreshData();
+                }
             }
         });
         return () => unsubscribe();

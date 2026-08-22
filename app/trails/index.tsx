@@ -33,6 +33,7 @@ const TrailCard = React.memo(({ item, index, styles }: {
     index: number;
     styles: any;
 }) => {
+    const { colors, isDark } = useTheme();
     if (!isValidData(item.trail_name) && !isValidData(item.description)) return null;
 
     return (
@@ -65,6 +66,18 @@ const TrailCard = React.memo(({ item, index, styles }: {
                         contentWidth={width - 32}
                         baseStyle={styles.trailDescription}
                     />
+                ) : null}
+
+                {/* Seasonal Closure Notice */}
+                {isValidData(item.seasonal_closure) ? (
+                    <View style={{ marginTop: 12 }}>
+                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 13, color: isDark ? colors.onSurface : '#000000' }}>
+                            Seasonal Closure:
+                        </AppText>
+                        <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 13, color: isDark ? colors.onSurfaceVariant : '#555555', marginTop: 2 }}>
+                            {item.seasonal_closure}
+                        </AppText>
+                    </View>
                 ) : null}
 
                 {/* Get Directions Button */}

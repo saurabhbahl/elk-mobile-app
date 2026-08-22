@@ -51,6 +51,7 @@ export interface ProgramsData {
     full_description?: string;
     schedule_dates?: string;
     location?: unknown[];
+    location_poi_link?: unknown[];
     registration_link?: string;
     category_tag?: unknown[];
     featured?: boolean;
@@ -147,10 +148,12 @@ export interface VisitorsData {
     body_copy?: string;
     address?: string;
     phone_number?: string;
-    hours_of_operation?: boolean;
+    hours_of_operation?: any;
     accessibility_notes?: string;
+    cta_1_title?: string;
     cta_1_image?: { url: string } | null;
     cta_1_link?: any;
+    cta_2_title?: string;
     cta_2_image?: { url: string } | null;
     cta_2_link?: any;
     map_poi_link?: unknown[];

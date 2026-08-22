@@ -8,6 +8,7 @@ import React from "react";
 import {
     ActivityIndicator,
     InteractionManager,
+    Linking,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -27,6 +28,8 @@ import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "../../src/utils/validation";
 
+import { parseLinkObject, handleLinkPress } from "@/src/utils/linkUtils";
+
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
     return color.startsWith("#") ? color : `#${color}`;
@@ -35,7 +38,7 @@ const getValidColor = (color: string | undefined) => {
 export default function ProgramDetailScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { id } = useLocalSearchParams();
-    const { brandData, programsData, apiStatus } = useAppContent();
+    const { brandData, programsData, poisData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
@@ -45,7 +48,24 @@ export default function ProgramDetailScreen() {
         (p: ProgramsData, index: number) => String(p.id || index) === String(id)
     );
 
-    const poiId = React.useMemo(() => extractPoiId(program?.location), [program?.location]);
+    const poiId = React.useMemo(() => extractPoiId(program?.location_poi_link || program?.location), [program?.location_poi_link, program?.location]);
+    const relatedPoi = React.useMemo(() => {
+        if (poiId === null || !poisData) return null;
+        return poisData.find(p => String(p.id) === String(poiId)) || null;
+    }, [poiId, poisData]);
+
+    const poiName = relatedPoi?.poi_name || relatedPoi?.title || null;
+    const poiAddress = relatedPoi?.address || null;
+
+    const regLinkObj = React.useMemo(() => {
+        return parseLinkObject(program?.registration_link, "More Info");
+    }, [program?.registration_link]);
+
+    const handleRegistrationPress = React.useCallback(() => {
+        if (regLinkObj?.url) {
+            handleLinkPress(regLinkObj.url, router);
+        }
+    }, [regLinkObj]);
 
     const [isTransitioning, setIsTransitioning] = React.useState(true);
 
@@ -143,9 +163,21 @@ export default function ProgramDetailScreen() {
 
                     {/* Short Description */}
                     {isValidData(program.short_description) ? (
-                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 14, fontWeight: '700', color: colors.onSurface, marginBottom: 12 }}>
+                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 18, fontWeight: '700', color: colors.onSurface, marginBottom: 8 }}>
                             {program.short_description}
                         </AppText>
+                    ) : null}
+
+                    {/* Location */}
+                    {(isValidData(poiName) || isValidData(poiAddress)) ? (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
+                            <View style={{ flex: 1 }}>
+                                {isValidData(poiName) ? (
+                                    <AppText style={styles.locationNameText}>{poiName}</AppText>
+                                ) : null}
+                            </View>
+                        </View>
                     ) : null}
 
                     {/* Description Paragraph */}
@@ -161,6 +193,16 @@ export default function ProgramDetailScreen() {
                                 textAlign: "left",
                             }}
                         />
+                    ) : null}
+
+                    {/* Registration Link Button */}
+                    {regLinkObj ? (
+                        <View style={{ marginTop: 20, marginBottom: 16, alignItems: 'flex-start' }}>
+                            <PrimaryButton
+                                title={regLinkObj.title}
+                                onPress={handleRegistrationPress}
+                            />
+                        </View>
                     ) : null}
                 </View>
             </Animated.ScrollView>
@@ -255,6 +297,28 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontWeight: "bold",
         color: colors.onSurface,
         marginBottom: 14,
+    },
+
+    infoRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 12,
+    },
+
+    infoIcon: {
+        marginRight: 8,
+    },
+
+    locationNameText: {
+        fontSize: 14,
+        fontWeight: "bold",
+        color: colors.onSurface,
+    },
+
+    locationAddressText: {
+        fontSize: 13,
+        color: colors.onSurfaceVariant,
+        marginTop: 2,
     },
 
     descriptionText: {

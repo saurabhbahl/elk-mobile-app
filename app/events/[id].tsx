@@ -26,6 +26,7 @@ import { EventsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { extractPoiId, navigateToPoi } from "@/src/utils/mapUtils";
 import { openExternalLink } from "@/src/utils/openLink";
 import { isValidData } from "@/src/utils/validation";
+import { parseLinkObject, handleLinkPress } from "@/src/utils/linkUtils";
 
 const getValidColor = (color: string | undefined) => {
     if (!color) return undefined;
@@ -95,7 +96,7 @@ const formatEventDateTime = (startStr: string, endStr?: string) => {
 export default function EventDetailScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { id } = useLocalSearchParams();
-    const { brandData, eventsData, apiStatus } = useAppContent();
+    const { brandData, eventsData, poisData, apiStatus } = useAppContent();
     const primaryColor = getValidColor(brandData?.brand_color_primary);
     const secondaryColor = getValidColor(brandData?.brand_color_secondary);
 
@@ -108,15 +109,26 @@ export default function EventDetailScreen() {
     }, [eventsData, id]);
 
     const poiId = React.useMemo(() => extractPoiId(event?.location_poi_link), [event?.location_poi_link]);
+    const relatedPoi = React.useMemo(() => {
+        if (poiId === null || !poisData) return null;
+        return poisData.find(p => String(p.id) === String(poiId)) || null;
+    }, [poiId, poisData]);
+
+    const poiName = relatedPoi?.poi_name || relatedPoi?.title || event?.location_name || null;
+    const poiAddress = relatedPoi?.address || event?.location_address || null;
 
     const rawDescription = event?.full_description || "";
 
-    const handleRegister = () => {
-        const url = event?.registration_ticket_link;
-        if (url) {
-            openExternalLink(url, "An active internet connection is required to register or buy tickets.");
+    const eventLinkObj = React.useMemo(() => {
+        const raw = (event as any)?.registration_ticket_link || (event as any)?.registration_link || (event as any)?.external_link;
+        return parseLinkObject(raw, "More Info");
+    }, [event]);
+
+    const handleRegister = React.useCallback(() => {
+        if (eventLinkObj?.url) {
+            handleLinkPress(eventLinkObj.url, router);
         }
-    };
+    }, [eventLinkObj]);
 
     const [isTransitioning, setIsTransitioning] = React.useState(true);
 
@@ -213,20 +225,19 @@ export default function EventDetailScreen() {
                     ) : null}
 
                     {/* Short Description */}
-                    <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 14, fontWeight: '700', color: colors.onSurface, marginBottom: 0 }}>
-                        {isValidData(event.short_description) ? event.short_description : "Elk Country Visitor Center"}
-                    </AppText>
+                    {isValidData(event.short_description) ? (
+                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 18, fontWeight: '700', color: colors.onSurface, marginBottom: 8 }}>
+                            {event.short_description}
+                        </AppText>
+                    ) : null}
 
                     {/* Location */}
-                    {(isValidData(event.location_name) || isValidData(event.location_address)) ? (
+                    {(isValidData(poiName) || isValidData(poiAddress)) ? (
                         <View style={styles.infoRow}>
                             <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
-                            <View>
-                                {isValidData(event.location_name) ? (
-                                    <AppText style={styles.locationNameText}>{event.location_name}</AppText>
-                                ) : null}
-                                {isValidData(event.location_address) ? (
-                                    <AppText style={styles.locationAddressText}>{event.location_address}</AppText>
+                            <View style={{ flex: 1 }}>
+                                {isValidData(poiName) ? (
+                                    <AppText style={styles.locationNameText}>{poiName}</AppText>
                                 ) : null}
                             </View>
                         </View>
@@ -250,16 +261,13 @@ export default function EventDetailScreen() {
                     ) : null}
 
                     {/* Register Button */}
-                    {isValidData(event.registration_ticket_link) ? (
-                        <TouchableOpacity
-                            style={[styles.registerButton, { backgroundColor: primaryColor }]}
-                            onPress={handleRegister}
-                            activeOpacity={0.8}
-                        >
-                            <AppText style={[styles.registerButtonText, { color: isDark ? "#FFFFFF" : secondaryColor || "" }]}>
-                                Register / Buy Tickets
-                            </AppText>
-                        </TouchableOpacity>
+                    {eventLinkObj ? (
+                        <View style={{ marginTop: 20, marginBottom: 16, alignItems: 'flex-start' }}>
+                            <PrimaryButton
+                                title={eventLinkObj.title}
+                                onPress={handleRegister}
+                            />
+                        </View>
                     ) : null}
                 </View>
             </Animated.ScrollView>

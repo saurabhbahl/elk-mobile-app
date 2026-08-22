@@ -50,13 +50,13 @@ export default function SectionHeader({
                         </AppText>
                     </TitleComponent>
                 </View>
-                {/* {actionLabel && onActionPress && (
+                {actionLabel && onActionPress && (
                     <TouchableOpacity onPress={onActionPress}>
-                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : primaryColor }]}>
+                        <AppText style={[styles.viewAllEventsText, { color: isDark ? "#FFFFFF" : secondaryColor }]}>
                             {actionLabel}
                         </AppText>
                     </TouchableOpacity>
-                )} */}
+                )}
             </View>
         );
     }

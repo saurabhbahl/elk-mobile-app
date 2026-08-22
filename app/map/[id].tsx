@@ -21,6 +21,8 @@ import { useAppContent } from "../../src/contexts/AppContentContext";
 import { normalizeHex } from "../../src/utils/colorUtils";
 import { isValidData } from "../../src/utils/validation";
 
+import { parseLinkObject, handleLinkPress } from "@/src/utils/linkUtils";
+
 export default function WaypointDetailsScreen() {
     const { id } = useLocalSearchParams();
     const { colors, fonts, isDark } = useTheme();
@@ -30,12 +32,15 @@ export default function WaypointDetailsScreen() {
 
     const waypoints = poisData || [];
 
-
-
     const waypoint = useMemo(() => {
         const numericId = parseInt(String(id), 10);
         return waypoints.find(w => w.id === numericId);
     }, [id, waypoints]);
+
+    const poiLinkObj = useMemo(() => {
+        const raw = (waypoint as any)?.external_link || (waypoint as any)?.registration_link || (waypoint as any)?.website_link || (waypoint as any)?.link;
+        return parseLinkObject(raw, "More Info");
+    }, [waypoint]);
 
     const handleGetDirections = () => {
         if (!waypoint) return;
@@ -217,29 +222,15 @@ export default function WaypointDetailsScreen() {
                         </View>
                     ) : null */}
 
-                        {/* External Link */}
-                        {/* isValidData(waypoint.external_link) ? (
-                        (() => {
-                            const linkUrl = typeof waypoint.external_link === 'string' ? waypoint.external_link : (waypoint.external_link as any)?.url;
-                            const linkTitle = typeof waypoint.external_link === 'string' ? 'More Info' : (waypoint.external_link as any)?.title;
-                            if (!isValidData(linkUrl)) return null;
-
-                            return (
-                                <TouchableOpacity
-                                    style={[styles.externalLinkButton, { backgroundColor: isDark ? colors.surfaceVariant : '#F5F5F5' }]}
-                                    onPress={() => openExternalLink(linkUrl)}
-                                    activeOpacity={0.8}
-                                >
-                                    {isValidData(linkTitle) ? (
-                                        <AppText style={[styles.externalLinkText, { fontFamily: 'OpenSans-Bold', color: isDark ? colors.onSurface : '#000' }]}>
-                                            {linkTitle}
-                                        </AppText>
-                                    ) : null}
-                                    <MaterialIcons name="open-in-new" size={18} color={isDark ? colors.onSurface : '#000'} style={{ marginLeft: 6 }} />
-                                </TouchableOpacity>
-                            );
-                        })()
-                    ) : null */}
+                        {/* External / Registration Link Button */}
+                        {poiLinkObj ? (
+                            <View style={{ marginTop: 20, marginBottom: 16, alignItems: 'flex-start' }}>
+                                <PrimaryButton
+                                    title={poiLinkObj.title}
+                                    onPress={() => handleLinkPress(poiLinkObj.url, router)}
+                                />
+                            </View>
+                        ) : null}
                     </View>
                 </ScrollView>
             </Animated.View>

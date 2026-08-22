@@ -13,8 +13,8 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
     const short_description = prog.short_description || null;
     const full_description = prog.full_description || null;
     const schedule_dates = typeof prog.schedule_dates === 'object' ? JSON.stringify(prog.schedule_dates) : (prog.schedule_dates || null);
-    const location_poi_id = helperExtractPoiId(prog.location);
-    const registration_link = prog.registration_link || null;
+    const location_poi_id = helperExtractPoiId(prog.location_poi_link || prog.location);
+    const registration_link = typeof prog.registration_link === 'object' ? JSON.stringify(prog.registration_link) : (prog.registration_link || null);
     const category_tags = Array.isArray(prog.category_tag) ? prog.category_tag.join(',') : (prog.category_tag || null);
     const featured = prog.featured ? 1 : 0;
     const active = prog.active !== false ? 1 : 0;
@@ -34,6 +34,14 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
     const list: any[] = [];
     const rows = this.query<any>('SELECT * FROM programs');
     rows.forEach(row => {
+      let regLink = row.registration_link;
+      if (typeof regLink === 'string' && regLink.startsWith('{')) {
+        try {
+          regLink = JSON.parse(regLink);
+        } catch {
+          // Keep raw string if JSON parsing fails
+        }
+      }
       list.push({
         id: row.id,
         program_name: row.program_name,
@@ -42,7 +50,8 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
         full_description: row.full_description,
         schedule_dates: row.schedule_dates,
         location: row.location_poi_id ? [{ ID: row.location_poi_id }] : null,
-        registration_link: row.registration_link,
+        location_poi_link: row.location_poi_id ? [{ ID: row.location_poi_id }] : null,
+        registration_link: regLink,
         category_tag: row.category_tags ? row.category_tags.split(',') : null,
         featured: row.featured === 1,
         active: row.active === 1,

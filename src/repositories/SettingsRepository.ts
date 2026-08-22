@@ -144,18 +144,20 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     const phone = vc.phone_number || null;
     const hours = typeof vc.hours_of_operation === 'string' ? vc.hours_of_operation : (Array.isArray(vc.hours_of_operation) ? JSON.stringify(vc.hours_of_operation) : null);
     const access = vc.accessibility_notes || null;
+    const cta1Title = vc.cta_1_title || null;
     const cta1Img = helperExtractImage(vc.cta_1_image);
-    const cta1LinkTitle = vc.cta_1_link?.title || null;
-    const cta1LinkUrl = vc.cta_1_link?.url || null;
+    const cta1LinkTitle = vc.cta_1_link?.title || (typeof vc.cta_1_link === 'string' ? vc.cta_1_link : null);
+    const cta1LinkUrl = vc.cta_1_link?.url || (typeof vc.cta_1_link === 'string' ? vc.cta_1_link : null);
+    const cta2Title = vc.cta_2_title || null;
     const cta2Img = helperExtractImage(vc.cta_2_image);
-    const cta2LinkTitle = vc.cta_2_link?.title || null;
-    const cta2LinkUrl = vc.cta_2_link?.url || null;
+    const cta2LinkTitle = vc.cta_2_link?.title || (typeof vc.cta_2_link === 'string' ? vc.cta_2_link : null);
+    const cta2LinkUrl = vc.cta_2_link?.url || (typeof vc.cta_2_link === 'string' ? vc.cta_2_link : null);
     const poiLink = helperExtractPoiId(vc.map_poi_link);
 
     this.execute(`
-      INSERT OR REPLACE INTO visitors_center_settings (id, screen_title, hero_image_url, body_copy, address, phone_number, hours_of_operation, accessibility_notes, cta_1_image_url, cta_1_link_title, cta_1_link_url, cta_2_image_url, cta_2_link_title, cta_2_link_url, map_poi_link_id)
-      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [title, hero, body, addr, phone, hours, access, cta1Img, cta1LinkTitle, cta1LinkUrl, cta2Img, cta2LinkTitle, cta2LinkUrl, poiLink]);
+      INSERT OR REPLACE INTO visitors_center_settings (id, screen_title, hero_image_url, body_copy, address, phone_number, hours_of_operation, accessibility_notes, cta_1_title, cta_1_image_url, cta_1_link_title, cta_1_link_url, cta_2_title, cta_2_image_url, cta_2_link_title, cta_2_link_url, map_poi_link_id)
+      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [title, hero, body, addr, phone, hours, access, cta1Title, cta1Img, cta1LinkTitle, cta1LinkUrl, cta2Title, cta2Img, cta2LinkTitle, cta2LinkUrl, poiLink]);
 
     this.execute(`DELETE FROM visitor_gallery;`);
     if (vc.image_gallery && Array.isArray(vc.image_gallery)) {
@@ -442,8 +444,10 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
           phone_number: row.phone_number,
           hours_of_operation: hoursParsed,
           accessibility_notes: row.accessibility_notes,
+          cta_1_title: row.cta_1_title,
           cta_1_image: row.cta_1_image_url ? { url: row.cta_1_image_url } : null,
           cta_1_link: row.cta_1_link_url ? { title: row.cta_1_link_title, url: row.cta_1_link_url } : null,
+          cta_2_title: row.cta_2_title,
           cta_2_image: row.cta_2_image_url ? { url: row.cta_2_image_url } : null,
           cta_2_link: row.cta_2_link_url ? { title: row.cta_2_link_title, url: row.cta_2_link_url } : null,
           map_poi_link: row.map_poi_link_id ? [{ ID: row.map_poi_link_id }] : null

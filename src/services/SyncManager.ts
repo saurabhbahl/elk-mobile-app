@@ -110,6 +110,17 @@ function extractPreCacheUrls(data: Record<string, unknown> | unknown): { path: s
 
 export class SyncManager {
   private static activeSyncPromise: Promise<boolean> | null = null;
+  private static progressListeners = new Set<(progress: number, status: string) => void>();
+
+  private static notifyProgress(progress: number, status: string) {
+    SyncManager.progressListeners.forEach(listener => {
+      try {
+        listener(progress, status);
+      } catch (err) {
+        console.warn("[SyncManager] Error in progress listener:", err);
+      }
+    });
+  }
 
   static async triggerDeltaSync(): Promise<boolean> {
     console.log("[SyncManager] Triggering background delta sync");
@@ -153,6 +164,10 @@ export class SyncManager {
     isDelta = false,
     lastSyncTime?: string
   ): Promise<boolean> {
+    if (onProgress) {
+      SyncManager.progressListeners.add(onProgress);
+    }
+
     if (SyncManager.activeSyncPromise) {
       console.log("[SyncManager] Sync already in progress, awaiting active sync...");
       return SyncManager.activeSyncPromise;
@@ -165,14 +180,19 @@ export class SyncManager {
       }
 
     try {
-      if (onProgress) onProgress(0.05, 'Downloading app content...');
+      SyncManager.notifyProgress(0.05, 'Downloading app content...');
 
       console.log("[SyncManager] Fetching split sync data from endpoints parallelly...");
       const endpoints = ['pois', 'programs', 'events', 'trails', 'rentals', 'tips', 'cameras', 'settings'];
+      const totalEndpoints = endpoints.length;
+      let completedEndpoints = 0;
 
       const fetchPromises = endpoints.map(async (endpoint) => {
         try {
           const res = await ApiService.fetchEndpointData<any>(endpoint, isDelta, lastSyncTime);
+          completedEndpoints++;
+          const pct = 0.05 + (completedEndpoints / totalEndpoints) * 0.45;
+          SyncManager.notifyProgress(pct, 'Downloading app content...');
           return { endpoint, data: res };
         } catch (err) {
           console.error(`[SyncManager] Error fetching split endpoint ${endpoint}:`, err);
@@ -226,7 +246,7 @@ export class SyncManager {
         console.warn('Failed to save branding early:', err);
       }
 
-      if (onProgress) onProgress(0.2, 'Preparing app photos...');
+      SyncManager.notifyProgress(0.50, 'Preparing app photos...');
       const imagesToDownload = extractPreCacheUrls(mergedJson);
       const totalImages = imagesToDownload.length;
       let downloadedCount = 0;
@@ -247,10 +267,8 @@ export class SyncManager {
             }
 
             downloadedCount++;
-            if (onProgress) {
-              const pct = 0.2 + (downloadedCount / totalImages) * 0.7;
-              onProgress(pct, `Downloading app photos`);
-            }
+            const pct = 0.50 + (downloadedCount / totalImages) * 0.45;
+            SyncManager.notifyProgress(pct, 'Downloading app photos');
           }
         };
 
@@ -258,9 +276,9 @@ export class SyncManager {
           .fill(null)
           .map(() => downloadWorker());
         await Promise.all(workers);
+      } else {
+        SyncManager.notifyProgress(0.95, 'Finalizing offline setup...');
       }
-
-      if (onProgress) onProgress(0.95, 'Finalizing offline setup...');
 
       if (!isDelta) {
         db.withTransactionSync(() => {
@@ -331,7 +349,7 @@ export class SyncManager {
         appRepository.upsertMetadata('last_full_sync', syncTime);
       });
 
-      if (onProgress) onProgress(1.0, 'Sync complete!');
+      SyncManager.notifyProgress(1.0, 'Sync complete!');
       return true;
     } catch (e) {
       console.error('Fetch and store error:', e);
@@ -344,6 +362,7 @@ export class SyncManager {
       return await task;
     } finally {
       SyncManager.activeSyncPromise = null;
+      SyncManager.progressListeners.clear();
     }
   }
 

@@ -100,9 +100,11 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     phone_number TEXT,
     hours_of_operation TEXT,
     accessibility_notes TEXT,
+    cta_1_title TEXT,
     cta_1_image_url TEXT,
     cta_1_link_title TEXT,
     cta_1_link_url TEXT,
+    cta_2_title TEXT,
     cta_2_image_url TEXT,
     cta_2_link_title TEXT,
     cta_2_link_url TEXT,
@@ -110,6 +112,9 @@ export function createSettingsTables(db: SQLite.SQLiteDatabase) {
     FOREIGN KEY (map_poi_link_id) REFERENCES pois(id) ON DELETE SET NULL
   );
   `);
+
+  try { db.execSync(`ALTER TABLE visitors_center_settings ADD COLUMN cta_1_title TEXT;`); } catch { }
+  try { db.execSync(`ALTER TABLE visitors_center_settings ADD COLUMN cta_2_title TEXT;`); } catch { }
 
   // Visitor Gallery
   db.execSync(`
