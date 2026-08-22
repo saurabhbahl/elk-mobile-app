@@ -189,7 +189,7 @@ export default function TipsScreen() {
                                         fontSize: 14,
                                         color: isDark ? "#E5E5E5" : "#333",
                                         lineHeight: 20,
-                                        textAlign: "center"
+                                        textAlign: "left"
                                     }}
                                 />
                             </View>
