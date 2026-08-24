@@ -269,7 +269,7 @@ export default function VisitorsCenterScreen() {
                                                 name="call-outline"
                                                 size={18}
                                                 color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)}
-                                                style={{ marginRight: 8 }}
+                                                style={{ marginRight: 8, marginTop: 4 }}
                                             />
                                             <AppText style={styles.phoneText}>
                                                 {visitorsData?.phone_number}
@@ -280,9 +280,9 @@ export default function VisitorsCenterScreen() {
 
                                 {/* Hours of Operation Section (Mobile Table View) */}
                                 {parsedHours ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                                    <View style={{ marginHorizontal: 16, marginTop: (isValidData(visitorsData?.phone_number) || isValidData(visitorsData?.address)) ? 8 : 24 }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                            <Ionicons name="time-outline" size={20} color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)} style={{ marginRight: 8 }} />
+                                            <Ionicons name="time-outline" size={20} color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)} style={{ marginRight: 8, marginTop: 2 }} />
                                             <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 16, color: colors.onSurface }}>
                                                 Hours of Operation
                                             </AppText>

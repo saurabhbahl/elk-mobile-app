@@ -160,7 +160,7 @@ export default function ProgramDetailScreen() {
                     {/* Location */}
                     {(isValidData(poiName) || isValidData(poiAddress)) ? (
                         <View style={styles.infoRow}>
-                            <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
+                            <Ionicons name="location-outline" size={16} color={secondaryColor} style={styles.infoIcon} />
                             <View style={{ flex: 1 }}>
                                 {isValidData(poiName) ? (
                                     <AppText style={styles.locationNameText}>{poiName}</AppText>

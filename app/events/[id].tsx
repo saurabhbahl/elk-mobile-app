@@ -206,7 +206,6 @@ export default function EventDetailScreen() {
                     {/* Date & Time */}
                     {isValidData(event["start_date_&_time"]) ? (
                         <View style={styles.infoRow}>
-                            <Ionicons name="calendar-outline" size={16} color="#555" style={styles.infoIcon} />
                             <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
                                 {formatEventDateTime(event["start_date_&_time"] as string, isValidData(event["end_date_&_time"]) ? event["end_date_&_time"] as string : undefined)}
                             </AppText>
@@ -223,7 +222,7 @@ export default function EventDetailScreen() {
                     {/* Location */}
                     {(isValidData(poiName) || isValidData(poiAddress)) ? (
                         <View style={styles.infoRow}>
-                            <Ionicons name="location-outline" size={16} color="#555" style={styles.infoIcon} />
+                            <Ionicons name="location-outline" size={16} color={secondaryColor} style={styles.infoIcon} />
                             <View style={{ flex: 1 }}>
                                 {isValidData(poiName) ? (
                                     <AppText style={styles.locationNameText}>{poiName}</AppText>
