@@ -1,3 +1,4 @@
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import AppText from "@/src/components/AppText";
 import ImageGallerySlider from "@/src/components/ImageGallerySlider";
 import Navbar from "@/src/components/Navbar";
@@ -14,7 +15,6 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
@@ -267,9 +267,9 @@ export default function VisitorsCenterScreen() {
                                         >
                                             <Ionicons
                                                 name="call-outline"
-                                                size={18}
+                                                size={20}
                                                 color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)}
-                                                style={{ marginRight: 8, marginTop: 4 }}
+                                                style={{ marginRight: 8, marginTop: 0 }}
                                             />
                                             <AppText style={styles.phoneText}>
                                                 {visitorsData?.phone_number}
