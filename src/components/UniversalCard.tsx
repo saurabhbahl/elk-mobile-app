@@ -214,6 +214,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         fontSize: width < 390 ? 12 : 14,
         fontFamily: 'OpenSans-Bold',
         color: "#FFFFFF",
+        textTransform: 'capitalize',
     },
     cardLocation: {
         fontSize: width < 380 ? 10 : 12,

@@ -1037,7 +1037,7 @@ function MapScreen() {
               <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
               {isValidData(item.title) ? (
                 <AppText style={styles.hotspotTitle} numberOfLines={1}>
-                  {item.title.toUpperCase()}
+                  {item.title}
                 </AppText>
               ) : null}
             </View>
@@ -1838,7 +1838,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '1a',
     },
     searchResultText: { flex: 1 },
-    searchResultTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface },
+    searchResultTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface, textTransform: 'capitalize' },
     searchResultDesc: { fontFamily: fonts.body, fontSize: 12, color: colors.onSurfaceVariant, marginTop: 2 },
 
     // Side controls
@@ -1883,6 +1883,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       fontSize: 14,
       color: isDark ? colors.onSurface : '#000000',
       flex: 1,
+      textTransform: 'capitalize',
     },
     cardCloseButton: {
       width: 24,

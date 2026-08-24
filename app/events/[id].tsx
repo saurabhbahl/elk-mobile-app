@@ -361,6 +361,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 14,
         fontWeight: "bold",
         color: colors.onSurface,
+        textTransform: 'capitalize',
     },
 
     locationAddressText: {

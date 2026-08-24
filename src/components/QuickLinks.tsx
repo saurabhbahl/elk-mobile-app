@@ -4,7 +4,7 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import WireframePlaceholder from "./WireframePlaceholder";
 

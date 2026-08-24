@@ -1,3 +1,4 @@
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import AppText from "@/src/components/AppText";
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
@@ -17,10 +18,8 @@ import {
     View
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import CachedImage from "@/src/components/CachedImage";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
@@ -621,6 +620,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginVertical: 14,
         lineHeight: width < 380 ? 20 : 22,
         paddingHorizontal: 16,
+        textTransform: 'capitalize',
     },
 
     welcomeBannerContainer: {
@@ -938,6 +938,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontWeight: '400',
         fontFamily: 'OpenSans-Regular',
         color: "#FFFFFF",
+        textTransform: 'capitalize',
     },
 
     // Modal styles
@@ -985,6 +986,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontSize: 22,
         fontWeight: "bold",
         textAlign: "center",
+        textTransform: 'capitalize',
     },
 
     modalBody: {
@@ -1015,6 +1017,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         textShadowColor: "rgba(0, 0, 0, 0.5)",
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 3,
+        textTransform: 'capitalize',
     },
 
     modalBodyDynamic: {
