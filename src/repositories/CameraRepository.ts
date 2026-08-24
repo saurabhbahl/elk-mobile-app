@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, safeParseInt } from './utils';
+import { helperExtractImage, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class CameraRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class CameraRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(cam: any) {
     const id = cam.id;
-    const camera_name = cam.camera_name || null;
+    const camera_name = capitalizeFirstLetter(cam.camera_name) || null;
     const stream_url = cam.stream_url || null;
     const stream_type = cam.stream_type || null;
     const thumbnail_url = helperExtractImage(cam.thumbnail_poster || cam.thumbnail || cam.thumbnail_image || cam.thumbnail_url);
@@ -32,7 +32,7 @@ export class CameraRepository extends BaseRepository<Record<string, unknown>> {
     rows.forEach(row => {
       list.push({
         id: row.id,
-        camera_name: row.camera_name,
+        camera_name: capitalizeFirstLetter(row.camera_name),
         stream_url: row.stream_url,
         stream_type: row.stream_type,
         thumbnail_poster: row.thumbnail_url ? { url: row.thumbnail_url } : null,

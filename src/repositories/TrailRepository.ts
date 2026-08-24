@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractPoiId, safeParseInt } from './utils';
+import { helperExtractImage, helperExtractPoiId, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class TrailRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class TrailRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(trail: any) {
     const id = trail.id;
-    const trail_name = trail.trail_name || null;
+    const trail_name = capitalizeFirstLetter(trail.trail_name) || null;
     const featured_image_url = helperExtractImage(trail.featured_image);
     const description = trail.description || null;
     const trailhead_address = trail.trailhead_address || null;
@@ -34,7 +34,7 @@ export class TrailRepository extends BaseRepository<Record<string, unknown>> {
     rows.forEach(row => {
       list.push({
         id: row.id,
-        trail_name: row.trail_name,
+        trail_name: capitalizeFirstLetter(row.trail_name),
         featured_image: row.featured_image_url ? { url: row.featured_image_url } : null,
         description: row.description,
         trailhead_address: row.trailhead_address,

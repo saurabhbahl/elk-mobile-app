@@ -96,7 +96,7 @@ function MapScreen() {
   const AMERICA_MAX_BOUNDS: [number, number, number, number] = [-170.0, 14.0, -52.0, 72.0];
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const { poisData, mapSettingsData, brandData } = useAppContent();
+  const { poisData, mapSettingsData, brandData, apiStatus } = useAppContent();
   const waypoints = poisData || [];
   const netInfo = useNetInfo();
 
@@ -112,7 +112,7 @@ function MapScreen() {
 
   const navAreaAnimatedStyle = useAnimatedStyle(() => {
     return {
-      maxHeight: interpolate(headerProgress.value, [0, 1], [0, 300]),
+      maxHeight: interpolate(headerProgress.value, [0, 1], [0, 380]),
       opacity: headerProgress.value,
       transform: [
         {
@@ -340,7 +340,8 @@ function MapScreen() {
         return { latitude: lat, longitude: lng };
       }
     }
-    return null;
+    // Fallback to Benezette, PA (center of ELK POIs) if no settings are available
+    return { latitude: 41.3418, longitude: -78.3681 };
   }, [mapSettingsData]);
 
   // ── GPS tracking ────────────────────────────────────────────────────────────
@@ -438,6 +439,9 @@ function MapScreen() {
       return;
     }
 
+    // Dynamic bottom padding: if a waypoint details sheet is visible, use 300 to clear it; otherwise 120 is enough.
+    const bottomPadding = selectedWaypoint ? insets.bottom + 300 : insets.bottom + 120;
+
     cameraRef.current?.fitBounds(
       [minLng, minLat, maxLng, maxLat],
       {
@@ -445,16 +449,31 @@ function MapScreen() {
         padding: {
           top: insets.top + 160,
           right: 48,
-          bottom: insets.bottom + 300,
+          bottom: bottomPadding,
           left: 48,
         },
       }
     );
-  }, [insets.bottom, insets.top]);
+  }, [insets.bottom, insets.top, selectedWaypoint]);
 
   // ── Scenic Drive: handle navigateToWaypointId param from explore screen ─────
   const params = useLocalSearchParams();
   const hasHandledNavParam = useRef<string | false>(false);
+
+  // Fit map camera to all waypoints once on initial load
+  useEffect(() => {
+    if (waypoints.length > 0 && cameraRef.current && !hasCenteredOnce.current) {
+      if (params.navigateToWaypointId || params.routeToWaypointId) {
+        hasCenteredOnce.current = true;
+        return;
+      }
+      hasCenteredOnce.current = true;
+      const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
+      setTimeout(() => {
+        fitRouteToCamera(coords, 1000);
+      }, 500);
+    }
+  }, [waypoints, fitRouteToCamera, params]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1074,7 +1093,7 @@ function MapScreen() {
     );
   }
 
-  if (!mapComponents) {
+  if (!mapComponents || apiStatus !== 'ready') {
     return (
       <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -1132,8 +1151,10 @@ function MapScreen() {
           {currentRegion && (
             <Camera
               ref={cameraRef}
-              zoom={mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9}
-              center={[currentRegion.longitude, currentRegion.latitude]}
+              defaultSettings={{
+                centerCoordinate: [currentRegion.longitude, currentRegion.latitude],
+                zoomLevel: mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9,
+              }}
               maxBounds={AMERICA_MAX_BOUNDS}
               minZoom={3.5}
             />
