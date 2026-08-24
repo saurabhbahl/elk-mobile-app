@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import AppText from "@/src/components/AppText";
 import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
@@ -145,9 +146,16 @@ export default function ProgramDetailScreen() {
                 <View style={styles.detailsContent}>
                     {/* Schedule / Date & Time */}
                     {isValidData(program.schedule_dates) ? (
-                        <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
-                            {formatProgramScheduleDate(program.schedule_dates)}
-                        </AppText>
+                        <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
+                            <Image
+                                source={require("@/assets/images/eventicon.png")}
+                                style={{ width: 16, height: 16, marginRight: 8, marginTop: 6, tintColor: secondaryColor }}
+                                contentFit="contain"
+                            />
+                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400', marginBottom: 0, flex: 1 }]}>
+                                {formatProgramScheduleDate(program.schedule_dates)}
+                            </AppText>
+                        </View>
                     ) : null}
 
                     {/* Short Description */}

@@ -2,7 +2,7 @@ import AppText from "@/src/components/AppText";
 import { Image, ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { ActivityIndicator, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,6 +22,11 @@ export default function LandingScreen() {
     const bgColor = brandData?.brand_color_primary || "#000000";
     const secColor = brandData?.brand_color_secondary || "#ea0b0b";
 
+    const logoDuration = 1000;
+    const primaryDelay = 150;
+    const secondaryDelay = 300;
+    const bgDuration = 800;
+
     const bgImageUri = brandData?.splash_loading_screen_background
         ? (typeof brandData.splash_loading_screen_background === 'string'
             ? brandData.splash_loading_screen_background
@@ -40,8 +45,8 @@ export default function LandingScreen() {
                                 source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
                                 style={styles.logo}
                                 contentFit="contain"
-                                entering={FadeInDown.duration(1000).springify()}
-                                transition={800}
+                                entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
+                                transition={Platform.OS === 'ios' ? 400 : 0}
                             />
                         ) : null}
 
@@ -50,13 +55,13 @@ export default function LandingScreen() {
                                 source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
                                 style={styles.explorer}
                                 contentFit="contain"
-                                entering={FadeInDown.duration(1000).delay(150).springify()}
-                                transition={800}
+                                entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}
+                                transition={Platform.OS === 'ios' ? 400 : 0}
                             />
                         ) : null}
 
                         {apiStatus === 'loading' ? (
-                            <Animated.View entering={FadeInUp.duration(1000).delay(300).springify()} style={{ alignItems: 'center' }}>
+                            <Animated.View entering={FadeInUp.duration(logoDuration)} style={{ alignItems: 'center' }}>
                                 {syncError ? (
                                     <>
                                         <AppText style={{ fontSize: 12, color: '#FF5252', textAlign: 'center', marginBottom: 16 }}>{syncError}</AppText>
@@ -82,7 +87,7 @@ export default function LandingScreen() {
                                 )}
                             </Animated.View>
                         ) : (
-                            <Animated.View entering={FadeInUp.duration(1000).delay(300).springify()}>
+                            <Animated.View entering={FadeInUp.duration(logoDuration)}>
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     style={[styles.button, secColor ? { backgroundColor: secColor } : {}]}
@@ -101,23 +106,20 @@ export default function LandingScreen() {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: '#000' }]}>
             <StatusBar barStyle="light-content" />
-            {bgImageUri ? (
-                <AnimatedImageBackground
-                    source={{ uri: bgImageUri }}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    entering={FadeIn.duration(1500)}
-                    transition={1000}
-                >
-                    <View style={styles.darkOverlay}>{Inner}</View>
-                </AnimatedImageBackground>
-            ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: bgColor || '#2E3B2F' }]}>
-                    <View style={styles.darkOverlay}>{Inner}</View>
-                </View>
+            {bgImageUri && (
+                <Animated.View entering={FadeIn.duration(bgDuration)} style={StyleSheet.absoluteFill}>
+                    <Image
+                        source={{ uri: bgImageUri }}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                    />
+                </Animated.View>
             )}
+            <View style={[StyleSheet.absoluteFill, styles.darkOverlay]}>
+                {Inner}
+            </View>
         </View>
     );
 }

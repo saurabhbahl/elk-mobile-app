@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import AppText from "@/src/components/AppText";
 import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
@@ -205,8 +206,13 @@ export default function EventDetailScreen() {
                 <View style={styles.detailsContent}>
                     {/* Date & Time */}
                     {isValidData(event["start_date_&_time"]) ? (
-                        <View style={styles.infoRow}>
-                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400' }]}>
+                        <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
+                            <Image
+                                source={require("@/assets/images/eventicon.png")}
+                                style={{ width: 16, height: 16, marginRight: 8, marginTop: 6, tintColor: secondaryColor }}
+                                contentFit="contain"
+                            />
+                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400', flex: 1 }]}>
                                 {formatEventDateTime(event["start_date_&_time"] as string, isValidData(event["end_date_&_time"]) ? event["end_date_&_time"] as string : undefined)}
                             </AppText>
                         </View>
