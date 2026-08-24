@@ -572,6 +572,16 @@ function MapScreen() {
     }
   }, [isNavigating]);
 
+  const handleCloseCard = useCallback(() => {
+    setSelectedWaypoint(null);
+    if (waypoints.length > 0) {
+      const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
+      setTimeout(() => {
+        fitRouteToCamera(coords, 1000);
+      }, 100);
+    }
+  }, [waypoints, fitRouteToCamera]);
+
   const handleRoutePress = useCallback((route: 'main' | 'orange', coords: [number, number]) => {
     isTappingMarker.current = true;
     setTimeout(() => { isTappingMarker.current = false; }, 300);
@@ -1031,7 +1041,7 @@ function MapScreen() {
                 </AppText>
               ) : null}
             </View>
-            <TouchableOpacity onPress={() => setSelectedWaypoint(null)} style={styles.cardCloseButton}>
+            <TouchableOpacity onPress={handleCloseCard} style={styles.cardCloseButton}>
               <MaterialIcons name="close" size={14} color="white" />
             </TouchableOpacity>
           </View>
