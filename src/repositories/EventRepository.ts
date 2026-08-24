@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractLink, helperExtractPoiId } from './utils';
 
 export class EventRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -17,7 +17,7 @@ export class EventRepository extends BaseRepository<Record<string, unknown>> {
     const location_name = ev.location_name || null;
     const location_address = ev.location_address || null;
     const location_poi_id = helperExtractPoiId(ev.location_poi_link);
-    const registration_ticket_link = ev.registration_ticket_link || null;
+    const registration_ticket_link = helperExtractLink(ev.registration_ticket_link).url;
     const category_tags = Array.isArray(ev.category_tag) ? ev.category_tag.join(',') : (ev.category_tag || null);
     const featured = ev.featured ? 1 : 0;
     const active = ev.active !== false ? 1 : 0;

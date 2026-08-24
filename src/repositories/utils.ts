@@ -47,7 +47,7 @@ export function helperExtractPoiId(field: any): number | null {
   if (rawId === null) return null;
 
   try {
-    const check = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM pois WHERE id = ?', [rawId]);
+    const check = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM pois WHERE id = ?', [rawId === undefined ? null : rawId]);
     return (check && check.count > 0) ? rawId : null;
   } catch {
     return rawId;

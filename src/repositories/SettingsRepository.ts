@@ -44,7 +44,7 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
     const title = popup.popup_title || null;
     const body = popup.popup_body_copy || null;
     const img = helperExtractImage(popup.popup_image);
-    const link = typeof popup.cta_button_link === 'object' ? JSON.stringify(popup.cta_button_link) : null;
+    const link = (popup.cta_button_link && typeof popup.cta_button_link === 'object') ? JSON.stringify(popup.cta_button_link) : null;
     const closeStyle = popup.close_button_style || null;
 
     this.execute(`
@@ -56,7 +56,7 @@ export class SettingsRepository extends BaseRepository<Record<string, unknown>> 
   upsertHomeScreenSettings(hs: any) {
     const welcome = hs.hero_welcome_heading || null;
     const intro = hs.hero_intro_paragraph || null;
-    const ctaLink = typeof hs.hero_cta_button_link === 'object' ? JSON.stringify(hs.hero_cta_button_link) : null;
+    const ctaLink = (hs.hero_cta_button_link && typeof hs.hero_cta_button_link === 'object') ? JSON.stringify(hs.hero_cta_button_link) : null;
     const mapHeading = hs.map_block_heading || null;
     const mapViewLabel = hs.map_view_button_label || null;
     const programsHeading = hs.programs_block_heading || null;

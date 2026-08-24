@@ -8,10 +8,30 @@ export abstract class BaseRepository<T> {
   }
 
   protected execute(query: string, params: unknown[] = []) {
-    return db.runSync(query, params as never[]); // Using never[] for sqlite binding generic matching
+    const sanitizedParams = params.map(p => p === undefined ? null : p);
+    try {
+      return db.runSync(query, sanitizedParams as never[]); // Using never[] for sqlite binding generic matching
+    } catch (error) {
+      console.error("Execute failed on query:", query.trim());
+      console.error("Sanitized params details:");
+      sanitizedParams.forEach((p, idx) => {
+        console.error(`  [${idx}] type=${typeof p} constructor=${p?.constructor?.name} val=`, p);
+      });
+      throw error;
+    }
   }
 
   protected query<R>(query: string, params: unknown[] = []): R[] {
-    return db.getAllSync(query, params as never[]) as R[];
+    const sanitizedParams = params.map(p => p === undefined ? null : p);
+    try {
+      return db.getAllSync(query, sanitizedParams as never[]) as R[];
+    } catch (error) {
+      console.error("Query failed on query:", query.trim());
+      console.error("Sanitized params details:");
+      sanitizedParams.forEach((p, idx) => {
+        console.error(`  [${idx}] type=${typeof p} constructor=${p?.constructor?.name} val=`, p);
+      });
+      throw error;
+    }
   }
 }

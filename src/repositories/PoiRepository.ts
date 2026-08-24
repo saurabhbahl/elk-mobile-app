@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, safeParseInt } from './utils';
+import { helperExtractImage, helperExtractLink, safeParseInt } from './utils';
 
 export class PoiRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -18,7 +18,7 @@ export class PoiRepository extends BaseRepository<Record<string, unknown>> {
     const handicap_accessible = poi.handicap_accessible ? 1 : 0;
     const open_year_round = poi.open_year_round ? 1 : 0;
     const seasonal_notes = poi.seasonal_notes || null;
-    const external_link = poi.external_link || null;
+    const external_link = helperExtractLink(poi.external_link).url;
     const pin_icon_override = helperExtractImage(poi.pin_icon_override);
     const active = poi.active !== false ? 1 : 0;
     const sort_order = safeParseInt(poi.sort_order, 9999);
