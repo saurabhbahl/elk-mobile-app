@@ -211,12 +211,12 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         justifyContent: 'center',
     },
     cardName: {
-        fontSize: width < 390 ? 14 : 16,
+        fontSize: width < 390 ? 12 : 14,
         fontFamily: 'OpenSans-Bold',
         color: "#FFFFFF",
     },
     cardLocation: {
-        fontSize: width < 380 ? 12 : 14,
+        fontSize: width < 380 ? 10 : 12,
         fontWeight: 400,
         letterSpacing: 0,
         fontFamily: 'OpenSans-Regular',

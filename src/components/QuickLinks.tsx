@@ -66,7 +66,7 @@ export default function QuickLinks() {
                         onPress={() => {
                             if (isExactActive) return;
                             if (isNavigating.current) return;
-                            
+
                             isNavigating.current = true;
                             setTimeout(() => {
                                 isNavigating.current = false;
@@ -151,7 +151,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         borderBottomRightRadius: 8,
     },
     menuCardTitle: {
-        fontSize: 11,
+        fontSize: 14,
         fontFamily: 'OpenSans-SemiBold',
         color: colors.onSurface,
         textAlign: 'center',
