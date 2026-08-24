@@ -229,6 +229,8 @@ function MapScreen() {
   const [highlightedRoute, setHighlightedRoute] = useState<'main' | 'orange' | null>(null);
   const [location, setLocation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
   const [destinationPoint, setDestinationPoint] = useState<Waypoint | null>(null);
   const [showPointPicker, setShowPointPicker] = useState(false);
@@ -343,6 +345,16 @@ function MapScreen() {
     // Fallback to Benezette, PA (center of ELK POIs) if no settings are available
     return { latitude: 41.3418, longitude: -78.3681 };
   }, [mapSettingsData]);
+
+  // ── Hide initial [0, 0] Africa loading frame and camera snap ─────────────────
+  useEffect(() => {
+    if (apiStatus === 'ready') {
+      const timer = setTimeout(() => {
+        setIsMapLoaded(true);
+      }, 2500); // 2.5-second safety net
+      return () => clearTimeout(timer);
+    }
+  }, [apiStatus]);
 
   // ── GPS tracking ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -462,18 +474,27 @@ function MapScreen() {
 
   // Fit map camera to all waypoints once on initial load
   useEffect(() => {
-    if (waypoints.length > 0 && cameraRef.current && !hasCenteredOnce.current) {
+    if (isMapLoaded && waypoints.length > 0 && cameraRef.current && !hasCenteredOnce.current) {
       if (params.navigateToWaypointId || params.routeToWaypointId) {
         hasCenteredOnce.current = true;
+        // Mark map ready after a tiny delay if we are navigating/routing to a specific pin
+        setTimeout(() => {
+          setIsMapReady(true);
+        }, 300);
         return;
       }
       hasCenteredOnce.current = true;
       const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
+      
+      // Snap instantly (duration: 0) to POI pins bounding box
+      fitRouteToCamera(coords, 0);
+      
+      // Delay dismissing the loading cover slightly so the native thread completes layout snap
       setTimeout(() => {
-        fitRouteToCamera(coords, 1000);
-      }, 500);
+        setIsMapReady(true);
+      }, 300);
     }
-  }, [waypoints, fitRouteToCamera, params]);
+  }, [isMapLoaded, waypoints, fitRouteToCamera, params]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1103,15 +1124,8 @@ function MapScreen() {
     );
   }
 
-  if (!mapComponents || apiStatus !== 'ready') {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
-  const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = mapComponents;
+  const showMapPlaceholder = !mapComponents || apiStatus !== 'ready';
+  const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = (mapComponents || {}) as any;
   const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin;
   const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
 
@@ -1120,11 +1134,17 @@ function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <Map
-          ref={mapRef}
+        {showMapPlaceholder ? (
+          <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <Map
+            ref={mapRef}
           style={styles.map}
           mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
           compass={false}
+          onDidFinishLoadingMap={() => setIsMapLoaded(true)}
           onPress={(event: any) => {
             if (isTappingMarker.current) return;
             if (isNavigating) return;
@@ -1255,6 +1275,14 @@ function MapScreen() {
             />
           ))}
         </Map>
+        )}
+
+        {/* Absolute loader overlay to hide initial [0, 0] Africa loading frame and camera snap */}
+        {!showMapPlaceholder && !isMapReady && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', zIndex: 999 }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        )}
 
         {/* OSM & CARTO Attribution Overlay */}
         <View style={styles.attributionContainer} pointerEvents="none">
