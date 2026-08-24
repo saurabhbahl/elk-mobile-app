@@ -1,4 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from './AppText';
@@ -73,11 +73,19 @@ export default function SectionHeader({
             </TitleComponent>
             {showToggleArrow && (
                 <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.toggleArrowButton}>
-                    <MaterialIcons
-                        name={isCollapsed ? "keyboard-arrow-down" : "keyboard-arrow-up"}
-                        size={24}
-                        color={isDark ? "#FFFFFF" : primaryColor}
-                    />
+                    {isCollapsed ? (
+                        <MaterialCommunityIcons
+                            name="arrow-expand"
+                            size={24}
+                            color={isDark ? "#FFFFFF" : primaryColor}
+                        />
+                    ) : (
+                        <Feather
+                            name="minimize-2"
+                            size={22}
+                            color={isDark ? "#FFFFFF" : primaryColor}
+                        />
+                    )}
                 </TouchableOpacity>
             )}
         </View>
