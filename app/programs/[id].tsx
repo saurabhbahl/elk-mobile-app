@@ -39,8 +39,8 @@ export default function ProgramDetailScreen() {
     const { colors, fonts, isDark } = useTheme();
     const { id } = useLocalSearchParams();
     const { brandData, programsData, poisData, apiStatus } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary);
-    const secondaryColor = getValidColor(brandData?.brand_color_secondary);
+    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
+    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
 
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
