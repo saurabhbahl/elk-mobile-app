@@ -133,25 +133,14 @@ export default function RentalDetailScreen() {
 
                 {/* Heading Row */}
                 {isValidData(rental.rental_name) ? (
-                    <View style={{ paddingHorizontal: 16 }}>
-                        <View style={styles.headerTitleRow}>
-                            <TouchableOpacity
-                                onPress={() => router.back()}
-                                style={styles.backIconButton}
-                                activeOpacity={0.7}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (primaryColor || "#000000")} />
-                            </TouchableOpacity>
-                            <SectionHeader
-                                title={rental.rental_name as string}
-                                iconSource={require("../../assets/images/rentals.png")}
-                                primaryColor={primaryColor || "#000000"}
-                                secondaryColor={secondaryColor || "#ea0b0b"}
-                                isDark={isDark}
-                                style={{ marginLeft: 0, flex: 1 }}
-                            />
-                        </View>
+                    <View>
+                        <SectionHeader
+                            title={rental.rental_name as string}
+                            iconSource={require("../../assets/images/rentals.png")}
+                            primaryColor={primaryColor || "#000000"}
+                            secondaryColor={secondaryColor || "#ea0b0b"}
+                            isDark={isDark}
+                        />
                     </View>
                 ) : null}
 

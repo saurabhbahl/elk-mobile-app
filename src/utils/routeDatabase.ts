@@ -22,7 +22,7 @@ export async function saveRoute(
 ): Promise<void> {
   db.runSync(
     `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance, from_coord, to_coord) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [fromId, toId, polyline, duration, distance, fromCoord, toCoord]
+    [fromId ?? null, toId ?? null, polyline ?? null, duration ?? 0, distance ?? 0, fromCoord ?? "", toCoord ?? ""]
   );
 }
 
@@ -32,7 +32,7 @@ export async function getRoute(
 ): Promise<{ polyline: string; duration: number; distance: number } | null> {
   const row = db.getFirstSync<{ encoded_polyline: string; duration: number; distance: number }>(
     `SELECT encoded_polyline, duration, distance FROM routes WHERE from_id = ? AND to_id = ?`,
-    [fromId, toId]
+    [fromId ?? null, toId ?? null]
   );
   if (!row) return null;
   return {
@@ -51,14 +51,14 @@ export async function hasRoute(
   if (fromCoord && toCoord) {
     const row = db.getFirstSync<{ cnt: number }>(
       `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ? AND from_coord = ? AND to_coord = ?`,
-      [fromId, toId, fromCoord, toCoord]
+      [fromId ?? null, toId ?? null, fromCoord ?? "", toCoord ?? ""]
     );
     return (row?.cnt ?? 0) > 0;
   }
 
   const row = db.getFirstSync<{ cnt: number }>(
     `SELECT COUNT(*) as cnt FROM routes WHERE from_id = ? AND to_id = ?`,
-    [fromId, toId]
+    [fromId ?? null, toId ?? null]
   );
   return (row?.cnt ?? 0) > 0;
 }

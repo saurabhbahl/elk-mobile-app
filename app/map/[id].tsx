@@ -79,24 +79,14 @@ export default function WaypointDetailsScreen() {
                     <View style={{ flex: 1 }}>
                         {/* Title */}
                         {isValidData(waypoint.title) ? (
-                            <View style={styles.headerTitleRow}>
-                                <TouchableOpacity
-                                    onPress={() => router.back()}
-                                    style={styles.backIconButton}
-                                    activeOpacity={0.7}
-                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                >
-                                    <Ionicons name="arrow-back" size={24} color={isDark ? "#FFFFFF" : (brandPrimary || "#000000")} />
-                                </TouchableOpacity>
-                                <SectionHeader
-                                    title={waypoint.title as string}
-                                    iconSource={require("../../assets/images/mapicon.png")}
-                                    primaryColor={brandPrimary || "#000000"}
-                                    secondaryColor={brandSecondary || "#ea0b0b"}
-                                    isDark={isDark}
-                                    style={{ marginLeft: 0, flex: 1 }}
-                                />
-                            </View>
+                            <SectionHeader
+                                title={waypoint.title as string}
+                                iconSource={require("../../assets/images/mapicon.png")}
+                                primaryColor={brandPrimary || "#000000"}
+                                secondaryColor={brandSecondary || "#ea0b0b"}
+                                isDark={isDark}
+                                style={{ marginHorizontal: 0 }}
+                            />
                         ) : null}
 
                         {/* Featured Image / Gallery */}

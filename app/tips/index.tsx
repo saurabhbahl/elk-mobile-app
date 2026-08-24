@@ -181,7 +181,7 @@ export default function TipsScreen() {
                         ) : null}
 
                         {isValidData(tipsScreenSettingsData?.intro_paragraph) ? (
-                            <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                            <View style={{ paddingBottom: 16 }}>
                                 <AppRenderHTML
                                     html={tipsScreenSettingsData?.intro_paragraph || ""}
                                     contentWidth={width - 32}
