@@ -490,7 +490,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontFamily: 'OpenSans-Bold',
         fontWeight: '700',
         fontStyle: 'normal',
-        fontSize: 14,
+        fontSize: 16,
         lineHeight: 18,
         letterSpacing: 0,
         color: colors.onSurface,

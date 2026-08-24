@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
         fontSize: width < 380 ? 16 : 18,
         fontFamily: 'Roboto-Medium',
         flexShrink: 1,
+        textTransform: 'capitalize',
     },
     sectionIconCircle: {
         width: 32,
@@ -142,6 +143,7 @@ const styles = StyleSheet.create({
         fontSize: width < 380 ? 16 : 18,
         fontFamily: 'Roboto-Medium',
         flexShrink: 1,
+        textTransform: 'capitalize',
     },
     viewAllEventsText: {
         fontSize: 12,
