@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractLink, helperExtractPoiId, safeParseInt } from './utils';
+import { helperExtractImage, helperExtractLink, helperExtractPoiId, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class RentalRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class RentalRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(rent: any) {
     const id = rent.id;
-    const rental_name = rent.rental_name || null;
+    const rental_name = capitalizeFirstLetter(rent.rental_name) || null;
     const featured_image_url = helperExtractImage(rent.featured_image);
     const short_description = rent.short_description || null;
     const full_description = rent.full_description || null;
@@ -50,7 +50,7 @@ export class RentalRepository extends BaseRepository<Record<string, unknown>> {
       const galleries = this.query<{ image_url: string }>('SELECT image_url FROM rental_gallery WHERE rental_id = ?', [row.id]);
       list.push({
         id: row.id,
-        rental_name: row.rental_name,
+        rental_name: capitalizeFirstLetter(row.rental_name),
         featured_image: row.featured_image_url ? { url: row.featured_image_url } : null,
         additional_images: galleries.length > 0 ? galleries.map(g => ({ url: g.image_url })) : null,
         short_description: row.short_description,

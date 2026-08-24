@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractLink, helperExtractPoiId } from './utils';
+import { helperExtractImage, helperExtractLink, helperExtractPoiId, capitalizeFirstLetter } from './utils';
 
 export class EventRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class EventRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(ev: any) {
     const id = ev.id;
-    const event_name = ev.event_name || null;
+    const event_name = capitalizeFirstLetter(ev.event_name) || null;
     const thumbnail_image_url = helperExtractImage(ev.thumbnail_image);
     const short_description = ev.short_description || null;
     const full_description = ev.full_description || null;
@@ -38,7 +38,7 @@ export class EventRepository extends BaseRepository<Record<string, unknown>> {
     rows.forEach(row => {
       list.push({
         id: row.id,
-        event_name: row.event_name,
+        event_name: capitalizeFirstLetter(row.event_name),
         thumbnail_image: row.thumbnail_image_url ? { url: row.thumbnail_image_url } : null,
         short_description: row.short_description,
         full_description: row.full_description,

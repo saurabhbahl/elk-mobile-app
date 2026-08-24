@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractLink, safeParseInt } from './utils';
+import { helperExtractImage, helperExtractLink, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class PoiRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class PoiRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(poi: any) {
     const id = poi.id;
-    const poi_name = poi.poi_name || null;
+    const poi_name = capitalizeFirstLetter(poi.poi_name) || null;
     const pin_popup_summary = poi.pin_popup_summary || null;
     const full_description = poi.full_description || null;
     const latitude = poi.latitude !== undefined && !isNaN(parseFloat(poi.latitude)) ? parseFloat(poi.latitude) : null;
@@ -51,7 +51,7 @@ export class PoiRepository extends BaseRepository<Record<string, unknown>> {
       const galleries = this.query<{ image_url: string }>('SELECT image_url FROM poi_gallery WHERE poi_id = ?', [row.id]);
       list.push({
         id: row.id,
-        poi_name: row.poi_name,
+        poi_name: capitalizeFirstLetter(row.poi_name),
         pin_popup_summary: row.pin_popup_summary,
         full_description: row.full_description,
         latitude: row.latitude !== null ? String(row.latitude) : null,

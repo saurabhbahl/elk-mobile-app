@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, safeParseInt } from './utils';
+import { helperExtractImage, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class TipRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class TipRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(tip: any) {
     const id = tip.id;
-    const tip_title = tip.tip_title || null;
+    const tip_title = capitalizeFirstLetter(tip.tip_title) || null;
     const tip_body = tip.tip_body || null;
     const tip_icon_url = helperExtractImage(tip.tip_icon_image);
     const category_tag = tip.category_tag || null;
@@ -31,7 +31,7 @@ export class TipRepository extends BaseRepository<Record<string, unknown>> {
     rows.forEach(row => {
       list.push({
         id: row.id,
-        tip_title: row.tip_title,
+        tip_title: capitalizeFirstLetter(row.tip_title),
         tip_body: row.tip_body,
         tip_icon_image: row.tip_icon_url ? { url: row.tip_icon_url } : null,
         category_tag: row.category_tag,

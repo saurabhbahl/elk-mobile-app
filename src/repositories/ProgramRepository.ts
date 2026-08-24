@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository';
-import { helperExtractImage, helperExtractPoiId, safeParseInt } from './utils';
+import { helperExtractImage, helperExtractPoiId, safeParseInt, capitalizeFirstLetter } from './utils';
 
 export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
   constructor() {
@@ -8,7 +8,7 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
 
   upsert(prog: any) {
     const id = prog.id;
-    const program_name = prog.program_name || null;
+    const program_name = capitalizeFirstLetter(prog.program_name) || null;
     const thumbnail_image_url = helperExtractImage(prog.thumbnail_image);
     const short_description = prog.short_description || null;
     const full_description = prog.full_description || null;
@@ -44,7 +44,7 @@ export class ProgramRepository extends BaseRepository<Record<string, unknown>> {
       }
       list.push({
         id: row.id,
-        program_name: row.program_name,
+        program_name: capitalizeFirstLetter(row.program_name),
         thumbnail_image: row.thumbnail_image_url ? { url: row.thumbnail_image_url } : null,
         short_description: row.short_description,
         full_description: row.full_description,

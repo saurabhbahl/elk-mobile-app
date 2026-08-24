@@ -53,3 +53,11 @@ export function helperExtractPoiId(field: any): number | null {
     return rawId;
   }
 }
+
+// Helper: Capitalize the first letter of a string
+export function capitalizeFirstLetter(str: any): string | null {
+  if (str === null || str === undefined || str === '') return null;
+  const s = String(str).trim();
+  if (s.length === 0) return null;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
