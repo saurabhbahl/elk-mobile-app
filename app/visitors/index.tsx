@@ -117,289 +117,282 @@ export default function VisitorsCenterScreen() {
                     <ActivityIndicator size="large" color={bgColor} />
                 </View>
             ) : (
-                <Animated.View entering={FadeInUp.duration(200)} style={{ flex: 1 }}>
-                    <Animated.FlatList
-                        data={[]}
-                        renderItem={null}
-                        showsVerticalScrollIndicator={false}
-                        ListHeaderComponent={
-                            <View style={styles.scrollContent}>
-                                <Navbar />
-                                <QuickLinks />
-                                {/* Header Row */}
-                                {isValidData(visitorsData?.screen_title) ? (
-                                    <View>
-                                        <SectionHeader
-                                            title={visitorsData?.screen_title as string}
-                                            iconSource={require("../../assets/images/house-flag.png")}
-                                            primaryColor={bgColor || "#000000"}
-                                            secondaryColor={brandData?.brand_color_secondary || "#ea0b0b"}
-                                            isDark={isDark}
-                                            isFeatured={true}
-                                        />
-                                    </View>
-                                ) : null}
+                <Animated.ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <Navbar />
+                    <QuickLinks />
+                    {/* Header Row */}
+                    {isValidData(visitorsData?.screen_title) ? (
+                        <View>
+                            <SectionHeader
+                                title={visitorsData?.screen_title as string}
+                                iconSource={require("../../assets/images/house-flag.png")}
+                                primaryColor={bgColor || "#000000"}
+                                secondaryColor={brandData?.brand_color_secondary || "#ea0b0b"}
+                                isDark={isDark}
+                                isFeatured={true}
+                            />
+                        </View>
+                    ) : null}
 
-                                {/* Image Gallery Slider with Get Directions Overlay */}
-                                {isValidData(images) ? (
-                                    <View style={{ marginHorizontal: 16, position: 'relative' }}>
-                                        <ImageGallerySlider images={images} width={CAROUSEL_WIDTH} height={190} />
-                                        {poiId !== null ? (
-                                            <View style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 25 }}>
-                                                <PrimaryButton
-                                                    title="Get Directions"
-                                                    onPress={() => navigateToPoi(router, poiId)}
-                                                />
-                                            </View>
-                                        ) : null}
-                                    </View>
-                                ) : (
-                                    poiId !== null ? (
-                                        <View style={{ marginTop: 16, marginHorizontal: 16, alignItems: 'flex-start' }}>
-                                            <PrimaryButton
-                                                title="Get Directions"
-                                                onPress={() => navigateToPoi(router, poiId)}
+                    {/* Image Gallery Slider with Get Directions Overlay */}
+                    {isValidData(images) ? (
+                        <View style={{ marginHorizontal: 16, position: 'relative' }}>
+                            <ImageGallerySlider images={images} width={CAROUSEL_WIDTH} height={190} />
+                            {poiId !== null ? (
+                                <View style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 25 }}>
+                                    <PrimaryButton
+                                        title="Get Directions"
+                                        onPress={() => navigateToPoi(router, poiId)}
+                                    />
+                                </View>
+                            ) : null}
+                        </View>
+                    ) : (
+                        poiId !== null ? (
+                            <View style={{ marginTop: 16, marginHorizontal: 16, alignItems: 'flex-start' }}>
+                                <PrimaryButton
+                                    title="Get Directions"
+                                    onPress={() => navigateToPoi(router, poiId)}
+                                />
+                            </View>
+                        ) : null
+                    )}
+
+                    {/* Call to Actions (CTA) Cards */}
+                    {(hasCta1 || hasCta2) ? (
+                        <View
+                            style={[styles.ctaContainer, { justifyContent: hasBothCtas ? "space-between" : "center" }]}
+                        >
+                            {/* CTA 1 */}
+                            {hasCta1 ? (
+                                <TouchableOpacity
+                                    style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
+                                    activeOpacity={0.9}
+                                    onPress={() => {
+                                        if (isValidData(visitorsData?.cta_1_link?.url)) {
+                                            handleOpenLink(visitorsData?.cta_1_link?.url);
+                                        } else if (isValidData(visitorsData?.phone_number)) {
+                                            handleOpenLink(`tel:${visitorsData?.phone_number}`);
+                                        }
+                                    }}
+                                >
+                                    <View style={styles.ctaImagePlaceholder}>
+                                        {isValidData(visitorsData?.cta_1_image?.url) ? (
+                                            <CachedImage
+                                                uri={visitorsData?.cta_1_image?.url}
+                                                style={{ width: "100%", height: "100%", aspectRatio: undefined }}
+                                                contentFit="cover"
+                                                onLoadStateChange={setCta1Loading}
                                             />
-                                        </View>
-                                    ) : null
-                                )}
-
-                                {/* Call to Actions (CTA) Cards */}
-                                {(hasCta1 || hasCta2) ? (
-                                    <View
-                                        key={hasBothCtas ? "both-ctas" : "single-cta"}
-                                        style={[styles.ctaContainer, { justifyContent: hasBothCtas ? "space-between" : "center" }]}
-                                    >
-                                        {/* CTA 1 */}
-                                        {hasCta1 ? (
-                                            <TouchableOpacity
-                                                style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
-                                                activeOpacity={0.9}
-                                                onPress={() => {
-                                                    if (isValidData(visitorsData?.cta_1_link?.url)) {
-                                                        handleOpenLink(visitorsData?.cta_1_link?.url);
-                                                    } else if (isValidData(visitorsData?.phone_number)) {
-                                                        handleOpenLink(`tel:${visitorsData?.phone_number}`);
-                                                    }
-                                                }}
-                                            >
-                                                <View style={styles.ctaImagePlaceholder}>
-                                                    {isValidData(visitorsData?.cta_1_image?.url) ? (
-                                                        <CachedImage
-                                                            uri={visitorsData?.cta_1_image?.url}
-                                                            style={{ width: "100%", height: "100%", aspectRatio: undefined }}
-                                                            contentFit="cover"
-                                                            onLoadStateChange={setCta1Loading}
-                                                        />
-                                                    ) : (
-                                                        <Ionicons name="call-outline" size={32} color={bgColor} />
-                                                    )}
-                                                </View>
-                                                <View style={styles.ctaContent}>
-                                                    {isValidData(visitorsData?.cta_1_title) ? (
-                                                        <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
-                                                            {visitorsData?.cta_1_title}
-                                                        </AppText>
-                                                    ) : null}
-                                                    {isValidData(visitorsData?.cta_1_link?.title) ? (
-                                                        <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
-                                                            {visitorsData?.cta_1_link?.title}
-                                                        </AppText>
-                                                    ) : null}
-                                                </View>
-                                                {cta1Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
-                                            </TouchableOpacity>
-                                        ) : null}
-
-                                        {/* CTA 2 */}
-                                        {hasCta2 ? (
-                                            <TouchableOpacity
-                                                style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
-                                                activeOpacity={0.9}
-                                                onPress={() => handleOpenLink(visitorsData?.cta_2_link?.url)}
-                                            >
-                                                <View style={styles.ctaImagePlaceholder}>
-                                                    {isValidData(visitorsData?.cta_2_image?.url) ? (
-                                                        <CachedImage
-                                                            uri={visitorsData?.cta_2_image?.url}
-                                                            style={{ width: "100%", height: "100%", aspectRatio: undefined }}
-                                                            contentFit="cover"
-                                                            onLoadStateChange={setCta2Loading}
-                                                        />
-                                                    ) : (
-                                                        <Ionicons name="mail-outline" size={30} color={bgColor} />
-                                                    )}
-                                                </View>
-                                                <View style={styles.ctaContent}>
-                                                    {isValidData(visitorsData?.cta_2_title) ? (
-                                                        <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
-                                                            {visitorsData?.cta_2_title}
-                                                        </AppText>
-                                                    ) : null}
-                                                    {isValidData(visitorsData?.cta_2_link?.title) ? (
-                                                        <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
-                                                            {visitorsData?.cta_2_link?.title}
-                                                        </AppText>
-                                                    ) : null}
-                                                </View>
-                                                {cta2Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
-                                            </TouchableOpacity>
-                                        ) : null}
-                                    </View>
-                                ) : null}
-
-                                {/* Address Section */}
-                                {isValidData(visitorsData?.address) ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: 24 }}>
-                                        <AppText style={styles.addressText}>
-                                            {visitorsData?.address}
-                                        </AppText>
-                                    </View>
-                                ) : null}
-
-                                {/* Phone Number Section */}
-                                {isValidData(visitorsData?.phone_number) ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 8 : 24 }}>
-                                        <TouchableOpacity
-                                            activeOpacity={0.7}
-                                            onPress={() => handleOpenLink(`tel:${visitorsData?.phone_number}`)}
-                                            style={{ flexDirection: 'row', alignItems: 'center' }}
-                                        >
-                                            <Ionicons
-                                                name="call-outline"
-                                                size={20}
-                                                color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)}
-                                                style={{ marginRight: 8, marginTop: 0 }}
-                                            />
-                                            <AppText style={styles.phoneText}>
-                                                {visitorsData?.phone_number}
-                                            </AppText>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : null}
-
-                                {/* Hours of Operation Section (Mobile Table View) */}
-                                {parsedHours ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: (isValidData(visitorsData?.phone_number) || isValidData(visitorsData?.address)) ? 8 : 24 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                            <Ionicons name="time-outline" size={20} color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)} style={{ marginRight: 8, marginTop: 2 }} />
-                                            <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 16, color: colors.onSurface }}>
-                                                Hours of Operation
-                                            </AppText>
-                                        </View>
-
-                                        {Array.isArray(parsedHours) ? (
-                                            <View
-                                                style={{
-                                                    borderRadius: 12,
-                                                    overflow: 'hidden',
-                                                    borderWidth: 1,
-                                                    borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0',
-                                                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF',
-                                                    shadowColor: '#000',
-                                                    shadowOffset: { width: 0, height: 1 },
-                                                    shadowOpacity: 0.05,
-                                                    shadowRadius: 3,
-                                                    elevation: 1,
-                                                }}
-                                            >
-                                                {/* Table Data Rows */}
-                                                {parsedHours.map((item: any, idx: number) => {
-                                                    const dayStr = typeof item === 'object' ? (item.day || item.days || item.title || "") : String(item);
-                                                    const hoursStr = typeof item === 'object' ? (item.hours || item.time || "") : "";
-                                                    const isLast = idx === parsedHours.length - 1;
-                                                    const isEven = idx % 2 === 0;
-
-                                                    return (
-                                                        <View
-                                                            key={idx}
-                                                            style={{
-                                                                flexDirection: 'row',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center',
-                                                                paddingVertical: 12,
-                                                                paddingHorizontal: 14,
-                                                                backgroundColor: isEven
-                                                                    ? (isDark ? 'transparent' : '#FFFFFF')
-                                                                    : (isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
-                                                                borderBottomWidth: isLast ? 0 : 1,
-                                                                borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
-                                                            }}
-                                                        >
-                                                            <AppText
-                                                                style={{
-                                                                    fontFamily: 'OpenSans-Regular',
-                                                                    fontSize: 13,
-                                                                    color: colors.onSurface,
-                                                                    flex: 1,
-                                                                    paddingRight: 12,
-                                                                }}
-                                                            >
-                                                                {dayStr}
-                                                            </AppText>
-                                                            {hoursStr ? (
-                                                                <View
-                                                                    style={{
-                                                                        backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : (secondaryColor ? `${secondaryColor}15` : '#EFF6FF'),
-                                                                        paddingVertical: 4,
-                                                                        paddingHorizontal: 10,
-                                                                        borderRadius: 20,
-                                                                    }}
-                                                                >
-                                                                    <AppText
-                                                                        style={{
-                                                                            fontFamily: 'OpenSans-Bold',
-                                                                            fontSize: 12,
-                                                                            color: isDark ? '#FFFFFF' : (secondaryColor || '#1E40AF'),
-                                                                        }}
-                                                                    >
-                                                                        {hoursStr}
-                                                                    </AppText>
-                                                                </View>
-                                                            ) : null}
-                                                        </View>
-                                                    );
-                                                })}
-                                            </View>
                                         ) : (
-                                            <View
-                                                style={{
-                                                    borderRadius: 12,
-                                                    padding: 14,
-                                                    borderWidth: 1,
-                                                    borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0',
-                                                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
-                                                }}
-                                            >
-                                                <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 13, color: colors.onSurface }}>
-                                                    {String(parsedHours)}
-                                                </AppText>
-                                            </View>
+                                            <Ionicons name="call-outline" size={32} color={bgColor} />
                                         )}
                                     </View>
-                                ) : null}
-
-                                {/* Body Copy Section */}
-                                {isValidData(visitorsData?.body_copy) ? (
-                                    <View style={{ marginHorizontal: 16, marginTop: 24 }}>
-                                        <AppRenderHTML
-                                            html={visitorsData?.body_copy || ""}
-                                            contentWidth={width - 32}
-                                            baseStyle={{
-                                                fontFamily: 'OpenSans-Regular',
-                                                fontSize: 13,
-                                                color: colors.onSurface,
-                                                lineHeight: 20,
-                                                letterSpacing: 0,
-                                                textAlign: "left",
-                                            }}
-                                        />
+                                    <View style={styles.ctaContent}>
+                                        {isValidData(visitorsData?.cta_1_title) ? (
+                                            <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
+                                                {visitorsData?.cta_1_title}
+                                            </AppText>
+                                        ) : null}
+                                        {isValidData(visitorsData?.cta_1_link?.title) ? (
+                                            <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
+                                                {visitorsData?.cta_1_link?.title}
+                                            </AppText>
+                                        ) : null}
                                     </View>
-                                ) : null}
+                                    {cta1Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
+                                </TouchableOpacity>
+                            ) : null}
+
+                            {/* CTA 2 */}
+                            {hasCta2 ? (
+                                <TouchableOpacity
+                                    style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
+                                    activeOpacity={0.9}
+                                    onPress={() => handleOpenLink(visitorsData?.cta_2_link?.url)}
+                                >
+                                    <View style={styles.ctaImagePlaceholder}>
+                                        {isValidData(visitorsData?.cta_2_image?.url) ? (
+                                            <CachedImage
+                                                uri={visitorsData?.cta_2_image?.url}
+                                                style={{ width: "100%", height: "100%", aspectRatio: undefined }}
+                                                contentFit="cover"
+                                                onLoadStateChange={setCta2Loading}
+                                            />
+                                        ) : (
+                                            <Ionicons name="mail-outline" size={30} color={bgColor} />
+                                        )}
+                                    </View>
+                                    <View style={styles.ctaContent}>
+                                        {isValidData(visitorsData?.cta_2_title) ? (
+                                            <AppText style={[styles.ctaTitle, secondaryColor ? { color: isDark ? "#FFFFFF" : secondaryColor } : undefined]} numberOfLines={1}>
+                                                {visitorsData?.cta_2_title}
+                                            </AppText>
+                                        ) : null}
+                                        {isValidData(visitorsData?.cta_2_link?.title) ? (
+                                            <AppText style={[styles.ctaSubtitle, bgColor ? { color: isDark ? colors.onSurfaceVariant : bgColor } : undefined]} numberOfLines={1}>
+                                                {visitorsData?.cta_2_link?.title}
+                                            </AppText>
+                                        ) : null}
+                                    </View>
+                                    {cta2Loading && <SkeletonPlaceholder style={[StyleSheet.absoluteFill, { zIndex: 10 }]} />}
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
+                    ) : null}
+
+                    {/* Address Section */}
+                    {isValidData(visitorsData?.address) ? (
+                        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                            <AppText style={styles.addressText}>
+                                {visitorsData?.address}
+                            </AppText>
+                        </View>
+                    ) : null}
+
+                    {/* Phone Number Section */}
+                    {isValidData(visitorsData?.phone_number) ? (
+                        <View style={{ marginHorizontal: 16, marginTop: isValidData(visitorsData?.address) ? 8 : 24 }}>
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => handleOpenLink(`tel:${visitorsData?.phone_number}`)}
+                                style={{ flexDirection: 'row', alignItems: 'center' }}
+                            >
+                                <Ionicons
+                                    name="call-outline"
+                                    size={18}
+                                    color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)}
+                                    style={{ marginRight: 8, marginTop: 4 }}
+                                />
+                                <AppText style={styles.phoneText}>
+                                    {visitorsData?.phone_number}
+                                </AppText>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
+
+                    {/* Hours of Operation Section (Mobile Table View) */}
+                    {parsedHours ? (
+                        <View style={{ marginHorizontal: 16, marginTop: (isValidData(visitorsData?.phone_number) || isValidData(visitorsData?.address)) ? 8 : 24 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                <Ionicons name="time-outline" size={20} color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)} style={{ marginRight: 8, marginTop: 2 }} />
+                                <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 16, color: colors.onSurface }}>
+                                    Hours of Operation
+                                </AppText>
                             </View>
-                        }
-                    />
-                </Animated.View>
+
+                            {Array.isArray(parsedHours) ? (
+                                <View
+                                    style={{
+                                        borderRadius: 12,
+                                        overflow: 'hidden',
+                                        borderWidth: 1,
+                                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: 0.05,
+                                        shadowRadius: 3,
+                                        elevation: 1,
+                                    }}
+                                >
+                                    {/* Table Data Rows */}
+                                    {parsedHours.map((item: any, idx: number) => {
+                                        const dayStr = typeof item === 'object' ? (item.day || item.days || item.title || "") : String(item);
+                                        const hoursStr = typeof item === 'object' ? (item.hours || item.time || "") : "";
+                                        const isLast = idx === parsedHours.length - 1;
+                                        const isEven = idx % 2 === 0;
+
+                                        return (
+                                            <View
+                                                key={idx}
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    paddingVertical: 12,
+                                                    paddingHorizontal: 14,
+                                                    backgroundColor: isEven
+                                                        ? (isDark ? 'transparent' : '#FFFFFF')
+                                                        : (isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
+                                                    borderBottomWidth: isLast ? 0 : 1,
+                                                    borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                                                }}
+                                            >
+                                                <AppText
+                                                    style={{
+                                                        fontFamily: 'OpenSans-Regular',
+                                                        fontSize: 13,
+                                                        color: colors.onSurface,
+                                                        flex: 1,
+                                                        paddingRight: 12,
+                                                    }}
+                                                >
+                                                    {dayStr}
+                                                </AppText>
+                                                {hoursStr ? (
+                                                    <View
+                                                        style={{
+                                                            backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : (secondaryColor ? `${secondaryColor}15` : '#EFF6FF'),
+                                                            paddingVertical: 4,
+                                                            paddingHorizontal: 10,
+                                                            borderRadius: 20,
+                                                        }}
+                                                    >
+                                                        <AppText
+                                                            style={{
+                                                                fontFamily: 'OpenSans-Bold',
+                                                                fontSize: 12,
+                                                                color: isDark ? '#FFFFFF' : (secondaryColor || '#1E40AF'),
+                                                            }}
+                                                        >
+                                                            {hoursStr}
+                                                        </AppText>
+                                                    </View>
+                                                ) : null}
+                                            </View>
+                                        );
+                                    })}
+                                </View>
+                            ) : (
+                                <View
+                                    style={{
+                                        borderRadius: 12,
+                                        padding: 14,
+                                        borderWidth: 1,
+                                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                                    }}
+                                >
+                                    <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 13, color: colors.onSurface }}>
+                                        {String(parsedHours)}
+                                    </AppText>
+                                </View>
+                            )}
+                        </View>
+                    ) : null}
+
+                    {/* Body Copy Section */}
+                    {isValidData(visitorsData?.body_copy) ? (
+                        <View style={{ marginHorizontal: 16, marginTop: 24 }}>
+                            <AppRenderHTML
+                                html={visitorsData?.body_copy || ""}
+                                contentWidth={width - 32}
+                                baseStyle={{
+                                    fontFamily: 'OpenSans-Regular',
+                                    fontSize: 13,
+                                    color: colors.onSurface,
+                                    lineHeight: 20,
+                                    letterSpacing: 0,
+                                    textAlign: "left",
+                                }}
+                            />
+                        </View>
+                    ) : null}
+                </Animated.ScrollView>
             )}
         </SafeAreaView>
     );

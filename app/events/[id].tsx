@@ -9,6 +9,7 @@ import React from "react";
 import {
     ActivityIndicator,
     InteractionManager,
+    Platform,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -209,7 +210,13 @@ export default function EventDetailScreen() {
                         <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
                             <Image
                                 source={require("@/assets/images/eventicon.png")}
-                                style={{ width: 16, height: 16, marginRight: 8, marginTop: 6, tintColor: secondaryColor }}
+                                style={{
+                                    width: 14,
+                                    height: 14,
+                                    marginRight: 8,
+                                    marginTop: Platform.OS === 'ios' ? 3 : 7,
+                                    tintColor: secondaryColor
+                                }}
                                 contentFit="contain"
                             />
                             <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400', flex: 1 }]}>

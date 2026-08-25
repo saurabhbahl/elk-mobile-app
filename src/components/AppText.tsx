@@ -61,5 +61,6 @@ export default function AppText(props: TextProps) {
 const styles = StyleSheet.create({
   defaultText: {
     fontFamily: 'OpenSans-Regular',
+    includeFontPadding: false,
   },
 });

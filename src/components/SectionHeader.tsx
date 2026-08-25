@@ -74,15 +74,17 @@ export default function SectionHeader({
             {showToggleArrow && (
                 <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.toggleArrowButton}>
                     {isCollapsed ? (
-                        <MaterialCommunityIcons
-                            name="arrow-expand"
-                            size={24}
-                            color={isDark ? "#FFFFFF" : primaryColor}
-                        />
-                    ) : (
                         <Feather
                             name="minimize-2"
                             size={22}
+                            color={isDark ? "#FFFFFF" : primaryColor}
+                        />
+
+                    ) : (
+
+                        <MaterialCommunityIcons
+                            name="arrow-expand"
+                            size={24}
                             color={isDark ? "#FFFFFF" : primaryColor}
                         />
                     )}

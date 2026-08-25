@@ -234,10 +234,6 @@ export default function LiveCameraScreen() {
             <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
 
-            <View style={{ backgroundColor: bgColor }}>
-
-            </View>
-
             {apiStatus === "fetching" ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={bgColor} />
@@ -246,7 +242,6 @@ export default function LiveCameraScreen() {
                 <Animated.ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    entering={FadeInUp.duration(200)}
                 >
                     <View>
                         <Navbar />
@@ -307,7 +302,6 @@ export default function LiveCameraScreen() {
                                         source={{ uri: cameraThumbnail || undefined }}
                                         style={[StyleSheet.absoluteFill, { borderRadius: 16, opacity: 0.4 }]}
                                         contentFit="cover"
-                                        transition={150}
                                     />
                                     <Ionicons name="cloud-offline" size={48} color="#FFFFFF" style={{ marginBottom: 12 }} />
                                     <AppText style={[styles.noCameraText, { color: '#FFFFFF', textAlign: 'center', paddingHorizontal: 24 }]}>
@@ -332,7 +326,6 @@ export default function LiveCameraScreen() {
                                             source={{ uri: cameraThumbnail || undefined }}
                                             style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
                                             contentFit="cover"
-                                            transition={150}
                                         />
                                         <View style={[StyleSheet.absoluteFill, styles.playerOverlay, { backgroundColor: secColor ? `${secColor}40` : 'rgba(0, 0, 0, 0.4)' }]}>
                                             <View style={{ width: 44, height: 44, borderRadius: 32, backgroundColor: '#E22B2B', borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
