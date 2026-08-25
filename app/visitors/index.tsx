@@ -263,9 +263,9 @@ export default function VisitorsCenterScreen() {
                             >
                                 <Ionicons
                                     name="call-outline"
-                                    size={18}
+                                    size={20}
                                     color={isDark ? colors.onSurface : (secondaryColor || bgColor || colors.onSurface)}
-                                    style={{ marginRight: 8, marginTop: 4 }}
+                                    style={{ marginRight: 8, marginTop: 0 }}
                                 />
                                 <AppText style={styles.phoneText}>
                                     {visitorsData?.phone_number}
