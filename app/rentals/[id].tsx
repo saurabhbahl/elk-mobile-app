@@ -215,7 +215,7 @@ export default function RentalDetailScreen() {
                             contentWidth={width - 32}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: colors.onSurface,
                                 lineHeight: 20,
                                 textAlign: "left",
@@ -234,7 +234,7 @@ export default function RentalDetailScreen() {
                                 contentWidth={width - 32}
                                 baseStyle={{
                                     fontFamily: 'OpenSans-Regular',
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     color: colors.onSurfaceVariant,
                                     lineHeight: 20,
                                     textAlign: "left",
@@ -254,7 +254,7 @@ export default function RentalDetailScreen() {
                                 contentWidth={width - 32}
                                 baseStyle={{
                                     fontFamily: 'OpenSans-Regular',
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     color: colors.onSurfaceVariant,
                                     lineHeight: 20,
                                     textAlign: "left",
@@ -331,7 +331,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     bannerImage: {
         width: "100%",
-        height: 200,
+        aspectRatio: 4 / 3,
         borderRadius: 12,
         backgroundColor: colors.outlineVariant,
     },
@@ -344,7 +344,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         borderRadius: 6,
     },
     badgeText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "700",
     },
     infoRow: {
@@ -361,7 +361,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         flex: 1,
     },
     notesText: {
-        fontSize: 13,
+        fontSize: 14,
         color: "#555555",
         lineHeight: 18,
         marginBottom: 10,

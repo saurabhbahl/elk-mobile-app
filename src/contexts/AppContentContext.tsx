@@ -3,6 +3,7 @@ import { appRepository } from "../repositories/AppRepository";
 import { SyncManager } from "../services/SyncManager";
 import { preloadManifestCache } from "../utils/imageCache";
 
+import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -83,8 +84,74 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [initialSyncPhase, isMapDownloading, mapDownloadProgress]);
 
+    // Load data from local Web Storage on web
+    const loadFromWebStorage = (): boolean => {
+        try {
+            const raw = typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('@elk_web_merged_content') : null;
+            if (!raw) return false;
+            const data = JSON.parse(raw);
+            if (!data) return false;
+
+            if (data.app_branding) setBrandData(data.app_branding);
+            if (data.popup_content) setPopupData(data.popup_content);
+            if (data.home_screen) setHomeData(data.home_screen);
+            if (data.plan_your_trip) setPlanTripData(data.plan_your_trip);
+            if (data.visitors) setVisitorsData(data.visitors);
+            if (data.programs_setting) setProgramsSettingData(data.programs_setting);
+            if (data.event_settings) setEventSettingsData(data.event_settings);
+            if (data.live_cam_settings) setLiveCamSettingsData(data.live_cam_settings);
+            if (data.trail_settings) setTrailSettingsData(data.trail_settings);
+            if (data.rental_settings) setRentalSettingsData(data.rental_settings);
+            if (data.tips_screen_settings) setTipsScreenSettingsData(data.tips_screen_settings);
+            if (data.map_settings) setMapSettingsData(data.map_settings);
+            if (data.navigation) setNavigationData(data.navigation);
+
+            const sortBySortOrder = (arr: any[]) => {
+                if (!arr || !Array.isArray(arr)) return [];
+                return [...arr].sort((a, b) => {
+                    const orderA = a.sort_order !== undefined && a.sort_order !== null && a.sort_order !== '' ? parseInt(a.sort_order, 10) : 99999;
+                    const orderB = b.sort_order !== undefined && b.sort_order !== null && b.sort_order !== '' ? parseInt(b.sort_order, 10) : 99999;
+                    return orderA - orderB;
+                });
+            };
+
+            if (data.programs) setProgramsData(sortBySortOrder(data.programs));
+            if (data.events) setEventsData(sortBySortOrder(data.events));
+            if (data.trails) setTrailsData(sortBySortOrder(data.trails));
+            if (data.rentals) setRentalsData(sortBySortOrder(data.rentals));
+            if (data.tips) setTipsData(sortBySortOrder(data.tips));
+            if (data.cameras) setCamerasData(sortBySortOrder(data.cameras));
+
+            if (data.pois) {
+                const mappedPois = (data.pois as any[]).map((poi: any) => ({
+                    ...poi,
+                    id: poi.id || 0,
+                    coordinate: {
+                        latitude: parseFloat(poi.latitude || '0'),
+                        longitude: parseFloat(poi.longitude || '0'),
+                    },
+                    title: poi.poi_name || '',
+                    description: poi.pin_popup_summary || poi.full_description || '',
+                }));
+                setPoisData(sortBySortOrder(mappedPois) as any[]);
+            }
+
+            console.log("[WebStorage] Loaded cached web data into React Context.");
+            setApiStatus('ready');
+            return true;
+        } catch (e) {
+            console.error("Failed to load web storage data:", e);
+            return false;
+        }
+    };
+
     // Load data from local SQLite database into memory
     const loadFromSQLite = () => {
+        if (Platform.OS === 'web') {
+            loadFromWebStorage();
+            setApiStatus('ready');
+            return;
+        }
         try {
             // Guarantee the database is clean from expired events before loading them into memory
             SyncManager.cleanupExpiredEvents();
@@ -204,52 +271,33 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 setSyncError("Please check your internet connection.");
                 setIsSyncing(false);
                 setInitialSyncPhase('idle');
+                if (Platform.OS === 'web') {
+                    loadFromWebStorage();
+                    setApiStatus('ready');
+                }
                 return false;
             }
 
-            // Phase 2: Map sync
-            setInitialSyncPhase('map');
-            setSyncStatusText("Downloading map data...");
-            setSyncProgress(0.3);
+            if (Platform.OS !== 'web') {
+                // Phase 2: Map sync
+                setInitialSyncPhase('map');
+                setSyncStatusText("Downloading map data...");
+                setSyncProgress(0.3);
 
-            try {
-                await downloadMap();
-                // Check if map downloaded successfully
-                const mapValid = await checkMapStatus();
-                if (mapValid) {
-                    // Save consent as yes on successful download
-                    await saveConsent('yes');
-                } else {
-                    console.warn("[Sync] Map download did not complete successfully, but continuing initial sync.");
+                try {
+                    await downloadMap();
+                    // Check if map downloaded successfully
+                    const mapValid = await checkMapStatus();
+                    if (mapValid) {
+                        // Save consent as yes on successful download
+                        await saveConsent('yes');
+                    } else {
+                        console.warn("[Sync] Map download did not complete successfully, but continuing initial sync.");
+                    }
+                } catch (mapErr) {
+                    console.warn("[Sync] Error downloading map during initial sync:", mapErr);
                 }
-            } catch (mapErr) {
-                console.warn("[Sync] Error downloading map during initial sync:", mapErr);
             }
-
-            // // Phase 3: Route preload
-            // setInitialSyncPhase('routes');
-            // setSyncStatusText("Downloading map data...");
-            // setSyncProgress(0.9);
-
-            // try {
-            //     const recordsMap = appRepository.getAllRecords();
-            //     if (recordsMap.pois) {
-            //         const mappedPois = (recordsMap.pois as any[]).map((poi: any) => ({
-            //             id: poi.id || 0,
-            //             coordinate: {
-            //                 latitude: parseFloat(poi.latitude || '0'),
-            //                 longitude: parseFloat(poi.longitude || '0'),
-            //             }
-            //         }));
-
-            //         const { preloadAllRoutesHelper } = require('../hooks/useRoutePreloader');
-            //         await preloadAllRoutesHelper(mappedPois, (p: any) => {
-            //             setSyncProgress(0.9 + (p.percentage / 100) * 0.1);
-            //         });
-            //     }
-            // } catch (err) {
-            //     console.warn("[Sync] Route preloading failed:", err);
-            // }
 
             setInitialSyncPhase('complete');
             loadFromSQLite();
@@ -267,8 +315,10 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Performs silent background delta sync
     const refreshData = async (): Promise<boolean> => {
-        const netInfo = await NetInfo.fetch();
-        if (!netInfo.isConnected) return false;
+        const isOnline = Platform.OS === 'web'
+            ? (typeof navigator !== 'undefined' ? navigator.onLine : true)
+            : (await NetInfo.fetch()).isConnected;
+        if (!isOnline) return false;
 
         // Removed last_full_sync override so the app performs delta checks on boot rather than full syncs, preventing SQLite write lockups and CPU spikes.
 
@@ -280,7 +330,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // Fire and forget silent map updates based on timestamp
-            silentUpdateMap().catch(e => console.warn("[AppContent] Silent map update failed:", e));
+            if (Platform.OS !== 'web') {
+                silentUpdateMap().catch(e => console.warn("[AppContent] Silent map update failed:", e));
+            }
 
             setIsSyncing(false);
             return true;
@@ -295,7 +347,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const wasOfflineRef = React.useRef(false);
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
-            const isOnline = !!(state.isConnected && state.isInternetReachable !== false);
+            const isOnline = Platform.OS === 'web'
+                ? (typeof navigator !== 'undefined' ? navigator.onLine : true)
+                : !!(state.isConnected && state.isInternetReachable !== false);
             if (!isOnline) {
                 console.log("[Sync] Device went offline.");
                 wasOfflineRef.current = true;
@@ -317,6 +371,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     // Boot Logic
     useEffect(() => {
         preloadManifestCache().catch(e => console.warn('[AppContent] Failed to preload manifest:', e));
+        if (Platform.OS === 'web') {
+            loadFromWebStorage();
+        }
         const isComplete = SyncManager.isSyncComplete();
         if (isComplete) {
             loadFromSQLite();

@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, Animated } from 'react-native';
+import { StyleSheet, View, Animated, Platform } from 'react-native';
 import AppText from './AppText';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function OfflineBanner() {
     const netInfo = useNetInfo();
-    const isOffline = netInfo.isConnected === false;
+    const isOffline = Platform.OS === 'web' ? false : netInfo.isConnected === false;
 
     if (!isOffline) return null;
 

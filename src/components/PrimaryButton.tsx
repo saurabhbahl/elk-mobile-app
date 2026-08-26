@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     buttonText: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: 600,
         letterSpacing: 0.2,
     },

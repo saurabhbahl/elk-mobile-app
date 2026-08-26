@@ -160,7 +160,7 @@ export default function ProgramDetailScreen() {
                                 }}
                                 contentFit="contain"
                             />
-                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400', marginBottom: 0, flex: 1 }]}>
+                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 14, lineHeight: 20, fontWeight: '400', marginBottom: 0, flex: 1 }]}>
                                 {formatProgramScheduleDate(program.schedule_dates)}
                             </AppText>
                         </View>
@@ -192,7 +192,7 @@ export default function ProgramDetailScreen() {
                             contentWidth={width - 32}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: colors.onSurface,
                                 lineHeight: 20,
                                 textAlign: "left",
@@ -288,7 +288,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     bannerImage: {
         width: "100%",
-        height: 200,
+        aspectRatio: 4 / 3,
         borderRadius: 12,
         backgroundColor: colors.outlineVariant,
     },
@@ -322,7 +322,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     locationAddressText: {
-        fontSize: 13,
+        fontSize: 14,
         color: colors.onSurfaceVariant,
         marginTop: 2,
     },

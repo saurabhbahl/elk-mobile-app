@@ -445,7 +445,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     subtitle: {
       fontFamily: fonts.body,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.onSurfaceVariant,
       marginTop: 4,
       marginBottom: 32,
@@ -464,13 +464,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     sectionTitle: {
       fontFamily: fonts.headingBold,
-      fontSize: 15,
+      fontSize: 16,
       color: isDark ? "#FFFFFF" : brandPrimary,
       marginBottom: 8,
     },
     sectionDescription: {
       fontFamily: fonts.body,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.onSurfaceVariant,
       lineHeight: 20,
       marginBottom: 20,
@@ -488,7 +488,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     toggleText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.onSurface,
     },
     statusContainer: {
@@ -502,7 +502,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     statusText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 13,
+      fontSize: 14,
       color: isDark ? "#FFFFFF" : brandPrimary,
     },
     progressContainer: {
@@ -513,7 +513,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     progressText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 13,
+      fontSize: 14,
       color: isDark ? "#FFFFFF" : brandPrimary,
     },
     downloadButton: {
@@ -528,7 +528,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     downloadButtonText: {
       color: colors.onPrimary,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
     deleteButton: {
       backgroundColor: colors.surfaceContainerLowest,
@@ -542,11 +542,11 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     deleteButtonText: {
       color: colors.error,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
     progressSubtext: {
       fontFamily: fonts.caption,
-      fontSize: 11,
+      fontSize: 12,
       color: colors.onSurfaceVariant,
       marginTop: 2,
     },
@@ -560,7 +560,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     cancelButtonText: {
       color: colors.error,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
     pauseButton: {
       paddingVertical: 8,
@@ -572,7 +572,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     pauseButtonText: {
       color: colors.primary,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
     clearButton: {
       backgroundColor: colors.surfaceContainerLowest,
@@ -591,7 +591,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     clearButtonText: {
       color: colors.error,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
 
     // Error Toast
@@ -630,13 +630,13 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     errorToastTitle: {
       fontFamily: fonts.bodySemiBold,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.onSurface,
       marginBottom: 2,
     },
     errorToastDescription: {
       fontFamily: fonts.body,
-      fontSize: 11,
+      fontSize: 12,
       color: colors.onSurfaceVariant,
     },
     errorToastClose: {

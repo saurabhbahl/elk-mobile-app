@@ -71,6 +71,14 @@ export default function LandingScreen() {
                                         >
                                             <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>Retry Setup</AppText>
                                         </TouchableOpacity>
+                                        {Platform.OS === 'web' && (
+                                            <TouchableOpacity
+                                                style={[styles.button, { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                                                onPress={() => router.replace("/(home)" as any)}
+                                            >
+                                                <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>Preview Web Layout</AppText>
+                                            </TouchableOpacity>
+                                        )}
                                     </>
                                 ) : (
                                     <>

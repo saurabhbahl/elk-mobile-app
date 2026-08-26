@@ -4,9 +4,12 @@ import { Platform } from "react-native";
 const database = Platform.OS === 'web'
     ? ({
         execSync: () => {},
-        runSync: () => {},
+        runSync: () => ({ lastInsertRowId: 1, changes: 1 }),
         getAllSync: () => [],
         getFirstSync: () => null,
+        withTransactionSync: (fn: () => void) => {
+          if (typeof fn === 'function') fn();
+        },
       } as unknown as SQLite.SQLiteDatabase)
     : SQLite.openDatabaseSync("app.db");
 

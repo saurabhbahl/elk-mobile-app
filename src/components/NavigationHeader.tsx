@@ -166,7 +166,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
   },
   routeLabel: {
     fontFamily: fonts.body,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.onSurfaceVariant,
     flex: 1,
   },

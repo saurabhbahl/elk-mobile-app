@@ -20,7 +20,7 @@ import { WebView } from "react-native-webview";
 import { Image } from "expo-image";
 import SectionHeader from "@/src/components/SectionHeader";
 import { STREAM_TYPES } from "@/src/constants/streamTypes";
-import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
+import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { CamerasData, useAppContentData } from "@/src/contexts/AppContentContext";
 import { isValidData, isValidStreamUrl } from "@/src/utils/validation";
@@ -418,7 +418,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     tabButtonText: {
         fontFamily: "OpenSans-SemiBold",
         fontWeight: "500",
-        fontSize: 13,
+        fontSize: 14,
         lineHeight: 20,
         letterSpacing: 0,
         color: isDark ? colors.onSurfaceVariant : primaryColor,
@@ -428,7 +428,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     playerContainer: {
         marginHorizontal: 16,
-        height: 250,
+        width: width - 32,
+        aspectRatio: 343 / 250,
         borderRadius: 16,
         backgroundColor: colors.surfaceVariant,
         borderWidth: 1,
@@ -458,7 +459,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         marginTop: 8,
         fontFamily: "OpenSans-SemiBold",
         fontWeight: "500",
-        fontSize: 13,
+        fontSize: 14,
         lineHeight: 20,
         letterSpacing: 0,
         color: "#8E8E93",
@@ -471,7 +472,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     cameraDescription: {
         fontFamily: "OpenSans-Regular",
         fontWeight: "400",
-        fontSize: 13,
+        fontSize: 14,
         lineHeight: 20,
         letterSpacing: 0,
         color: colors.onSurface,
@@ -480,7 +481,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     infoText: {
         fontFamily: "OpenSans-Regular",
         fontWeight: "400",
-        fontSize: 13,
+        fontSize: 14,
         lineHeight: 20,
         letterSpacing: 0,
         color: colors.onSurface,

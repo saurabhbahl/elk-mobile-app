@@ -100,7 +100,7 @@ const TipCard = React.memo(({ item, index, styles, primaryColor, secondaryColor,
                             contentWidth={width - 64}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: colors.onSurfaceVariant,
                                 lineHeight: 20,
                                 letterSpacing: 0,
@@ -274,11 +274,11 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         borderRadius: 6,
     },
     badgeText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "700",
     },
     tipBody: {
-        fontSize: 13,
+        fontSize: 14,
         color: colors.onSurfaceVariant,
         lineHeight: 18,
     },

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { ApiService } from '../api/ApiService';
 import { db } from '../database/index';
@@ -155,11 +156,20 @@ export class SyncManager {
   }
 
   static isSyncComplete(): boolean {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' && window.localStorage
+        ? localStorage.getItem('@elk_web_is_sync_complete') === 'true'
+        : false;
+    }
     return appRepository.getMetadata('is_sync_complete') === 'true';
   }
 
   static async clearLocalCache() {
     try {
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('@elk_web_merged_content');
+        localStorage.removeItem('@elk_web_is_sync_complete');
+      }
       await clearImageCache();
       appRepository.clearAll();
       console.log("Local database and image cache cleared successfully");
@@ -183,8 +193,10 @@ export class SyncManager {
     }
 
     const task = (async () => {
-      const netInfo = await NetInfo.fetch();
-      if (!netInfo.isConnected) {
+      const isOnline = Platform.OS === 'web'
+        ? (typeof navigator !== 'undefined' ? navigator.onLine : true)
+        : (await NetInfo.fetch()).isConnected;
+      if (!isOnline) {
         throw new Error('No network connection available for initial sync');
       }
 
@@ -205,6 +217,10 @@ export class SyncManager {
           return { endpoint, data: res };
         } catch (err) {
           console.error(`[SyncManager] Error fetching split endpoint ${endpoint}:`, err);
+          if (Platform.OS === 'web') {
+            console.warn(`[SyncManager Web] Fetch failed for ${endpoint}, continuing web mode with cached/empty data...`);
+            return { endpoint, data: null };
+          }
           throw err;
         }
       });
@@ -244,6 +260,20 @@ export class SyncManager {
           }
         }
       });
+
+      if (Platform.OS === 'web') {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem('@elk_web_merged_content', JSON.stringify(mergedJson));
+            localStorage.setItem('@elk_web_is_sync_complete', 'true');
+            localStorage.setItem('@elk_web_last_sync', syncTime);
+          }
+        } catch (webErr) {
+          console.warn('Failed to save to web localStorage:', webErr);
+        }
+        SyncManager.notifyProgress(1.0, 'Sync complete!');
+        return true;
+      }
 
       // Early save branding to SQLite so it can be loaded on the splash screen immediately
       try {

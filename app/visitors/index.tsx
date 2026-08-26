@@ -325,7 +325,7 @@ export default function VisitorsCenterScreen() {
                                                 <AppText
                                                     style={{
                                                         fontFamily: 'OpenSans-Regular',
-                                                        fontSize: 13,
+                                                        fontSize: 14,
                                                         color: colors.onSurface,
                                                         flex: 1,
                                                         paddingRight: 12,
@@ -367,7 +367,7 @@ export default function VisitorsCenterScreen() {
                                         backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
                                     }}
                                 >
-                                    <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 13, color: colors.onSurface }}>
+                                    <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 14, color: colors.onSurface }}>
                                         {String(parsedHours)}
                                     </AppText>
                                 </View>
@@ -383,7 +383,7 @@ export default function VisitorsCenterScreen() {
                                 contentWidth={width - 32}
                                 baseStyle={{
                                     fontFamily: 'OpenSans-Regular',
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     color: colors.onSurface,
                                     lineHeight: 20,
                                     letterSpacing: 0,
@@ -466,7 +466,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         fontFamily: 'OpenSans-Light',
         fontWeight: '300',
         fontStyle: 'normal',
-        fontSize: 11,
+        fontSize: 12,
         letterSpacing: 0,
         marginTop: 2,
     },
@@ -489,7 +489,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         color: colors.onSurface,
     },
     bodyCopy: {
-        fontSize: 13,
+        fontSize: 14,
         color: colors.onSurface,
         lineHeight: 18,
         marginHorizontal: 16,

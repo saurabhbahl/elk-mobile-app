@@ -179,7 +179,7 @@ export default function PlanTripScreen() {
                                                 contentWidth={width - 32}
                                                 baseStyle={{
                                                     fontFamily: 'OpenSans-Regular',
-                                                    fontSize: 13,
+                                                    fontSize: 14,
                                                     color: colors.onSurface,
                                                     lineHeight: 20,
                                                     letterSpacing: 0,
@@ -277,7 +277,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
         flex: 1,
     },
     sectionBody: {
-        fontSize: 13,
+        fontSize: 14,
         color: colors.onSurface,
         lineHeight: 18,
     },

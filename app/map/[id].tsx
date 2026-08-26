@@ -157,7 +157,7 @@ export default function WaypointDetailsScreen() {
                                             style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                             contentFit="contain"
                                         />
-                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 12, color: isDark ? '#fff' : '#000' }]}>
                                             Handicap Accessible
                                         </AppText>
                                     </View>
@@ -169,7 +169,7 @@ export default function WaypointDetailsScreen() {
                                             style={{ width: 16, height: 16, marginRight: 6, tintColor: isDark ? '#fff' : '#000' }}
                                             contentFit="contain"
                                         />
-                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 11, color: isDark ? '#fff' : '#000' }]}>
+                                        <AppText style={[styles.badgeText, { fontFamily: 'OpenSans-SemiBold', fontSize: 12, color: isDark ? '#fff' : '#000' }]}>
                                             Open Year Round
                                         </AppText>
                                     </View>
@@ -184,7 +184,7 @@ export default function WaypointDetailsScreen() {
                                 contentWidth={windowWidth - 40}
                                 baseStyle={{
                                     fontFamily: 'OpenSans-Regular',
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     lineHeight: 20,
                                     color: isDark ? colors.onSurfaceVariant : "#000000",
                                     marginBottom: 16,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     },
     imageSliderContainer: {
         width: "100%",
-        height: 220,
+        aspectRatio: 4 / 3,
         borderRadius: 12,
         overflow: "hidden",
         marginBottom: 20,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         marginRight: 16,
     },
     addressText: {
-        fontSize: 13,
+        fontSize: 14,
         color: "#000000",
         lineHeight: 18,
     },
@@ -340,11 +340,11 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     badgeText: {
-        fontSize: 11,
+        fontSize: 12,
         color: "#000000",
     },
     descriptionText: {
-        fontSize: 13,
+        fontSize: 14,
         lineHeight: 20,
     },
     cautionContainer: {
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     externalLinkText: {
-        fontSize: 13,
+        fontSize: 14,
     },
     errorContainer: {
         flex: 1,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     errorText: {
-        fontSize: 15,
+        fontSize: 16,
         marginTop: 16,
         marginBottom: 24,
     },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     backButtonText: {
-        fontSize: 13,
+        fontSize: 14,
     },
     headerTitleRow: {
         flexDirection: 'row',

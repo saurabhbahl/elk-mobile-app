@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 const SITE_URL = process.env.EXPO_PUBLIC_SITE_URL;
 const API_BASE_URL = `${SITE_URL?.replace(/\/$/, '')}/wp-json/elk/v1`;
 
@@ -20,15 +22,19 @@ export class ApiService {
       if (endpoint == 'events') {
         console.log(url.toString());
       }
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+      };
+      if (Platform.OS !== 'web') {
+        headers['Content-Type'] = 'application/json';
+        headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+        headers['Pragma'] = 'no-cache';
+        headers['Expires'] = '0';
+      }
+
       const response = await this.fetchWithTimeout(url.toString(), {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
+        headers,
       });
 
       if (!response.ok) {

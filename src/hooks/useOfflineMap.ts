@@ -49,10 +49,12 @@ function emit() {
   listeners.forEach(l => l());
 }
 
+import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
 /** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
 async function isValidMbtiles(uri: string): Promise<boolean> {
+  if (Platform.OS === 'web') return true;
   let tempDb: SQLite.SQLiteDatabase | null = null;
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
@@ -195,6 +197,10 @@ export const useOfflineMap = () => {
   }, []);
 
   const checkMapStatus = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      setHasMap(false);
+      return false;
+    }
     try {
       // Use dynamically saved list if available, else fall back to static list
       let expectedFiles: Array<{ name?: string; path?: string; uri: string }> = MBTILES_PATHS;
@@ -278,8 +284,8 @@ export const useOfflineMap = () => {
     }
   };
   const downloadMap = async () => {
-    if (isExpoGo) {
-      console.log('Download aborted: Expo Go does not support custom MBTiles');
+    if (isExpoGo || Platform.OS === 'web') {
+      console.log('Download aborted: Web/Expo Go does not support custom MBTiles');
       return;
     }
 

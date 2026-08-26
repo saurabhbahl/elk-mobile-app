@@ -136,8 +136,8 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
 
 const createStyles = (primaryColor: string) => StyleSheet.create({
     horizontalCard: {
-        width: 286,
-        height: 250,
+        width: Math.min(286, width - 48),
+        aspectRatio: 286 / 250,
         borderRadius: 10,
         overflow: "hidden",
         backgroundColor: primaryColor,
@@ -149,7 +149,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         flexDirection: 'column',
     },
     featuredCard: {
-        height: 269.33,
+        aspectRatio: 343 / 269.33,
         borderRadius: 10,
         overflow: "hidden",
         backgroundColor: primaryColor,
@@ -164,7 +164,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
     },
     gridCard: {
         width: cardWidth,
-        height: 220,
+        aspectRatio: 165.5 / 220,
         borderRadius: 12,
         overflow: "hidden",
         backgroundColor: primaryColor,
@@ -177,7 +177,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
     },
     listCard: {
         width: "100%",
-        height: 269.33,
+        aspectRatio: 343 / 269.33,
         borderRadius: 10,
         overflow: "hidden",
         backgroundColor: primaryColor,
@@ -236,7 +236,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         zIndex: 5,
     },
     cardBadgeMonth: {
-        fontSize: 9,
+        fontSize: 10,
         fontFamily: 'OpenSans-Bold',
         color: '#FFFFFF',
         letterSpacing: 0.5,
@@ -251,7 +251,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         textAlign: 'center',
     },
     cardBadgeText: {
-        fontSize: 9,
+        fontSize: 10,
         fontFamily: 'OpenSans-Bold',
         color: '#FFFFFF',
         letterSpacing: 0.3,
@@ -271,7 +271,7 @@ const createStyles = (primaryColor: string) => StyleSheet.create({
         backgroundColor: '#ffffff'
     },
     cardViewButtonText: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: 'OpenSans-Bold',
         color: '#000000',
     },

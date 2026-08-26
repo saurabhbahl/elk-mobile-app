@@ -24,7 +24,7 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     // Only show offline when explicitly disconnected (isConnected === false).
     // isInternetReachable is unreliable on Android release builds (often null) so we
     // do NOT use it to trigger offline mode — avoids false "offline" on strong WiFi.
-    const isOffline = forceShowForTesting || netInfo.isConnected === false;
+    const isOffline = forceShowForTesting || (Platform.OS === 'web' ? false : netInfo.isConnected === false);
     const [visible, setVisible] = useState(false);
     const [hasDismissed, setHasDismissed] = useState(false);
 
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     primaryButtonText: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 'bold',
     },
     secondaryButton: {
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
     },
     secondaryButtonText: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: 'bold',
     },
 });

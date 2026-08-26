@@ -376,7 +376,7 @@ export default function HomeScreen() {
                                     contentWidth={width - 16}
                                     baseStyle={{
                                         fontFamily: 'Inter-Regular',
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: '400',
                                         color: isDark ? colors.onSurfaceVariant : '#333333',
                                         lineHeight: 16,
@@ -386,7 +386,7 @@ export default function HomeScreen() {
                                     tagsStyles={{
                                         p: {
                                             fontFamily: 'Inter-Regular',
-                                            fontSize: 11,
+                                            fontSize: 12,
                                             fontWeight: '400',
                                             lineHeight: 16,
                                             letterSpacing: -0.1,
@@ -607,7 +607,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     menuCardTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "600",
         color: colors.onSurface,
     },
@@ -632,7 +632,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     welcomeBannerCard: {
         width: '100%',
-        minHeight: (width - 32) * (25 / 36),
+        aspectRatio: 36 / 25,
     },
 
     welcomeBannerOverlay: {
@@ -653,7 +653,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     aboutKecaText: {
         fontFamily: 'Roboto-Bold',
         color: '#FFFFFF',
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 'bold',
     },
 
@@ -703,8 +703,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     mapCard: {
-        height: 250,
         width: "100%",
+        aspectRatio: 343 / 250,
     },
 
     viewMapButton: {
@@ -735,8 +735,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     programCard: {
-        width: 286,
-        height: 250,
+        width: Math.min(286, width - 48),
+        aspectRatio: 286 / 250,
         borderRadius: 10,
         overflow: "hidden",
         backgroundColor: "#000000",
@@ -784,7 +784,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     cardBadgeMonth: {
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 'bold',
         color: '#FFFFFF',
         letterSpacing: 0.5,
@@ -808,7 +808,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     cardLocation: {
-        fontSize: 11,
+        fontSize: 12,
         color: 'rgba(255, 255, 255, 0.8)',
         marginTop: 2,
     },
@@ -826,7 +826,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     cardViewButtonText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#000000',
     },
@@ -1045,7 +1045,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     modalCtaText: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "bold",
     },
 

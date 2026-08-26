@@ -171,14 +171,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     eventCardName: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "700",
         color: colors.onSurface,
         lineHeight: 16,
     },
 
     eventCardDate: {
-        fontSize: 11,
+        fontSize: 12,
         color: colors.onSurfaceVariant,
         marginTop: 4,
     },

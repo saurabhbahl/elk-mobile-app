@@ -277,7 +277,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     instructionDistance: {
       fontFamily: fonts.caption,
-      fontSize: 11,
+      fontSize: 12,
       color: colors.onSurfaceVariant,
       textTransform: 'uppercase',
       letterSpacing: 1.2,
@@ -355,7 +355,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     destinationText: {
       fontFamily: fonts.bodyMedium,
-      fontSize: 13,
+      fontSize: 14,
       color: colors.onSurfaceVariant,
       flex: 1,
     },
@@ -371,14 +371,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     statLabel: {
       fontFamily: fonts.caption,
-      fontSize: 9,
+      fontSize: 10,
       color: colors.onSurfaceVariant,
       letterSpacing: 1,
       marginBottom: 2,
     },
     statValue: {
       fontFamily: fonts.headingBold,
-      fontSize: 21,
+      fontSize: 20,
       color: colors.primary,
     },
     statUnit: {
@@ -403,6 +403,6 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     exitButtonText: {
       color: colors.onError,
       fontFamily: fonts.bodyBold,
-      fontSize: 13,
+      fontSize: 14,
     },
   });

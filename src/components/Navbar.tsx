@@ -136,7 +136,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     tipsBadgeText: {
-        fontSize: 7,
+        fontSize: 8,
         fontWeight: "900",
     },
 });

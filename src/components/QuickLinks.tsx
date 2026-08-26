@@ -17,10 +17,15 @@ export default function QuickLinks() {
     const { width: screenWidth } = useWindowDimensions();
     const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
-    // Calculate dynamic card width so 2 full cards and 1/10th of 3rd card (2.1 cards) fit on phone screens,
-    // capped at MAX_CARD_WIDTH on wider screens like iPads/tablets.
-    const calculatedWidth = (screenWidth - MENU_PADDING - 2 * MENU_GAP) / 2.1;
-    const cardWidth = Math.min(MAX_CARD_WIDTH, Math.max(120, calculatedWidth));
+    // Calculate dynamic card width: 2.1 cards on mobile screens (< 600px),
+    // and 4.2 cards on iPad/wider screens (>= 600px).
+    const isWiderScreen = screenWidth >= 600;
+    const visibleCards = isWiderScreen ? 4.2 : 2.1;
+    const gapCount = isWiderScreen ? 4 : 2;
+    const calculatedWidth = (screenWidth - MENU_PADDING - gapCount * MENU_GAP) / visibleCards;
+    const cardWidth = isWiderScreen
+        ? Math.max(120, calculatedWidth)
+        : Math.min(MAX_CARD_WIDTH, Math.max(120, calculatedWidth));
 
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();

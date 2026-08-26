@@ -171,7 +171,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     programCardImage: {
         width: "100%",
-        height: 110,
+        aspectRatio: 165.5 / 110,
     },
 
     programCardContent: {
@@ -182,14 +182,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     programCardName: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: "700",
         color: colors.onSurface,
         lineHeight: 16,
     },
 
     programCardDate: {
-        fontSize: 11,
+        fontSize: 12,
         color: colors.onSurfaceVariant,
         marginTop: 4,
     },
@@ -212,7 +212,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     programListCardImage: {
         width: 110,
-        height: 110,
+        aspectRatio: 1,
     },
 
     programListCardContent: {
@@ -223,7 +223,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     programListCardName: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "700",
         color: colors.onSurface,
         marginBottom: 6,

@@ -71,10 +71,10 @@ const TrailCard = React.memo(({ item, index, styles }: {
                 {/* Seasonal Closure Notice */}
                 {isValidData(item.seasonal_closure) ? (
                     <View style={{ marginTop: 12 }}>
-                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 13, color: isDark ? colors.onSurface : '#000000' }}>
+                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, color: isDark ? colors.onSurface : '#000000' }}>
                             Seasonal Closure:
                         </AppText>
-                        <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 13, color: isDark ? colors.onSurfaceVariant : '#555555', marginTop: 2 }}>
+                        <AppText style={{ fontFamily: 'OpenSans-Regular', fontSize: 14, color: isDark ? colors.onSurfaceVariant : '#555555', marginTop: 2 }}>
                             {item.seasonal_closure}
                         </AppText>
                     </View>
@@ -218,7 +218,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     trailName: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "700",
         color: isDark ? colors.onSurface : primaryColor,
         marginRight: 8,
@@ -233,7 +233,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     trailDescription: {
         fontFamily: 'OpenSans-Regular',
-        fontSize: 13,
+        fontSize: 14,
         color: isDark ? colors.onSurfaceVariant : "#555555",
         lineHeight: 18,
         textAlign: "left",

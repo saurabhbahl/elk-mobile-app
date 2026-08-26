@@ -220,7 +220,7 @@ export default function EventDetailScreen() {
                                 }}
                                 contentFit="contain"
                             />
-                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 13, lineHeight: 20, fontWeight: '400', flex: 1 }]}>
+                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 14, lineHeight: 20, fontWeight: '400', flex: 1 }]}>
                                 {formatEventDateTime(event["start_date_&_time"] as string, isValidData(event["end_date_&_time"]) ? event["end_date_&_time"] as string : undefined)}
                             </AppText>
                         </View>
@@ -252,7 +252,7 @@ export default function EventDetailScreen() {
                             contentWidth={width - 32}
                             baseStyle={{
                                 fontFamily: 'OpenSans-Regular',
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: colors.onSurface,
                                 lineHeight: 20,
                                 marginTop: 10,
@@ -345,7 +345,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     bannerImage: {
         width: "100%",
-        height: 200,
+        aspectRatio: 4 / 3,
         borderRadius: 12,
         backgroundColor: colors.outlineVariant,
     },
@@ -379,7 +379,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     locationAddressText: {
-        fontSize: 13,
+        fontSize: 14,
         color: colors.onSurfaceVariant,
         marginTop: 2,
     },
@@ -401,7 +401,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
 
     registerButtonText: {
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: "bold",
     },
     headerTitleRow: {

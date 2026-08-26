@@ -237,11 +237,20 @@ function MapScreen() {
   const [pickerType, setPickerType] = useState<'start' | 'end' | 'stop'>('start');
   const [stopPoints, setStopPoints] = useState<Waypoint[]>([]);
   const [isSelectingPin, setIsSelectingPin] = useState(false);
+  const isSelectingPinRef = useRef(false); // always current, safe to read in map event closures
   const [pinPickerType, setPinPickerType] = useState<'start' | 'end' | 'stop'>('start');
   const [pinPickerStopIndex, setPinPickerStopIndex] = useState<number | null>(null);
-  // Center coordinate of map for drop-pin crosshair
+  // mapCenterRef always holds the latest geographic center of the map camera.
+  // onRegionDidChange fires with the exact camera center — which is the same coordinate
+  // as the visual center of the map view where the crosshair sits. Using a ref (not state)
+  // means confirm reads the freshest value without async pixel conversion.
+  const mapCenterRef = useRef<{ lng: number; lat: number } | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lng: number; lat: number } | null>(null);
   const [dropPinPreviewCoordinate, setDropPinPreviewCoordinate] = useState<{ longitude: number; latitude: number } | null>(null);
+  // Tracks the Map view's pixel dimensions so we can compute its exact center
+  // for getCoordinateFromView — the crosshair sits at [width/2, height/2].
+  const mapViewSizeRef = useRef({ width: windowWidth, height: windowHeight });
+
   // User heading — Animated.Value so rotation updates without re-renders
   const headingAnim = useRef(new Animated.Value(0)).current;
   // Keep a plain ref for cardinal label (only needs to update occasionally)
@@ -583,6 +592,7 @@ function MapScreen() {
 
   // ── Waypoint interaction ────────────────────────────────────────────────────
   const handleWaypointPress = useCallback((waypoint: Waypoint) => {
+    if (isNavigating) return;
     isTappingMarker.current = true;
     setTimeout(() => { isTappingMarker.current = false; }, 300);
     setSelectedWaypoint(waypoint);
@@ -1014,15 +1024,19 @@ function MapScreen() {
   // ── Memoized waypoint marker ────────────────────────────────────────────────
   const WaypointMarker = useMemo(() => {
     const WaypointMarkerComponent = ({
-      waypoint, isSelected, onPress, Marker: MarkerComp
-    }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; Marker: any }) => (
+      waypoint, isSelected, onPress, disabled, Marker: MarkerComp
+    }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; disabled?: boolean; Marker: any }) => (
       <MarkerComp
         key={`waypoint-${waypoint.id}`}
         id={`waypoint-${waypoint.id}`}
         lngLat={toLngLat(waypoint.coordinate)}
         anchor="bottom"
       >
-        <TouchableOpacity onPress={() => onPress(waypoint)}>
+        <TouchableOpacity
+          onPress={() => onPress(waypoint)}
+          disabled={disabled}
+          activeOpacity={disabled ? 1 : 0.7}
+        >
           {waypoint.pin_icon_override ? (
             <Image
               source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : (waypoint.pin_icon_override as any).url }}
@@ -1150,6 +1164,12 @@ function MapScreen() {
             style={styles.map}
             mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
             compass={false}
+            onLayout={(e: import('react-native').LayoutChangeEvent) => {
+              mapViewSizeRef.current = {
+                width: e.nativeEvent.layout.width,
+                height: e.nativeEvent.layout.height,
+              };
+            }}
             onDidFinishLoadingMap={() => setIsMapLoaded(true)}
             onPress={(event: any) => {
               if (isTappingMarker.current) return;
@@ -1161,9 +1181,29 @@ function MapScreen() {
               setHighlightedRoute(null);
               setShowHeader(prev => !prev);
             }}
+            onRegionIsChanging={(feature: any) => {
+              // Fires continuously during drag — update the pin marker in real-time
+              // so it tracks the map center as the user pans.
+              if (!isSelectingPinRef.current) return;
+              // MapLibre passes a GeoJSON Feature: center is geometry.coordinates = [lng, lat]
+              const center = feature?.geometry?.coordinates
+                ?? feature?.nativeEvent?.center
+                ?? feature?.center;
+              if (Array.isArray(center) && center.length === 2) {
+                const [lng, lat] = center;
+                if (!isNaN(lng) && !isNaN(lat)) {
+                  mapCenterRef.current = { lng, lat };
+                  // Update the marker so it follows the map center live
+                  setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
+                }
+              }
+            }}
             onRegionDidChange={(feature: any) => {
-              // Track map center for drop-pin crosshair & enforce North America bounds
-              const center = feature?.nativeEvent?.center ?? feature?.center;
+              // MapLibre passes a GeoJSON Feature: center is geometry.coordinates = [lng, lat]
+              const center = feature?.geometry?.coordinates
+                ?? feature?.properties?.center
+                ?? feature?.nativeEvent?.center
+                ?? feature?.center;
               if (Array.isArray(center) && center.length === 2) {
                 const [lng, lat] = center;
                 // Enforce boundary clamp [-170, 14, -52, 72]
@@ -1178,8 +1218,10 @@ function MapScreen() {
                   return;
                 }
 
+                // Keep ref always fresh for immediate confirm reads
+                mapCenterRef.current = { lng, lat };
                 setMapCenter({ lng, lat });
-                if (isSelectingPin) {
+                if (isSelectingPinRef.current) {
                   setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
                 }
               }
@@ -1188,6 +1230,7 @@ function MapScreen() {
             {currentRegion && (
               <Camera
                 ref={cameraRef}
+                padding={isSelectingPin ? { paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: 0 } : undefined}
                 defaultSettings={{
                   centerCoordinate: [currentRegion.longitude, currentRegion.latitude],
                   zoomLevel: mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9,
@@ -1278,9 +1321,36 @@ function MapScreen() {
                 waypoint={wp}
                 isSelected={selectedWaypoint?.id === wp.id}
                 onPress={handleWaypointPress}
+                disabled={isNavigating}
                 Marker={Marker}
               />
             ))}
+
+            {/* Intermediate stop point markers (rendered ONLY for dropped pins) */}
+            {stopPoints
+              .filter((stop) => stop.title === 'Dropped Pin' || stop.id < 0)
+              .map((stop, idx) => (
+                <Marker
+                  key={`stop-point-${stop.id}-${idx}`}
+                  id={`stop-point-${stop.id}-${idx}`}
+                  lngLat={[stop.coordinate.longitude, stop.coordinate.latitude]}
+                  anchor={{ x: 0.5, y: 1.0 }}
+                >
+                  <TouchableOpacity
+                    onPress={() => setSelectedWaypoint(stop)}
+                    disabled={isNavigating}
+                    activeOpacity={isNavigating ? 1 : 0.8}
+                    style={styles.routePinBadgeContainer}
+                  >
+                    <View style={[styles.routePinBadge, { backgroundColor: '#E65100' }]}>
+                      <MaterialIcons name="place" size={14} color="#FFFFFF" />
+                      <AppText style={styles.routePinBadgeText}>{`Stop ${idx + 1}`}</AppText>
+                    </View>
+                    <View style={[styles.routePinPinhead, { borderTopColor: '#E65100' }]} />
+                  </TouchableOpacity>
+                </Marker>
+              ))}
+
           </Map>
         )}
 
@@ -1522,11 +1592,42 @@ function MapScreen() {
           onRemoveStop={(idx) => setStopPoints(prev => prev.filter((_, i) => i !== idx))}
           onUpdateStop={(idx, wp) => setStopPoints(prev => prev.map((s, i) => i === idx ? wp : s))}
           onSetPickerType={setPickerType}
-          onSelectOnMap={async (type, stopIndex) => {
+          onSelectOnMap={(type, stopIndex) => {
             setPinPickerType(type);
             if (type === 'stop' && stopIndex !== undefined) {
               setPinPickerStopIndex(stopIndex);
             }
+            // Reset camera padding so MapLibre center is 100% aligned with physical screen center
+            try {
+              const currentCenter = mapCenterRef.current
+                ? [mapCenterRef.current.lng, mapCenterRef.current.lat]
+                : currentRegion
+                ? [currentRegion.longitude, currentRegion.latitude]
+                : undefined;
+              if (currentCenter && cameraRef.current?.easeTo) {
+                cameraRef.current.easeTo({
+                  center: currentCenter,
+                  padding: { paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: 0 },
+                  duration: 150,
+                });
+              }
+            } catch (e) {
+              console.warn('[DropPin] Reset camera padding failed:', e);
+            }
+            // Set the initial pin coordinate immediately from the current map center
+            // so the Marker mounts ONCE at activation, not on the first pan event.
+            if (mapCenterRef.current) {
+              setDropPinPreviewCoordinate({
+                longitude: mapCenterRef.current.lng,
+                latitude: mapCenterRef.current.lat,
+              });
+            } else if (currentRegion) {
+              setDropPinPreviewCoordinate({
+                longitude: currentRegion.longitude,
+                latitude: currentRegion.latitude,
+              });
+            }
+            isSelectingPinRef.current = true;
             setIsSelectingPin(true);
             setShowPointPicker(false);
           }}
@@ -1616,20 +1717,20 @@ function MapScreen() {
             <View style={[styles.pinActionBar, { bottom: insets.bottom + 100 }]}>
               <TouchableOpacity
                 style={styles.pinCancelBtn}
-                onPress={() => { setIsSelectingPin(false); setShowPointPicker(true); }}
+                onPress={() => { isSelectingPinRef.current = false; setIsSelectingPin(false); setShowPointPicker(true); }}
               >
                 <MaterialIcons name="close" size={20} color={colors.primary} />
                 <AppText style={styles.pinCancelText}>Cancel</AppText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.pinConfirmBtn}
-                onPress={async () => {
-                  let lng = mapCenter?.lng ?? (currentRegion?.longitude ?? 0);
-                  let lat = mapCenter?.lat ?? (currentRegion?.latitude ?? 0);
-                  let source = mapCenter ? 'tracked-region-center' : 'default-region-center';
+                onPress={() => {
+                  const lng = dropPinPreviewCoordinate?.longitude ?? mapCenterRef.current?.lng ?? (currentRegion?.longitude ?? 0);
+                  const lat = dropPinPreviewCoordinate?.latitude ?? mapCenterRef.current?.lat ?? (currentRegion?.latitude ?? 0);
 
                   const pin: Waypoint = {
-                    id: -Date.now(), title: 'Dropped Pin',
+                    id: -Date.now(),
+                    title: 'Dropped Pin',
                     coordinate: { longitude: lng, latitude: lat },
                     description: 'Custom point selected on map',
                   };
@@ -1639,10 +1740,8 @@ function MapScreen() {
                   }
                   else if (pinPickerType === 'stop') {
                     if (pinPickerStopIndex !== null) {
-                      // Update existing stop at the specified index
                       setStopPoints(prev => prev.map((s, i) => i === pinPickerStopIndex ? pin : s));
                     } else {
-                      // Add new stop if no index specified
                       setStopPoints(prev => [...prev, pin]);
                     }
                   }
@@ -1650,6 +1749,7 @@ function MapScreen() {
                     setDestinationPoint(pin);
                   }
                   setPinPickerStopIndex(null);
+                  isSelectingPinRef.current = false;
                   setIsSelectingPin(false);
                   setShowPointPicker(true);
                 }}
@@ -1950,8 +2050,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       fontFamily: 'OpenSans-Regular',
       fontWeight: '400',
       fontStyle: 'normal',
-      fontSize: 13,
-      lineHeight: 13,
+      fontSize: 14,
+      lineHeight: 14,
       letterSpacing: 0,
       color: isDark ? colors.onSurface : '#ffffff',
     },
@@ -2002,7 +2102,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderWidth: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.08)',
     },
     compassArrow: { marginBottom: 1 },
-    compassLabel: { fontFamily: fonts.caption, fontSize: 9, color: brandPrimary, letterSpacing: 0.5 },
+    compassLabel: { fontFamily: fonts.caption, fontSize: 10, color: brandPrimary, letterSpacing: 0.5 },
     pinActionBar: {
       position: 'absolute', left: 16, right: 16, zIndex: 600,
       flexDirection: 'row', gap: 12,
@@ -2013,14 +2113,51 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       backgroundColor: colors.surface + 'f7',
       flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
     },
-    pinCancelText: { fontFamily: fonts.bodyBold, fontSize: 15, color: brandPrimary },
+    pinCancelText: { fontFamily: fonts.bodyBold, fontSize: 16, color: brandPrimary },
     pinConfirmBtn: {
       flex: 2, height: 52, borderRadius: 12,
       backgroundColor: brandPrimary,
       flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
       shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
     },
-    pinConfirmText: { fontFamily: fonts.bodyBold, fontSize: 15, color: colors.onPrimary },
+    pinConfirmText: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.onPrimary },
+
+    // Route & Stop point pin badge styles
+    routePinBadgeContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    routePinBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+      borderRadius: 12,
+      gap: 4,
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+    },
+    routePinBadgeText: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 12,
+      color: '#FFFFFF',
+      maxWidth: 110,
+    },
+    routePinPinhead: {
+      width: 0,
+      height: 0,
+      backgroundColor: 'transparent',
+      borderStyle: 'solid',
+      borderLeftWidth: 5,
+      borderRightWidth: 5,
+      borderTopWidth: 6,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      marginTop: -1,
+    },
 
     // Navigation compass badge
     navCompassBadge: {
@@ -2032,7 +2169,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
     },
     navCompassArrow: { marginBottom: 1 },
-    navCompassLabel: { fontFamily: fonts.caption, fontSize: 9, color: colors.onPrimary + 'cc', letterSpacing: 0.5 },
+    navCompassLabel: { fontFamily: fonts.caption, fontSize: 10, color: colors.onPrimary + 'cc', letterSpacing: 0.5 },
 
     // User heading arrow (navigation mode)
     userArrowContainer: {
@@ -2103,7 +2240,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     modalButtonPrimary: { backgroundColor: brandPrimary, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
     modalButtonTextPrimary: { color: colors.onPrimary, fontFamily: fonts.bodySemiBold, fontSize: 16 },
     modalButtonSecondary: { height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
-    modalButtonTextSecondary: { color: brandPrimary, fontFamily: fonts.bodySemiBold, fontSize: 15 },
+    modalButtonTextSecondary: { color: brandPrimary, fontFamily: fonts.bodySemiBold, fontSize: 16 },
     checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 32, gap: 8 },
     checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: colors.outline, justifyContent: 'center', alignItems: 'center' },
     checkboxChecked: { backgroundColor: brandPrimary, borderColor: brandPrimary },
@@ -2208,7 +2345,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     arrivalDescription: {
       fontFamily: fonts.body,
-      fontSize: 15,
+      fontSize: 16,
       color: colors.onSurfaceVariant,
       textAlign: 'center',
       lineHeight: 22,
@@ -2248,7 +2385,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderColor: colors.outlineVariant + '33',
     },
     attributionText: {
-      fontSize: 9,
+      fontSize: 10,
       fontFamily: fonts.body,
       color: isDark ? '#FFFFFF' : '#333333',
     },
