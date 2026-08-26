@@ -485,10 +485,10 @@ function MapScreen() {
       }
       hasCenteredOnce.current = true;
       const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
-      
+
       // Snap instantly (duration: 0) to POI pins bounding box
       fitRouteToCamera(coords, 0);
-      
+
       // Delay dismissing the loading cover slightly so the native thread completes layout snap
       setTimeout(() => {
         setIsMapReady(true);
@@ -586,15 +586,17 @@ function MapScreen() {
     isTappingMarker.current = true;
     setTimeout(() => { isTappingMarker.current = false; }, 300);
     setSelectedWaypoint(waypoint);
+    setDestinationPoint(waypoint);
     if (!isNavigating) { activeRouteRef.current = null; setRouteVersion(v => v + 1); }
     const index = waypoints.findIndex(w => w.id === waypoint.id);
     if (index !== -1) {
       setTimeout(() => { flatListRef.current?.scrollToIndex({ index, animated: false }); }, 50);
     }
-  }, [isNavigating]);
+  }, [isNavigating, waypoints]);
 
   const handleCloseCard = useCallback(() => {
     setSelectedWaypoint(null);
+    setDestinationPoint(null);
     if (waypoints.length > 0) {
       const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
       setTimeout(() => {
@@ -614,6 +616,7 @@ function MapScreen() {
     const waypoint = waypoints[index];
     if (waypoint) {
       setSelectedWaypoint(waypoint);
+      setDestinationPoint(waypoint);
       if (!isNavigating) { activeRouteRef.current = null; setRouteVersion(v => v + 1); }
       requestAnimationFrame(() => {
         cameraRef.current?.easeTo({
@@ -622,7 +625,7 @@ function MapScreen() {
         });
       });
     }
-  }, [isNavigating, windowWidth]);
+  }, [isNavigating, windowWidth, waypoints]);
 
   // ── Open route planner ──────────────────────────────────────────────────────
   // Pass an optional destination to pre-fill from the waypoint carousel card
@@ -639,11 +642,14 @@ function MapScreen() {
       setStartPoint(null);
       setPickerType('start');
     }
-    if (destination) {
-      setDestinationPoint(destination);
+    const targetDest = destination ?? selectedWaypoint;
+    if (targetDest) {
+      setDestinationPoint(targetDest);
+    } else {
+      setDestinationPoint(null);
     }
     setShowPointPicker(true);
-  }, [location]);
+  }, [location, selectedWaypoint]);
 
   // ── Start navigation ────────────────────────────────────────────────────────
   const startActualNavigation = useCallback(async (from: Waypoint, to: Waypoint, stops: Waypoint[] = [], isRecalculating = false) => {
@@ -1141,140 +1147,141 @@ function MapScreen() {
         ) : (
           <Map
             ref={mapRef}
-          style={styles.map}
-          mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
-          compass={false}
-          onDidFinishLoadingMap={() => setIsMapLoaded(true)}
-          onPress={(event: any) => {
-            if (isTappingMarker.current) return;
-            if (isNavigating) return;
-            setSelectedWaypoint(null);
-            activeRouteRef.current = null;
-            setRouteVersion(v => v + 1);
-            setHighlightedRoute(null);
-            setShowHeader(prev => !prev);
-          }}
-          onRegionDidChange={(feature: any) => {
-            // Track map center for drop-pin crosshair & enforce North America bounds
-            const center = feature?.nativeEvent?.center ?? feature?.center;
-            if (Array.isArray(center) && center.length === 2) {
-              const [lng, lat] = center;
-              // Enforce boundary clamp [-170, 14, -52, 72]
-              const clampedLng = Math.min(-52.0, Math.max(-170.0, lng));
-              const clampedLat = Math.min(72.0, Math.max(14.0, lat));
+            style={styles.map}
+            mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
+            compass={false}
+            onDidFinishLoadingMap={() => setIsMapLoaded(true)}
+            onPress={(event: any) => {
+              if (isTappingMarker.current) return;
+              if (isNavigating) return;
+              setSelectedWaypoint(null);
+              setDestinationPoint(null);
+              activeRouteRef.current = null;
+              setRouteVersion(v => v + 1);
+              setHighlightedRoute(null);
+              setShowHeader(prev => !prev);
+            }}
+            onRegionDidChange={(feature: any) => {
+              // Track map center for drop-pin crosshair & enforce North America bounds
+              const center = feature?.nativeEvent?.center ?? feature?.center;
+              if (Array.isArray(center) && center.length === 2) {
+                const [lng, lat] = center;
+                // Enforce boundary clamp [-170, 14, -52, 72]
+                const clampedLng = Math.min(-52.0, Math.max(-170.0, lng));
+                const clampedLat = Math.min(72.0, Math.max(14.0, lat));
 
-              if (clampedLng !== lng || clampedLat !== lat) {
-                cameraRef.current?.easeTo({
-                  center: [clampedLng, clampedLat],
-                  duration: 300,
-                });
-                return;
+                if (clampedLng !== lng || clampedLat !== lat) {
+                  cameraRef.current?.easeTo({
+                    center: [clampedLng, clampedLat],
+                    duration: 300,
+                  });
+                  return;
+                }
+
+                setMapCenter({ lng, lat });
+                if (isSelectingPin) {
+                  setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
+                }
               }
+            }}
+          >
+            {currentRegion && (
+              <Camera
+                ref={cameraRef}
+                defaultSettings={{
+                  centerCoordinate: [currentRegion.longitude, currentRegion.latitude],
+                  zoomLevel: mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9,
+                }}
+                maxBounds={AMERICA_MAX_BOUNDS}
+                minZoom={3.5}
+              />
+            )}
+            {/* Built-in dot — hidden during navigation so our custom arrow takes over */}
+            {!isNavigating && (
+              <UserLocation
+                animated
+                androidRenderMode="normal"
+                showsUserHeadingIndicator
+              />
+            )}
 
-              setMapCenter({ lng, lat });
-              if (isSelectingPin) {
-                setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
-              }
-            }
-          }}
-        >
-          {currentRegion && (
-            <Camera
-              ref={cameraRef}
-              defaultSettings={{
-                centerCoordinate: [currentRegion.longitude, currentRegion.latitude],
-                zoomLevel: mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9,
-              }}
-              maxBounds={AMERICA_MAX_BOUNDS}
-              minZoom={3.5}
+            {/* Custom heading arrow shown during navigation */}
+            {isNavigating && location && (
+              <Marker
+                id="user-heading-arrow"
+                lngLat={[location.longitude, location.latitude]}
+                anchor="center"
+              >
+                {/* Pulse ring behind the arrow */}
+                <View style={styles.userArrowContainer}>
+                  <View style={styles.userArrowPulse} />
+                  <Animated.View
+                    style={[
+                      styles.userArrowInner,
+                      {
+                        transform: [{
+                          rotate: headingAnim.interpolate({
+                            inputRange: [-720, 720],
+                            outputRange: ['-720deg', '720deg'],
+                          }),
+                        }],
+                      },
+                    ]}
+                  >
+                    <MaterialIcons name="navigation" size={26} color="white" />
+                  </Animated.View>
+                </View>
+              </Marker>
+            )}
+
+            {/* ── All route layers in one component ── */}
+            <MapRouteLayers
+              GeoJSONSource={GeoJSONSource}
+              Layer={Layer}
+              mainRouteFeature={mainRouteFeature as any}
+              orangeRouteFeature={orangeRouteFeature as any}
+              activeRouteData={activeRouteRef.current}
+              routeVersion={routeVersion}
+              isNavigating={isNavigating}
+              highlightedRoute={highlightedRoute}
+              onRoutePress={handleRoutePress}
             />
-          )}
-          {/* Built-in dot — hidden during navigation so our custom arrow takes over */}
-          {!isNavigating && (
-            <UserLocation
-              animated
-              androidRenderMode="normal"
-              showsUserHeadingIndicator
-            />
-          )}
-
-          {/* Custom heading arrow shown during navigation */}
-          {isNavigating && location && (
-            <Marker
-              id="user-heading-arrow"
-              lngLat={[location.longitude, location.latitude]}
-              anchor="center"
-            >
-              {/* Pulse ring behind the arrow */}
-              <View style={styles.userArrowContainer}>
-                <View style={styles.userArrowPulse} />
-                <Animated.View
-                  style={[
-                    styles.userArrowInner,
-                    {
-                      transform: [{
-                        rotate: headingAnim.interpolate({
-                          inputRange: [-720, 720],
-                          outputRange: ['-720deg', '720deg'],
-                        }),
-                      }],
-                    },
-                  ]}
-                >
-                  <MaterialIcons name="navigation" size={26} color="white" />
-                </Animated.View>
-              </View>
-            </Marker>
-          )}
-
-          {/* ── All route layers in one component ── */}
-          <MapRouteLayers
-            GeoJSONSource={GeoJSONSource}
-            Layer={Layer}
-            mainRouteFeature={mainRouteFeature as any}
-            orangeRouteFeature={orangeRouteFeature as any}
-            activeRouteData={activeRouteRef.current}
-            routeVersion={routeVersion}
-            isNavigating={isNavigating}
-            highlightedRoute={highlightedRoute}
-            onRoutePress={handleRoutePress}
-          />
 
 
 
-          {/* Territory labels */}
-          <GeoJSONSource id="territory-label-source" data={territoryLabelFeature}>
-            <Layer
-              id="territory-labels"
-              type="symbol"
-              layout={{
-                'text-field': ['get', 'name'],
-                'text-size': ['interpolate', ['linear'], ['zoom'], 7, 12, 11, 18],
-                'text-font': ['Open Sans Bold'],
-                'text-letter-spacing': 0.05,
-                'text-transform': 'uppercase',
-                'text-allow-overlap': false,
-              }}
-              paint={{
-                'text-color': '#4f5f4b',
-                'text-halo-color': '#eef1e7',
-                'text-halo-width': 2,
-                'text-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.75, 10, 0.45, 12, 0],
-              }}
-            />
-          </GeoJSONSource>
+            {/* Territory labels */}
+            <GeoJSONSource id="territory-label-source" data={territoryLabelFeature}>
+              <Layer
+                id="territory-labels"
+                type="symbol"
+                layout={{
+                  'text-field': ['get', 'name'],
+                  'text-size': ['interpolate', ['linear'], ['zoom'], 7, 12, 11, 18],
+                  'text-font': ['Open Sans Bold'],
+                  'text-letter-spacing': 0.05,
+                  'text-transform': 'uppercase',
+                  'text-allow-overlap': false,
+                }}
+                paint={{
+                  'text-color': '#4f5f4b',
+                  'text-halo-color': '#eef1e7',
+                  'text-halo-width': 2,
+                  'text-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.75, 10, 0.45, 12, 0],
+                }}
+              />
+            </GeoJSONSource>
 
-          {/* Waypoint markers */}
-          {waypoints.map((wp) => (
-            <WaypointMarker
-              key={wp.id}
-              waypoint={wp}
-              isSelected={selectedWaypoint?.id === wp.id}
-              onPress={handleWaypointPress}
-              Marker={Marker}
-            />
-          ))}
-        </Map>
+            {/* Waypoint markers */}
+            {waypoints.map((wp) => (
+              <WaypointMarker
+                key={wp.id}
+                waypoint={wp}
+                isSelected={selectedWaypoint?.id === wp.id}
+                onPress={handleWaypointPress}
+                Marker={Marker}
+              />
+            ))}
+          </Map>
         )}
 
         {/* Absolute loader overlay to hide initial [0, 0] Africa loading frame and camera snap */}
@@ -1408,7 +1415,7 @@ function MapScreen() {
             </Reanimated.View>
 
             <View style={[styles.sideControls, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}>
-              <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate()}>
+              <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate(selectedWaypoint || undefined)}>
                 <MaterialIcons name="navigation" size={24} color={colors.error} style={{ transform: [{ rotate: '45deg' }] }} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.sideButton} onPress={handleRecenter}>

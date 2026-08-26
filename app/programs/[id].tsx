@@ -154,6 +154,7 @@ export default function ProgramDetailScreen() {
                                     width: 14,
                                     height: 14,
                                     marginRight: 8,
+                                    marginLeft: 2,
                                     marginTop: Platform.OS === 'ios' ? 3 : 7,
                                     tintColor: secondaryColor
                                 }}
