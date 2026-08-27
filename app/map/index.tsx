@@ -27,6 +27,7 @@ import {
   Easing,
   FlatList,
   PanResponder,
+  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -52,6 +53,7 @@ import { NavigationOverlay } from '../../src/components/NavigationOverlay';
 import QuickLinks from '../../src/components/QuickLinks';
 import { RoutePlanner } from '../../src/components/RoutePlanner';
 import SectionHeader from '../../src/components/SectionHeader';
+import WebMapView from '../../src/components/WebMapView';
 
 // Data & utils
 import { territoryLabelFeature } from '../../src/data/territoryLabels';
@@ -164,7 +166,7 @@ function MapScreen() {
     Map: any; Camera: any; GeoJSONSource: any;
     Layer: any; Marker: any; UserLocation: any;
   } | null>(() => {
-    if (isExpoGo) return null;
+    if (isExpoGo || Platform.OS === 'web') return null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const ML = require('@maplibre/maplibre-react-native');
@@ -183,7 +185,7 @@ function MapScreen() {
   });
 
   useEffect(() => {
-    if (isExpoGo || mapComponents) return;
+    if (isExpoGo || Platform.OS === 'web' || mapComponents) return;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const ML = require('@maplibre/maplibre-react-native');
@@ -1104,7 +1106,7 @@ function MapScreen() {
   ), [windowWidth, handleViewDetails, colors.onSurface, isDark, setSelectedWaypoint, insets.bottom]);
 
   // ── Loading / error guards ──────────────────────────────────────────────────
-  if (!mapComponents && !isExpoGo) {
+  if (Platform.OS !== 'web' && !mapComponents && !isExpoGo) {
     return (
       <View style={styles.container}>
 
@@ -1113,7 +1115,7 @@ function MapScreen() {
     );
   }
 
-  if (isExpoGo) {
+  if (Platform.OS !== 'web' && isExpoGo) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -1144,17 +1146,43 @@ function MapScreen() {
     );
   }
 
-  const showMapPlaceholder = !mapComponents || apiStatus !== 'ready';
+  const showMapPlaceholder = Platform.OS !== 'web' && (!mapComponents || apiStatus !== 'ready');
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = (mapComponents || {}) as any;
-  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin;
-  const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed';
+  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin && Platform.OS !== 'web';
+  const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed' && Platform.OS !== 'web';
 
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        {showMapPlaceholder ? (
+        {Platform.OS === 'web' ? (
+          <WebMapView
+            currentRegion={currentRegion}
+            waypoints={waypoints}
+            selectedWaypoint={selectedWaypoint}
+            onSelectWaypoint={(wp) => {
+              setSelectedWaypoint(wp);
+              setDestinationPoint(wp);
+            }}
+            isDark={isDark}
+            mainRouteCoordinates={mainRouteCoordinates as any}
+            orangeRouteCoordinates={orangeRouteCoordinates as any}
+            activeRouteCoordinates={activeRouteRef.current?.features?.[0]?.geometry?.coordinates as any}
+            stopPoints={stopPoints}
+            isSelectingPin={isSelectingPin}
+            onRegionChange={(lat, lng) => {
+              mapCenterRef.current = { lat, lng };
+              setMapCenter({ lat, lng });
+            }}
+            onMapClick={() => {
+              setSelectedWaypoint(null);
+              setDestinationPoint(null);
+              setShowHeader(prev => !prev);
+            }}
+            cameraRef={cameraRef}
+          />
+        ) : showMapPlaceholder ? (
           <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
@@ -1355,7 +1383,7 @@ function MapScreen() {
         )}
 
         {/* Absolute loader overlay to hide initial [0, 0] Africa loading frame and camera snap */}
-        {!showMapPlaceholder && !isMapReady && (
+        {Platform.OS !== 'web' && !showMapPlaceholder && !isMapReady && (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', zIndex: 999 }]}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
@@ -1815,7 +1843,7 @@ function MapScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string | undefined, brandSecondary: string | undefined) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    container: { flex: 1, backgroundColor: '#FFFFFF', height: '100%' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface },
     loadingText: { marginTop: 10, fontFamily: fonts.bodyMedium, color: colors.onSurfaceVariant },
     map: { ...StyleSheet.absoluteFillObject },
@@ -1829,6 +1857,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     mapContainer: {
       flex: 1,
       position: 'relative',
+      height: '100%',
     },
 
     // Floating Title

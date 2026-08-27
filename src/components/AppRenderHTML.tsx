@@ -2,6 +2,7 @@ import { width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContentData } from "@/src/contexts/AppContentContext";
 import React from "react";
+import { Dimensions } from "react-native";
 import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
 
 const systemFonts = [...defaultSystemFonts, 'OpenSans-Regular', 'OpenSans-Bold', 'OpenSans-Light', 'Roboto-Regular', 'Roboto-Bold'];
@@ -16,6 +17,8 @@ interface AppRenderHTMLProps {
 export default function AppRenderHTML({ html, contentWidth = width - 32, baseStyle, tagsStyles }: AppRenderHTMLProps) {
     const { colors } = useTheme();
     const { brandData } = useAppContentData();
+    const { width: screenWidth } = Dimensions.get('window');
+    const extraSize = screenWidth >= 600 ? 4 : 0;
     
     const secondaryColor = brandData?.brand_color_secondary 
         ? (brandData.brand_color_secondary.startsWith('#') ? brandData.brand_color_secondary : `#${brandData.brand_color_secondary}`) 
@@ -25,11 +28,14 @@ export default function AppRenderHTML({ html, contentWidth = width - 32, baseSty
     const baseFont = 'OpenSans-Regular';
     const boldFont = 'OpenSans-Bold';
 
+    const rawFontSize = baseStyle?.fontSize || 14;
+    const rawLineHeight = baseStyle?.lineHeight || 20;
+
     const defaultBaseStyle = {
         fontFamily: baseFont,
-        fontSize: baseStyle?.fontSize || 13,
+        fontSize: rawFontSize + extraSize,
         color: baseStyle?.color || colors.onSurface,
-        lineHeight: baseStyle?.lineHeight || 20,
+        lineHeight: rawLineHeight + extraSize,
         textAlign: baseStyle?.textAlign || "left",
     };
 
@@ -41,6 +47,8 @@ export default function AppRenderHTML({ html, contentWidth = width - 32, baseSty
     const mergedBaseStyle = {
         ...defaultBaseStyle,
         ...cleanBaseStyle,
+        fontSize: rawFontSize + extraSize,
+        lineHeight: rawLineHeight + extraSize,
     };
 
     const defaultTagsStyles = {

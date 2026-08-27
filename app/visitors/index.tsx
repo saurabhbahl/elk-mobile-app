@@ -259,7 +259,7 @@ export default function VisitorsCenterScreen() {
                             <TouchableOpacity
                                 activeOpacity={0.7}
                                 onPress={() => handleOpenLink(`tel:${visitorsData?.phone_number}`)}
-                                style={{ flexDirection: 'row', alignItems: 'center' }}
+                                style={{ flexDirection: 'row', alignItems: 'flex-end' }}
                             >
                                 <Ionicons
                                     name="call-outline"

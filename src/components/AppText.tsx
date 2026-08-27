@@ -1,5 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, TextProps } from 'react-native';
+import { Dimensions, StyleSheet, Text, TextProps } from 'react-native';
+
+const getExtraFontSize = () => {
+  const { width } = Dimensions.get('window');
+  return width >= 600 ? 4 : 0;
+};
 
 const resolveFontFamily = (style: any) => {
   if (!style) return undefined;
@@ -50,9 +55,29 @@ const resolveFontFamily = (style: any) => {
 
 export default function AppText(props: TextProps) {
   const resolvedFont = resolveFontFamily(props.style);
-  
+  const extraSize = getExtraFontSize();
+
+  let dynamicStyle: any = undefined;
+  if (extraSize > 0) {
+    const flattened = StyleSheet.flatten(props.style);
+    if (flattened && typeof flattened.fontSize === 'number') {
+      dynamicStyle = {
+        fontSize: flattened.fontSize + extraSize,
+        ...(typeof flattened.lineHeight === 'number' ? { lineHeight: flattened.lineHeight + extraSize } : {})
+      };
+    }
+  }
+
   return (
-    <Text {...props} style={[styles.defaultText, props.style, resolvedFont ? { fontFamily: resolvedFont, fontWeight: 'normal' } : {}]}>
+    <Text
+      {...props}
+      style={[
+        styles.defaultText,
+        props.style,
+        resolvedFont ? { fontFamily: resolvedFont, fontWeight: 'normal' } : {},
+        dynamicStyle
+      ]}
+    >
       {props.children}
     </Text>
   );
