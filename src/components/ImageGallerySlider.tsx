@@ -3,21 +3,26 @@ import { useAppContentData } from "@/src/contexts/AppContentContext";
 import { normalizeHex } from "@/src/utils/colorUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, TouchableOpacity, useWindowDimensions, View } from "react-native";
 import CachedImage from "./CachedImage";
 
 interface ImageGallerySliderProps {
     images: string[];
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
 }
 
-export default function ImageGallerySlider({ images, width, height }: ImageGallerySliderProps) {
+export default function ImageGallerySlider({ images, width: propWidth, height }: ImageGallerySliderProps) {
     const { colors } = useTheme();
     const { brandData } = useAppContentData();
+    const { width: screenWidth } = useWindowDimensions();
     const brandPrimary = normalizeHex(brandData?.brand_color_primary) || colors.primary;
     const [activeIndex, setActiveIndex] = useState(0);
+    const [layoutWidth, setLayoutWidth] = useState<number>(0);
     const flatListRef = useRef<FlatList>(null);
+
+    // Effective slide width: measured layout container width -> fallback to propWidth -> fallback to screenWidth - 32
+    const sliderWidth = layoutWidth > 0 ? layoutWidth : (propWidth || (screenWidth - 32));
 
     const handlePrevSlide = () => {
         if (activeIndex === 0 || images.length <= 1) return;
@@ -38,7 +43,23 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
     const showControls = images.length > 1;
 
     return (
-        <View style={[styles.carouselContainer, { width, aspectRatio: 4 / 3, backgroundColor: colors.surfaceVariant, borderColor: colors.outlineVariant }]}>
+        <View
+            onLayout={(e) => {
+                const w = e.nativeEvent.layout.width;
+                if (w > 0 && Math.abs(w - layoutWidth) > 1) {
+                    setLayoutWidth(w);
+                }
+            }}
+            style={[
+                styles.carouselContainer,
+                {
+                    width: "100%",
+                    aspectRatio: 4 / 3,
+                    backgroundColor: colors.surfaceVariant,
+                    borderColor: colors.outlineVariant,
+                },
+            ]}
+        >
             <FlatList
                 ref={flatListRef}
                 data={images}
@@ -46,14 +67,24 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
+                getItemLayout={(_, index) => ({
+                    length: sliderWidth,
+                    offset: sliderWidth * index,
+                    index,
+                })}
                 onMomentumScrollEnd={(e) => {
-                    const nextIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+                    const nextIndex = Math.round(e.nativeEvent.contentOffset.x / sliderWidth);
                     setActiveIndex(nextIndex);
                 }}
                 renderItem={({ item }) => (
                     <CachedImage
                         uri={item}
-                        style={{ width, aspectRatio: 4 / 3, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)' }}
+                        style={{
+                            width: sliderWidth,
+                            aspectRatio: 4 / 3,
+                            borderRadius: 12,
+                            backgroundColor: "rgba(0,0,0,0.05)",
+                        }}
                         contentFit="cover"
                     />
                 )}
@@ -63,8 +94,8 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     <TouchableOpacity
                         style={[
                             styles.arrowButton,
-                            { left: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
-                            activeIndex === 0 ? { opacity: 0.4 } : { opacity: 1 }
+                            { left: 10, top: "50%", marginTop: -16, backgroundColor: brandPrimary },
+                            activeIndex === 0 ? { opacity: 0.4 } : { opacity: 1 },
                         ]}
                         onPress={handlePrevSlide}
                         activeOpacity={0.8}
@@ -75,8 +106,8 @@ export default function ImageGallerySlider({ images, width, height }: ImageGalle
                     <TouchableOpacity
                         style={[
                             styles.arrowButton,
-                            { right: 10, top: (width * 3 / 4) / 2 - 16, backgroundColor: brandPrimary },
-                            activeIndex === images.length - 1 ? { opacity: 0.4 } : { opacity: 1 }
+                            { right: 10, top: "50%", marginTop: -16, backgroundColor: brandPrimary },
+                            activeIndex === images.length - 1 ? { opacity: 0.4 } : { opacity: 1 },
                         ]}
                         onPress={handleNextSlide}
                         activeOpacity={0.8}

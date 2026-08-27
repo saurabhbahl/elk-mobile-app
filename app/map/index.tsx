@@ -5,20 +5,20 @@ import AppText from "@/src/components/AppText";
  * Component-based architecture. Heavy logic lives in hooks; UI is split into
  * focused components. This file orchestrates them.
  */
-import { MaterialIcons } from '@expo/vector-icons';
-import { useNetInfo } from '@react-native-community/netinfo';
-import Constants from 'expo-constants';
-import { Image } from 'expo-image';
-import { activateKeepAwakeAsync, isAvailableAsync } from 'expo-keep-awake';
-import * as Location from 'expo-location';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNetInfo } from "@react-native-community/netinfo";
+import Constants from "expo-constants";
+import { Image } from "expo-image";
+import { activateKeepAwakeAsync, isAvailableAsync } from "expo-keep-awake";
+import * as Location from "expo-location";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -34,30 +34,38 @@ import {
   TouchableOpacity,
   unstable_batchedUpdates,
   useWindowDimensions,
-  View
+  View,
 } from "react-native";
-import Reanimated, { Easing as ReanimatedEasing, FadeInDown, FadeOutDown, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addOpacity, normalizeHex } from '../../src/utils/colorUtils';
+import Reanimated, {
+  FadeInDown,
+  FadeOutDown,
+  interpolate,
+  Easing as ReanimatedEasing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { addOpacity, normalizeHex } from "../../src/utils/colorUtils";
 
 // Constants & theme
-import { getMapStyle } from '../../src/constants/mapStyle';
-import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
-import { useTheme } from '../../src/context/ThemeContext';
+import { getMapStyle } from "../../src/constants/mapStyle";
+import { LIGHT_COLORS, LIGHT_FONTS } from "../../src/constants/theme";
+import { useTheme } from "../../src/context/ThemeContext";
 
 // Components
-import { MapRouteLayers } from '../../src/components/MapRouteLayers';
-import Navbar from '../../src/components/Navbar';
-import { NavigationHeader } from '../../src/components/NavigationHeader';
-import { NavigationOverlay } from '../../src/components/NavigationOverlay';
-import QuickLinks from '../../src/components/QuickLinks';
-import { RoutePlanner } from '../../src/components/RoutePlanner';
-import SectionHeader from '../../src/components/SectionHeader';
-import WebMapView from '../../src/components/WebMapView';
+import { MapRouteLayers } from "../../src/components/MapRouteLayers";
+import Navbar from "../../src/components/Navbar";
+import { NavigationHeader } from "../../src/components/NavigationHeader";
+import { NavigationOverlay } from "../../src/components/NavigationOverlay";
+import QuickLinks from "../../src/components/QuickLinks";
+import { RoutePlanner } from "../../src/components/RoutePlanner";
+import SectionHeader from "../../src/components/SectionHeader";
+import WebMapView from "../../src/components/WebMapView";
 
 // Data & utils
-import { territoryLabelFeature } from '../../src/data/territoryLabels';
-import { Waypoint } from '../../src/data/waypoints';
+import { territoryLabelFeature } from "../../src/data/territoryLabels";
+import { Waypoint } from "../../src/data/waypoints";
 import {
   calcDistance,
   calculateBearing,
@@ -66,23 +74,23 @@ import {
   findNearestPointIndex,
   getTurnInstruction,
   toLngLat,
-} from '../../src/utils/mapUtils';
+} from "../../src/utils/mapUtils";
 
 // Hooks
-import { useAppContent } from '../../src/contexts/AppContentContext';
-import { useOfflineMap } from '../../src/hooks/useOfflineMap';
-import { useOfflineRouter } from '../../src/hooks/useOfflineRouter';
-import { useRouteLoader } from '../../src/hooks/useRouteLoader';
-import { preloadRouteIndex } from '../../src/utils/routeLookup';
-import { isValidData } from '../../src/utils/validation';
-import { useMapReset, useNavigationMode } from '../_layout';
+import { useAppContent } from "../../src/contexts/AppContentContext";
+import { useOfflineMap } from "../../src/hooks/useOfflineMap";
+import { useOfflineRouter } from "../../src/hooks/useOfflineRouter";
+import { useRouteLoader } from "../../src/hooks/useRouteLoader";
+import { preloadRouteIndex } from "../../src/utils/routeLookup";
+import { isValidData } from "../../src/utils/validation";
+import { useMapReset, useNavigationMode } from "../_layout";
 
-const isExpoGo = Constants.appOwnership === 'expo';
+const isExpoGo = Constants.appOwnership === "expo";
 
 /** Convert heading degrees to cardinal direction label */
 function headingToCardinal(deg: number): string {
-  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 }
 
 // ── Wrapper holds the reset key ───────────────────────────────────────────────
@@ -95,7 +103,9 @@ export default function MapScreenWrapper() {
 function MapScreen() {
   const insets = useSafeAreaInsets();
   // North America map view restriction array: [swLng, swLat, neLng, neLat] (online and offline)
-  const AMERICA_MAX_BOUNDS: [number, number, number, number] = [-170.0, 14.0, -52.0, 72.0];
+  const AMERICA_MAX_BOUNDS: [number, number, number, number] = [
+    -170.0, 14.0, -52.0, 72.0,
+  ];
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { poisData, mapSettingsData, brandData, apiStatus } = useAppContent();
@@ -113,8 +123,9 @@ function MapScreen() {
   }, [showHeader, headerProgress]);
 
   const navAreaAnimatedStyle = useAnimatedStyle(() => {
+    const maxH = windowWidth >= 600 ? 600 : 450;
     return {
-      maxHeight: interpolate(headerProgress.value, [0, 1], [0, 380]),
+      maxHeight: interpolate(headerProgress.value, [0, 1], [0, maxH]),
       opacity: headerProgress.value,
       transform: [
         {
@@ -135,7 +146,10 @@ function MapScreen() {
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Detect vertical swipe instantly with minimal threshold
-        return Math.abs(gestureState.dy) > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+        return (
+          Math.abs(gestureState.dy) > 5 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+        );
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy < -5) {
@@ -146,36 +160,48 @@ function MapScreen() {
           setShowHeader(true);
         }
       },
-    })
+    }),
   ).current;
 
   useEffect(() => {
     isAvailableAsync()
-      .then(available => { if (available) activateKeepAwakeAsync().catch(() => { }); })
-      .catch(() => { });
+      .then((available) => {
+        if (available) activateKeepAwakeAsync().catch(() => {});
+      })
+      .catch(() => {});
   }, []);
 
   const { colors, fonts, isDark } = useTheme();
   const brandPrimary = normalizeHex(brandData?.brand_color_primary);
   const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
-  const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
+  const styles = useMemo(
+    () => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary),
+    [colors, fonts, isDark, brandPrimary, brandSecondary],
+  );
 
   // ── Map engine ──────────────────────────────────────────────────────────────
   const [mapEngineError, setMapEngineError] = useState<string | null>(null);
   const [mapComponents] = useState<{
-    Map: any; Camera: any; GeoJSONSource: any;
-    Layer: any; Marker: any; UserLocation: any;
+    Map: any;
+    Camera: any;
+    GeoJSONSource: any;
+    Layer: any;
+    Marker: any;
+    UserLocation: any;
   } | null>(() => {
-    if (isExpoGo || Platform.OS === 'web') return null;
+    if (isExpoGo || Platform.OS === "web") return null;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const ML = require('@maplibre/maplibre-react-native');
+      const ML = require("@maplibre/maplibre-react-native");
       if (ML.Map && ML.Camera) {
         preloadRouteIndex();
         return {
-          Map: ML.Map, Camera: ML.Camera,
-          GeoJSONSource: ML.GeoJSONSource, Layer: ML.Layer,
-          Marker: ML.Marker, UserLocation: ML.UserLocation,
+          Map: ML.Map,
+          Camera: ML.Camera,
+          GeoJSONSource: ML.GeoJSONSource,
+          Layer: ML.Layer,
+          Marker: ML.Marker,
+          UserLocation: ML.UserLocation,
         };
       }
     } catch {
@@ -185,39 +211,50 @@ function MapScreen() {
   });
 
   useEffect(() => {
-    if (isExpoGo || Platform.OS === 'web' || mapComponents) return;
+    if (isExpoGo || Platform.OS === "web" || mapComponents) return;
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const ML = require('@maplibre/maplibre-react-native');
+      const ML = require("@maplibre/maplibre-react-native");
       if (!ML.Map || !ML.Camera) {
-        setMapEngineError(`Required components missing. Keys: ${Object.keys(ML).join(', ')}`);
+        setMapEngineError(
+          `Required components missing. Keys: ${Object.keys(ML).join(", ")}`,
+        );
       }
     } catch (e: any) {
-      setMapEngineError(e.message || 'Failed to load MapLibre module');
+      setMapEngineError(e.message || "Failed to load MapLibre module");
     }
   }, [mapComponents]);
 
-
-
   // ── Offline map ─────────────────────────────────────────────────────────────
   const {
-    hasMap, mbtilesError, downloadProgress, isDownloading,
-    consentStatus, saveConsent, downloadMap, cancelDownload, isInitializing, downloadedMapFiles,
+    hasMap,
+    mbtilesError,
+    downloadProgress,
+    isDownloading,
+    consentStatus,
+    saveConsent,
+    downloadMap,
+    cancelDownload,
+    isInitializing,
+    downloadedMapFiles,
   } = useOfflineMap();
 
   const [mapTimestamp, setMapTimestamp] = useState(Date.now());
   useEffect(() => {
-    if (!isDownloading && hasMap && !isInitializing) setMapTimestamp(Date.now());
+    if (!isDownloading && hasMap && !isInitializing)
+      setMapTimestamp(Date.now());
   }, [isDownloading, hasMap, isInitializing]);
 
   // ── Route data ──────────────────────────────────────────────────────────────
   const { mainRouteCoordinates, orangeRouteCoordinates } = useRouteLoader();
   const { getRouteBetween } = useOfflineRouter();
   const mainRouteFeature = useMemo(
-    () => createLineFeature(mainRouteCoordinates), [mainRouteCoordinates]
+    () => createLineFeature(mainRouteCoordinates),
+    [mainRouteCoordinates],
   );
   const orangeRouteFeature = useMemo(
-    () => createLineFeature(orangeRouteCoordinates), [orangeRouteCoordinates]
+    () => createLineFeature(orangeRouteCoordinates),
+    [orangeRouteCoordinates],
   );
 
   // Active route lives in a ref to avoid re-renders on every GPS tick.
@@ -227,28 +264,46 @@ function MapScreen() {
   const [routeVersion, setRouteVersion] = useState(0);
 
   // ── UI state ────────────────────────────────────────────────────────────────
-  const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(null);
-  const [highlightedRoute, setHighlightedRoute] = useState<'main' | 'orange' | null>(null);
+  const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(
+    null,
+  );
+  const [highlightedRoute, setHighlightedRoute] = useState<
+    "main" | "orange" | null
+  >(null);
   const [location, setLocation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
-  const [destinationPoint, setDestinationPoint] = useState<Waypoint | null>(null);
+  const [destinationPoint, setDestinationPoint] = useState<Waypoint | null>(
+    null,
+  );
   const [showPointPicker, setShowPointPicker] = useState(false);
-  const [pickerType, setPickerType] = useState<'start' | 'end' | 'stop'>('start');
+  const [pickerType, setPickerType] = useState<"start" | "end" | "stop">(
+    "start",
+  );
   const [stopPoints, setStopPoints] = useState<Waypoint[]>([]);
   const [isSelectingPin, setIsSelectingPin] = useState(false);
   const isSelectingPinRef = useRef(false); // always current, safe to read in map event closures
-  const [pinPickerType, setPinPickerType] = useState<'start' | 'end' | 'stop'>('start');
-  const [pinPickerStopIndex, setPinPickerStopIndex] = useState<number | null>(null);
+  const [pinPickerType, setPinPickerType] = useState<"start" | "end" | "stop">(
+    "start",
+  );
+  const [pinPickerStopIndex, setPinPickerStopIndex] = useState<number | null>(
+    null,
+  );
   // mapCenterRef always holds the latest geographic center of the map camera.
   // onRegionDidChange fires with the exact camera center — which is the same coordinate
   // as the visual center of the map view where the crosshair sits. Using a ref (not state)
   // means confirm reads the freshest value without async pixel conversion.
   const mapCenterRef = useRef<{ lng: number; lat: number } | null>(null);
-  const [mapCenter, setMapCenter] = useState<{ lng: number; lat: number } | null>(null);
-  const [dropPinPreviewCoordinate, setDropPinPreviewCoordinate] = useState<{ longitude: number; latitude: number } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    lng: number;
+    lat: number;
+  } | null>(null);
+  const [dropPinPreviewCoordinate, setDropPinPreviewCoordinate] = useState<{
+    longitude: number;
+    latitude: number;
+  } | null>(null);
   // Tracks the Map view's pixel dimensions so we can compute its exact center
   // for getCoordinateFromView — the crosshair sits at [width/2, height/2].
   const mapViewSizeRef = useRef({ width: windowWidth, height: windowHeight });
@@ -257,32 +312,38 @@ function MapScreen() {
   const headingAnim = useRef(new Animated.Value(0)).current;
   // Keep a plain ref for cardinal label (only needs to update occasionally)
   const headingRef = useRef(0);
-  const [headingCardinal, setHeadingCardinal] = useState('N');
+  const [headingCardinal, setHeadingCardinal] = useState("N");
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
   const [navigationData, setNavigationData] = useState({
-    distanceRemaining: '0.0 mi',
-    timeRemaining: '0 min',
-    arrivalTime: '--:--',
-    nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: "straight" as never },
+    distanceRemaining: "0.0 mi",
+    timeRemaining: "0 min",
+    arrivalTime: "--:--",
+    nextInstruction: {
+      text: "Continue Straight",
+      distance: "0 FT",
+      icon: "straight" as never,
+    },
   });
   const [showArrivalPopup, setShowArrivalPopup] = useState(false);
   const hasArrivedRef = useRef(false);
 
   // ── Search state ────────────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return waypoints.filter(
-      w => w.title.toLowerCase().includes(q) || w.description.toLowerCase().includes(q)
+      (w) =>
+        w.title.toLowerCase().includes(q) ||
+        w.description.toLowerCase().includes(q),
     );
   }, [searchQuery]);
 
   const handleSelectSearchResult = useCallback((wp: Waypoint) => {
-    setSearchQuery('');
+    setSearchQuery("");
     setShowSearchResults(false);
     setSelectedWaypoint(wp);
     cameraRef.current?.easeTo({
@@ -293,24 +354,36 @@ function MapScreen() {
   }, []);
 
   // Sync navigation mode to layout context so tab bar hides/shows
-  const { setIsNavigating: setLayoutNavigating, setIsBottomNavbarHidden, navbarVisibility } = useNavigationMode();
+  const {
+    setIsNavigating: setLayoutNavigating,
+    setIsBottomNavbarHidden,
+    navbarVisibility,
+  } = useNavigationMode();
 
   // Always show navbar and quicklinks on the map index page
   useFocusEffect(
     useCallback(() => {
       navbarVisibility.value = withTiming(0, { duration: 200 });
-    }, [navbarVisibility])
+    }, [navbarVisibility]),
   );
 
   useFocusEffect(
     useCallback(() => {
       setLayoutNavigating(isNavigating || isCalculatingRoute);
-      setIsBottomNavbarHidden(!!selectedWaypoint || isNavigating || isCalculatingRoute);
+      setIsBottomNavbarHidden(
+        !!selectedWaypoint || isNavigating || isCalculatingRoute,
+      );
       return () => {
         setLayoutNavigating(false);
         setIsBottomNavbarHidden(false);
       };
-    }, [isNavigating, isCalculatingRoute, selectedWaypoint, setLayoutNavigating, setIsBottomNavbarHidden])
+    }, [
+      isNavigating,
+      isCalculatingRoute,
+      selectedWaypoint,
+      setLayoutNavigating,
+      setIsBottomNavbarHidden,
+    ]),
   );
 
   // Handle Android hardware back button in navigation mode
@@ -333,7 +406,10 @@ function MapScreen() {
   }));
   const handleViewDetails = useCallback(() => {
     if (selectedWaypoint) {
-      router.push({ pathname: '/map/[id]', params: { id: selectedWaypoint.id } });
+      router.push({
+        pathname: "/map/[id]",
+        params: { id: selectedWaypoint.id },
+      });
     }
   }, [selectedWaypoint]);
   const hideDetail = useCallback(() => {
@@ -343,8 +419,15 @@ function MapScreen() {
   // ── Default map center ──────────────────────────────────────────────────────
   const currentRegion = useMemo(() => {
     // Check for 'latitude' and 'longitude' (new format), fallback to 'lat' and 'long'/'lng'
-    const latStr = mapSettingsData?.latitude || mapSettingsData?.default_map_center?.latitude || mapSettingsData?.default_map_center?.lat;
-    const lngStr = mapSettingsData?.longitude || mapSettingsData?.default_map_center?.longitude || mapSettingsData?.default_map_center?.long || mapSettingsData?.default_map_center?.lng;
+    const latStr =
+      mapSettingsData?.latitude ||
+      mapSettingsData?.default_map_center?.latitude ||
+      mapSettingsData?.default_map_center?.lat;
+    const lngStr =
+      mapSettingsData?.longitude ||
+      mapSettingsData?.default_map_center?.longitude ||
+      mapSettingsData?.default_map_center?.long ||
+      mapSettingsData?.default_map_center?.lng;
 
     if (latStr && lngStr) {
       const lat = parseFloat(latStr as string);
@@ -359,7 +442,7 @@ function MapScreen() {
 
   // ── Hide initial [0, 0] Africa loading frame and camera snap ─────────────────
   useEffect(() => {
-    if (apiStatus === 'ready') {
+    if (apiStatus === "ready") {
       const timer = setTimeout(() => {
         setIsMapLoaded(true);
       }, 2500); // 2.5-second safety net
@@ -375,14 +458,18 @@ function MapScreen() {
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (!isMounted || status !== 'granted') return;
+      if (!isMounted || status !== "granted") return;
 
       // Position — throttled (30m / 10s) to avoid re-render storms
       const pos = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, distanceInterval: 30, timeInterval: 10000 },
+        {
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: 30,
+          timeInterval: 10000,
+        },
         (loc) => {
           if (isMounted) setLocation(loc.coords);
-        }
+        },
       );
       if (!isMounted) {
         pos.remove();
@@ -393,9 +480,10 @@ function MapScreen() {
       // Heading — fires on every compass change, animates smoothly via Animated.Value
       const heading = await Location.watchHeadingAsync((headingData) => {
         if (!isMounted) return;
-        const deg = headingData.trueHeading >= 0
-          ? headingData.trueHeading
-          : headingData.magHeading;
+        const deg =
+          headingData.trueHeading >= 0
+            ? headingData.trueHeading
+            : headingData.magHeading;
         if (deg < 0) return;
 
         // Shortest-path rotation to avoid spinning the long way around
@@ -436,38 +524,45 @@ function MapScreen() {
     const cam = cameraRef.current;
     const loc = location;
     if (!cam || !loc) return;
-    cam.easeTo({ center: [loc.longitude, loc.latitude], zoom: 13, duration: 1000 });
+    cam.easeTo({
+      center: [loc.longitude, loc.latitude],
+      zoom: 13,
+      duration: 1000,
+    });
   }, [location]);
 
-  const fitRouteToCamera = useCallback((coords: [number, number][], duration = 1000) => {
-    if (!coords.length) return;
-    if (coords.length === 1) {
-      cameraRef.current?.easeTo({ center: coords[0], zoom: 14, duration });
-      return;
-    }
+  const fitRouteToCamera = useCallback(
+    (coords: [number, number][], duration = 1000) => {
+      if (!coords.length) return;
+      if (coords.length === 1) {
+        cameraRef.current?.easeTo({ center: coords[0], zoom: 14, duration });
+        return;
+      }
 
-    let minLng = coords[0][0], maxLng = coords[0][0];
-    let minLat = coords[0][1], maxLat = coords[0][1];
-    for (let i = 1; i < coords.length; i++) {
-      minLng = Math.min(minLng, coords[i][0]);
-      maxLng = Math.max(maxLng, coords[i][0]);
-      minLat = Math.min(minLat, coords[i][1]);
-      maxLat = Math.max(maxLat, coords[i][1]);
-    }
+      let minLng = coords[0][0],
+        maxLng = coords[0][0];
+      let minLat = coords[0][1],
+        maxLat = coords[0][1];
+      for (let i = 1; i < coords.length; i++) {
+        minLng = Math.min(minLng, coords[i][0]);
+        maxLng = Math.max(maxLng, coords[i][0]);
+        minLat = Math.min(minLat, coords[i][1]);
+        maxLat = Math.max(maxLat, coords[i][1]);
+      }
 
-    const lngSpan = Math.abs(maxLng - minLng);
-    const latSpan = Math.abs(maxLat - minLat);
-    if (lngSpan < 0.0004 && latSpan < 0.0004) {
-      cameraRef.current?.easeTo({ center: coords[0], zoom: 15, duration });
-      return;
-    }
+      const lngSpan = Math.abs(maxLng - minLng);
+      const latSpan = Math.abs(maxLat - minLat);
+      if (lngSpan < 0.0004 && latSpan < 0.0004) {
+        cameraRef.current?.easeTo({ center: coords[0], zoom: 15, duration });
+        return;
+      }
 
-    // Dynamic bottom padding: if a waypoint details sheet is visible, use 300 to clear it; otherwise 120 is enough.
-    const bottomPadding = selectedWaypoint ? insets.bottom + 300 : insets.bottom + 120;
+      // Dynamic bottom padding: if a waypoint details sheet is visible, use 300 to clear it; otherwise 120 is enough.
+      const bottomPadding = selectedWaypoint
+        ? insets.bottom + 300
+        : insets.bottom + 120;
 
-    cameraRef.current?.fitBounds(
-      [minLng, minLat, maxLng, maxLat],
-      {
+      cameraRef.current?.fitBounds([minLng, minLat, maxLng, maxLat], {
         duration,
         padding: {
           top: insets.top + 160,
@@ -475,9 +570,10 @@ function MapScreen() {
           bottom: bottomPadding,
           left: 48,
         },
-      }
-    );
-  }, [insets.bottom, insets.top, selectedWaypoint]);
+      });
+    },
+    [insets.bottom, insets.top, selectedWaypoint],
+  );
 
   // ── Scenic Drive: handle navigateToWaypointId param from explore screen ─────
   const params = useLocalSearchParams();
@@ -485,7 +581,12 @@ function MapScreen() {
 
   // Fit map camera to all waypoints once on initial load
   useEffect(() => {
-    if (isMapLoaded && waypoints.length > 0 && cameraRef.current && !hasCenteredOnce.current) {
+    if (
+      isMapLoaded &&
+      waypoints.length > 0 &&
+      cameraRef.current &&
+      !hasCenteredOnce.current
+    ) {
       if (params.navigateToWaypointId || params.routeToWaypointId) {
         hasCenteredOnce.current = true;
         // Mark map ready after a tiny delay if we are navigating/routing to a specific pin
@@ -495,7 +596,10 @@ function MapScreen() {
         return;
       }
       hasCenteredOnce.current = true;
-      const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
+      const coords = waypoints.map(
+        (w) =>
+          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
+      );
 
       // Snap instantly (duration: 0) to POI pins bounding box
       fitRouteToCamera(coords, 0);
@@ -513,9 +617,9 @@ function MapScreen() {
       if (!waypointId) return;
 
       const id = parseInt(String(waypointId), 10);
-      const destination = waypoints.find(w => w.id === id);
+      const destination = waypoints.find((w) => w.id === id);
       if (!destination) return;
-      const navRequestKey = `${id}:${params.navRequestId ?? 'initial'}`;
+      const navRequestKey = `${id}:${params.navRequestId ?? "initial"}`;
 
       if (hasHandledNavParam.current === navRequestKey || isNavigating) return;
       hasHandledNavParam.current = navRequestKey;
@@ -523,27 +627,36 @@ function MapScreen() {
       (async () => {
         try {
           // Load the scenic drive route from route.json
-          const routeData = await import('../../route.json');
+          const routeData = await import("../../route.json");
           const encodedGeometry = routeData.routes?.[0]?.geometry;
-          if (!encodedGeometry || typeof encodedGeometry !== 'string') {
-            console.warn('[ScenicDrive] No route geometry found');
+          if (!encodedGeometry || typeof encodedGeometry !== "string") {
+            console.warn("[ScenicDrive] No route geometry found");
             return;
           }
 
           // Decode the polyline string to coordinates
           const decodedCoords = decodePolyline(encodedGeometry);
-          const coords: [number, number][] = decodedCoords.map(c => [c.longitude, c.latitude]);
+          const coords: [number, number][] = decodedCoords.map((c) => [
+            c.longitude,
+            c.latitude,
+          ]);
 
           const routeFeature = {
-            type: 'FeatureCollection',
-            features: [{
-              type: 'Feature',
-              properties: { id: 'scenic-drive', startWaypoint: null, endWaypoint: destination },
-              geometry: {
-                type: 'LineString',
-                coordinates: coords,
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                properties: {
+                  id: "scenic-drive",
+                  startWaypoint: null,
+                  endWaypoint: destination,
+                },
+                geometry: {
+                  type: "LineString",
+                  coordinates: coords,
+                },
               },
-            }],
+            ],
           };
 
           lastSliceIdx.current = -1;
@@ -556,27 +669,35 @@ function MapScreen() {
           for (let i = 0; i < coords.length - 1; i++) {
             totalRouteDistance += calcDistance(
               { latitude: coords[i][1], longitude: coords[i][0] },
-              { latitude: coords[i + 1][1], longitude: coords[i + 1][0] }
+              { latitude: coords[i + 1][1], longitude: coords[i + 1][0] },
             );
           }
           const totalDistMi = totalRouteDistance / 1609.34;
           const totalDurMin = Math.round((totalRouteDistance / 1609.34) * 2.5);
           const arrivalETA = new Date(Date.now() + totalDurMin * 60000);
-          const arrivalStr = arrivalETA.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          const arrivalStr = arrivalETA.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          });
 
           unstable_batchedUpdates(() => {
-            setRouteVersion(v => v + 1);
+            setRouteVersion((v) => v + 1);
             setDestinationPoint(destination);
             setStartPoint({
-              id: 999, title: 'Scenic Drive Start',
+              id: 999,
+              title: "Scenic Drive Start",
               coordinate: { latitude: coords[0][1], longitude: coords[0][0] },
-              description: 'Starting point of the Elk Scenic Drive',
+              description: "Starting point of the Elk Scenic Drive",
             });
             setNavigationData({
               distanceRemaining: `${totalDistMi.toFixed(1)} mi`,
               timeRemaining: `${totalDurMin} min`,
               arrivalTime: arrivalStr,
-              nextInstruction: { text: 'Continue Straight', distance: `${totalDistMi.toFixed(1)} mi`, icon: "straight" as never },
+              nextInstruction: {
+                text: "Continue Straight",
+                distance: `${totalDistMi.toFixed(1)} mi`,
+                icon: "straight" as never,
+              },
             });
             setIsNavigating(true);
             setShowPointPicker(false);
@@ -586,190 +707,269 @@ function MapScreen() {
             fitRouteToCamera(coords, 1200);
           });
         } catch (error) {
-          console.error('[ScenicDrive] Error loading route:', error);
+          console.error("[ScenicDrive] Error loading route:", error);
         }
       })();
-    }, [params.navigateToWaypointId, params.navRequestId, isNavigating, fitRouteToCamera])
+    }, [
+      params.navigateToWaypointId,
+      params.navRequestId,
+      isNavigating,
+      fitRouteToCamera,
+    ]),
   );
 
   // ── Waypoint interaction ────────────────────────────────────────────────────
-  const handleWaypointPress = useCallback((waypoint: Waypoint) => {
-    if (isNavigating) return;
-    isTappingMarker.current = true;
-    setTimeout(() => { isTappingMarker.current = false; }, 300);
-    setSelectedWaypoint(waypoint);
-    setDestinationPoint(waypoint);
-    if (!isNavigating) { activeRouteRef.current = null; setRouteVersion(v => v + 1); }
-    const index = waypoints.findIndex(w => w.id === waypoint.id);
-    if (index !== -1) {
-      setTimeout(() => { flatListRef.current?.scrollToIndex({ index, animated: false }); }, 50);
-    }
-  }, [isNavigating, waypoints]);
+  const handleWaypointPress = useCallback(
+    (waypoint: Waypoint) => {
+      if (isNavigating) return;
+      isTappingMarker.current = true;
+      setTimeout(() => {
+        isTappingMarker.current = false;
+      }, 300);
+      setSelectedWaypoint(waypoint);
+      setDestinationPoint(waypoint);
+      if (!isNavigating) {
+        activeRouteRef.current = null;
+        setRouteVersion((v) => v + 1);
+      }
+      const index = waypoints.findIndex((w) => w.id === waypoint.id);
+      if (index !== -1) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({ index, animated: false });
+        }, 50);
+      }
+    },
+    [isNavigating, waypoints],
+  );
 
   const handleCloseCard = useCallback(() => {
     setSelectedWaypoint(null);
     setDestinationPoint(null);
     if (waypoints.length > 0) {
-      const coords = waypoints.map(w => [w.coordinate.longitude, w.coordinate.latitude] as [number, number]);
+      const coords = waypoints.map(
+        (w) =>
+          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
+      );
       setTimeout(() => {
         fitRouteToCamera(coords, 1000);
       }, 100);
     }
   }, [waypoints, fitRouteToCamera]);
 
-  const handleRoutePress = useCallback((route: 'main' | 'orange', coords: [number, number]) => {
-    isTappingMarker.current = true;
-    setTimeout(() => { isTappingMarker.current = false; }, 300);
-    setHighlightedRoute(route);
-  }, []);
+  const handleRoutePress = useCallback(
+    (route: "main" | "orange", coords: [number, number]) => {
+      isTappingMarker.current = true;
+      setTimeout(() => {
+        isTappingMarker.current = false;
+      }, 300);
+      setHighlightedRoute(route);
+    },
+    [],
+  );
 
-  const handleScrollEnd = useCallback((event: any) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
-    const waypoint = waypoints[index];
-    if (waypoint) {
-      setSelectedWaypoint(waypoint);
-      setDestinationPoint(waypoint);
-      if (!isNavigating) { activeRouteRef.current = null; setRouteVersion(v => v + 1); }
-      requestAnimationFrame(() => {
-        cameraRef.current?.easeTo({
-          center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
-          zoom: 14, duration: 800,
+  const handleScrollEnd = useCallback(
+    (event: any) => {
+      const index = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
+      const waypoint = waypoints[index];
+      if (waypoint) {
+        setSelectedWaypoint(waypoint);
+        setDestinationPoint(waypoint);
+        if (!isNavigating) {
+          activeRouteRef.current = null;
+          setRouteVersion((v) => v + 1);
+        }
+        requestAnimationFrame(() => {
+          cameraRef.current?.easeTo({
+            center: [
+              waypoint.coordinate.longitude,
+              waypoint.coordinate.latitude,
+            ],
+            zoom: 14,
+            duration: 800,
+          });
         });
-      });
-    }
-  }, [isNavigating, windowWidth, waypoints]);
+      }
+    },
+    [isNavigating, windowWidth, waypoints],
+  );
 
   // ── Open route planner ──────────────────────────────────────────────────────
   // Pass an optional destination to pre-fill from the waypoint carousel card
-  const handleNavigate = useCallback(async (destination?: Waypoint) => {
-    setStopPoints([]);
-    if (location) {
-      setStartPoint({
-        id: 999, title: 'Current Location',
-        coordinate: { latitude: location.latitude, longitude: location.longitude },
-        description: 'Your current GPS position',
-      });
-      setPickerType('end');
-    } else {
-      setStartPoint(null);
-      setPickerType('start');
-    }
-    const targetDest = destination ?? selectedWaypoint;
-    if (targetDest) {
-      setDestinationPoint(targetDest);
-    } else {
-      setDestinationPoint(null);
-    }
-    setShowPointPicker(true);
-  }, [location, selectedWaypoint]);
+  const handleNavigate = useCallback(
+    async (destination?: Waypoint) => {
+      setStopPoints([]);
+      if (location) {
+        setStartPoint({
+          id: 999,
+          title: "Current Location",
+          coordinate: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+          },
+          description: "Your current GPS position",
+        });
+        setPickerType("end");
+      } else {
+        setStartPoint(null);
+        setPickerType("start");
+      }
+      const targetDest = destination ?? selectedWaypoint;
+      if (targetDest) {
+        setDestinationPoint(targetDest);
+      } else {
+        setDestinationPoint(null);
+      }
+      setShowPointPicker(true);
+    },
+    [location, selectedWaypoint],
+  );
 
   // ── Start navigation ────────────────────────────────────────────────────────
-  const startActualNavigation = useCallback(async (from: Waypoint, to: Waypoint, stops: Waypoint[] = [], isRecalculating = false) => {
-    if (isNavInFlightRef.current) return;
-    isNavInFlightRef.current = true;
-    try {
-      setIsCalculatingRoute(true);
+  const startActualNavigation = useCallback(
+    async (
+      from: Waypoint,
+      to: Waypoint,
+      stops: Waypoint[] = [],
+      isRecalculating = false,
+    ) => {
+      if (isNavInFlightRef.current) return;
+      isNavInFlightRef.current = true;
+      try {
+        setIsCalculatingRoute(true);
 
-      // Build ordered list of waypoint IDs
-      const allIds = [from.id, ...stops.map(s => s.id), to.id];
+        // Build ordered list of waypoint IDs
+        const allIds = [from.id, ...stops.map((s) => s.id), to.id];
 
-      if (!from?.coordinate || !to?.coordinate) {
-        setTimeout(() => Alert.alert('Route Not Available', 'Missing location data for routing.'), 300);
-        setIsCalculatingRoute(false);
-        isNavInFlightRef.current = false;
-        return;
-      }
-
-      // Block routes that span unrealistic distances (e.g., across oceans)
-      const straightLineDist = calcDistance(from.coordinate, to.coordinate);
-      if (straightLineDist > 5000000) { // 5000 km (~3100 miles)
-        setTimeout(() => {
-          Alert.alert('Location Too Far', 'This place is too far away. Please choose a closer location.');
-        }, 300);
-        setIsCalculatingRoute(false);
-        isNavInFlightRef.current = false;
-        return;
-      }
-
-      // Get route from SQLite cache (falls back to OSRM if not cached)
-      const result = await getRouteBetween(
-        from.id,
-        to.id,
-        stops.map(s => s.id),
-        from.coordinate,
-        to.coordinate,
-        stops.map(s => s.coordinate)
-      );
-
-      if (!result.coordinates || result.coordinates.length < 2) {
-        setTimeout(() => {
-          Alert.alert('Route Not Available', 'No route found. Please check your connection or try another destination.');
-        }, 300);
-        setIsCalculatingRoute(false);
-        isNavInFlightRef.current = false;
-        return;
-      }
-
-      const coords = result.coordinates;
-
-      const routeData = {
-        type: 'FeatureCollection',
-        features: [{
-          type: 'Feature',
-          properties: { id: 'active-route', startWaypoint: from, endWaypoint: to },
-          geometry: {
-            type: 'LineString',
-            coordinates: coords,
-          },
-        }],
-      };
-
-      lastSliceIdx.current = -1;
-      lastRecalculateTime.current = Date.now();
-      fullRouteRef.current = routeData;
-      activeRouteRef.current = routeData;
-
-      // Initialize stats from route result
-      const totalDistMi = result.distance / 1609.34;
-      const totalDurMin = Math.round(result.duration / 60);
-      const arrivalETA = new Date(Date.now() + result.duration * 1000);
-      const arrivalStr = arrivalETA.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-      console.log(`[Navigation] Route result: distance=${result.distance}m (${totalDistMi.toFixed(1)} mi), duration=${result.duration}s (${totalDurMin} min)`);
-
-      // Set navigation state first, then UI state
-      setNavigationData({
-        distanceRemaining: `${totalDistMi.toFixed(1)} mi`,
-        timeRemaining: `${totalDurMin} min`,
-        arrivalTime: arrivalStr,
-        nextInstruction: { text: 'Continue Straight', distance: `${totalDistMi.toFixed(1)} mi`, icon: "straight" as never },
-      });
-
-      setRouteVersion(v => v + 1);
-      setDestinationPoint(to);
-      setStartPoint(from);
-      setIsNavigating(true);
-      setShowPointPicker(false);
-
-      if (!isRecalculating) {
-        requestAnimationFrame(() => {
-          fitRouteToCamera(coords, 1000);
-        });
-      }
-    } catch (error: any) {
-      if (error?.message === "offline_no_cache") {
-        setTimeout(() => {
-          Alert.alert(
-            'Internet Required',
-            'Route cannot be calculated. This requires an internet connection.'
+        if (!from?.coordinate || !to?.coordinate) {
+          setTimeout(
+            () =>
+              Alert.alert(
+                "Route Not Available",
+                "Missing location data for routing.",
+              ),
+            300,
           );
-        }, 300);
+          setIsCalculatingRoute(false);
+          isNavInFlightRef.current = false;
+          return;
+        }
+
+        // Block routes that span unrealistic distances (e.g., across oceans)
+        const straightLineDist = calcDistance(from.coordinate, to.coordinate);
+        if (straightLineDist > 5000000) {
+          // 5000 km (~3100 miles)
+          setTimeout(() => {
+            Alert.alert(
+              "Location Too Far",
+              "This place is too far away. Please choose a closer location.",
+            );
+          }, 300);
+          setIsCalculatingRoute(false);
+          isNavInFlightRef.current = false;
+          return;
+        }
+
+        // Get route from SQLite cache (falls back to OSRM if not cached)
+        const result = await getRouteBetween(
+          from.id,
+          to.id,
+          stops.map((s) => s.id),
+          from.coordinate,
+          to.coordinate,
+          stops.map((s) => s.coordinate),
+        );
+
+        if (!result.coordinates || result.coordinates.length < 2) {
+          setTimeout(() => {
+            Alert.alert(
+              "Route Not Available",
+              "No route found. Please check your connection or try another destination.",
+            );
+          }, 300);
+          setIsCalculatingRoute(false);
+          isNavInFlightRef.current = false;
+          return;
+        }
+
+        const coords = result.coordinates;
+
+        const routeData = {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              properties: {
+                id: "active-route",
+                startWaypoint: from,
+                endWaypoint: to,
+              },
+              geometry: {
+                type: "LineString",
+                coordinates: coords,
+              },
+            },
+          ],
+        };
+
+        lastSliceIdx.current = -1;
+        lastRecalculateTime.current = Date.now();
+        fullRouteRef.current = routeData;
+        activeRouteRef.current = routeData;
+
+        // Initialize stats from route result
+        const totalDistMi = result.distance / 1609.34;
+        const totalDurMin = Math.round(result.duration / 60);
+        const arrivalETA = new Date(Date.now() + result.duration * 1000);
+        const arrivalStr = arrivalETA.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
+
+        console.log(
+          `[Navigation] Route result: distance=${result.distance}m (${totalDistMi.toFixed(1)} mi), duration=${result.duration}s (${totalDurMin} min)`,
+        );
+
+        // Set navigation state first, then UI state
+        setNavigationData({
+          distanceRemaining: `${totalDistMi.toFixed(1)} mi`,
+          timeRemaining: `${totalDurMin} min`,
+          arrivalTime: arrivalStr,
+          nextInstruction: {
+            text: "Continue Straight",
+            distance: `${totalDistMi.toFixed(1)} mi`,
+            icon: "straight" as never,
+          },
+        });
+
+        setRouteVersion((v) => v + 1);
+        setDestinationPoint(to);
+        setStartPoint(from);
+        setIsNavigating(true);
+        setShowPointPicker(false);
+
+        if (!isRecalculating) {
+          requestAnimationFrame(() => {
+            fitRouteToCamera(coords, 1000);
+          });
+        }
+      } catch (error: any) {
+        if (error?.message === "offline_no_cache") {
+          setTimeout(() => {
+            Alert.alert(
+              "Internet Required",
+              "Route cannot be calculated. This requires an internet connection.",
+            );
+          }, 300);
+        }
+      } finally {
+        setIsCalculatingRoute(false);
+        setTimeout(() => {
+          isNavInFlightRef.current = false;
+        }, 1000);
       }
-    } finally {
-      setIsCalculatingRoute(false);
-      setTimeout(() => { isNavInFlightRef.current = false; }, 1000);
-    }
-  }, [fitRouteToCamera, getRouteBetween]);
+    },
+    [fitRouteToCamera, getRouteBetween],
+  );
 
   // ── Dynamic Route: handle routeToWaypointId param ───────────────────────────
   useFocusEffect(
@@ -778,9 +978,9 @@ function MapScreen() {
       if (!routeToWaypointId) return;
 
       const id = parseInt(String(routeToWaypointId), 10);
-      const destination = waypoints.find(w => w.id === id);
+      const destination = waypoints.find((w) => w.id === id);
       if (!destination) return;
-      const navRequestKey = `route:${id}:${params.navRequestId ?? 'initial'}`;
+      const navRequestKey = `route:${id}:${params.navRequestId ?? "initial"}`;
 
       if (hasHandledNavParam.current === navRequestKey || isNavigating) return;
 
@@ -789,14 +989,16 @@ function MapScreen() {
         const timeoutId = setTimeout(() => {
           setIsCalculatingRoute(false);
           hasHandledNavParam.current = navRequestKey;
-          alert('Could not determine your location to calculate the route.');
+          alert("Could not determine your location to calculate the route.");
         }, 15000);
 
         (async () => {
           try {
             let loc = await Location.getLastKnownPositionAsync();
             if (!loc) {
-              loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+              loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+              });
             }
             if (loc) {
               clearTimeout(timeoutId);
@@ -804,8 +1006,8 @@ function MapScreen() {
               setLocation(loc.coords);
               const fromWaypoint: Waypoint = {
                 id: -1,
-                title: 'Current Location',
-                description: 'Your current location',
+                title: "Current Location",
+                description: "Your current location",
                 coordinate: loc.coords,
               };
               startActualNavigation(fromWaypoint, destination, [], false);
@@ -822,21 +1024,36 @@ function MapScreen() {
 
       const fromWaypoint: Waypoint = {
         id: -1,
-        title: 'Current Location',
-        description: 'Your current location',
+        title: "Current Location",
+        description: "Your current location",
         coordinate: location,
       };
 
       startActualNavigation(fromWaypoint, destination, [], false);
-    }, [params.routeToWaypointId, params.navRequestId, location, isNavigating, startActualNavigation, waypoints])
+    }, [
+      params.routeToWaypointId,
+      params.navRequestId,
+      location,
+      isNavigating,
+      startActualNavigation,
+      waypoints,
+    ]),
   );
 
   // ── Live navigation stats update ────────────────────────────────────────────
   const stopPointsRef = useRef<Waypoint[]>([]);
-  useEffect(() => { stopPointsRef.current = stopPoints; }, [stopPoints]);
+  useEffect(() => {
+    stopPointsRef.current = stopPoints;
+  }, [stopPoints]);
 
   useEffect(() => {
-    if (!isNavigating || !location || !fullRouteRef.current || isCalculatingRoute) return;
+    if (
+      !isNavigating ||
+      !location ||
+      !fullRouteRef.current ||
+      isCalculatingRoute
+    )
+      return;
     try {
       const feature = fullRouteRef.current.features?.[0];
       if (!feature) return;
@@ -849,23 +1066,35 @@ function MapScreen() {
       const nearestIdx = findNearestPointIndex(location, coords);
 
       if (nearestIdx >= 0 && coords[nearestIdx]) {
-        const nearestCoord = { longitude: coords[nearestIdx][0], latitude: coords[nearestIdx][1] };
+        const nearestCoord = {
+          longitude: coords[nearestIdx][0],
+          latitude: coords[nearestIdx][1],
+        };
         const distanceToPath = calcDistance(location, nearestCoord);
 
         // Recalculate route if off-path (both offline router and online OSRM will handle it)
         const OFF_PATH_THRESHOLD = 50; // meters
         const cooldownElapsed = now - lastRecalculateTime.current > 5000;
-        const isCurrentLocationStart = feature.properties?.startWaypoint?.id === 999
-          || feature.properties?.startWaypoint?.id === -1;
+        const isCurrentLocationStart =
+          feature.properties?.startWaypoint?.id === 999 ||
+          feature.properties?.startWaypoint?.id === -1;
 
         if (distanceToPath > OFF_PATH_THRESHOLD) {
           if (isCurrentLocationStart && cooldownElapsed) {
             lastRecalculateTime.current = now;
             startActualNavigation(
-              { id: 999, title: 'Current Location', coordinate: { latitude: location.latitude, longitude: location.longitude }, description: '' },
+              {
+                id: 999,
+                title: "Current Location",
+                coordinate: {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                },
+                description: "",
+              },
               toWP,
               stopPointsRef.current,
-              true // isRecalculating
+              true, // isRecalculating
             );
             return;
           } else if (!isCurrentLocationStart && distanceToPath > 500) {
@@ -881,45 +1110,54 @@ function MapScreen() {
         for (let i = 0; i < remaining.length - 1; i++) {
           totalDist += calcDistance(
             { latitude: remaining[i][1], longitude: remaining[i][0] },
-            { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] }
+            { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] },
           );
         }
         const distMi = totalDist / 1609.34;
         const timeMin = Math.max(1, Math.round(distMi * 2.5));
         const arrival = new Date(Date.now() + timeMin * 60000);
-        const arrivalStr = arrival.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const arrivalStr = arrival.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        });
 
         // Next turn instruction — look ahead up to 2 km
-        let instruction = { text: 'Continue Straight', distance: '', icon: "straight" as never };
+        let instruction = {
+          text: "Continue Straight",
+          distance: "",
+          icon: "straight" as never,
+        };
         if (remaining.length > 3) {
           const curBearing = calculateBearing(
             { latitude: remaining[0][1], longitude: remaining[0][0] },
-            { latitude: remaining[1][1], longitude: remaining[1][0] }
+            { latitude: remaining[1][1], longitude: remaining[1][0] },
           );
           let distAcc = 0;
           for (let i = 1; i < Math.min(remaining.length - 1, 80); i++) {
             const segDist = calcDistance(
               { latitude: remaining[i - 1][1], longitude: remaining[i - 1][0] },
-              { latitude: remaining[i][1], longitude: remaining[i][0] }
+              { latitude: remaining[i][1], longitude: remaining[i][0] },
             );
             distAcc += segDist;
             if (distAcc > 2000) break;
             const segBearing = calculateBearing(
               { latitude: remaining[i][1], longitude: remaining[i][0] },
-              { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] }
+              { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] },
             );
             const turn = getTurnInstruction(curBearing, segBearing);
-            if (turn.text !== 'Continue Straight') {
-              const distStr = distAcc > 400
-                ? `${(distAcc / 1609.34).toFixed(1)} mi`
-                : `${Math.round(distAcc * 3.28084)} ft`;
+            if (turn.text !== "Continue Straight") {
+              const distStr =
+                distAcc > 400
+                  ? `${(distAcc / 1609.34).toFixed(1)} mi`
+                  : `${Math.round(distAcc * 3.28084)} ft`;
               instruction = { ...turn, distance: `In ${distStr}` } as any;
               break;
             }
           }
           // If no turn found, show distance to next significant point
           if (!instruction.distance) {
-            instruction.distance = distMi > 0.1 ? `${distMi.toFixed(1)} mi` : 'Arriving';
+            instruction.distance =
+              distMi > 0.1 ? `${distMi.toFixed(1)} mi` : "Arriving";
           }
         }
 
@@ -927,32 +1165,40 @@ function MapScreen() {
         if (nearestIdx !== lastSliceIdx.current) {
           lastSliceIdx.current = nearestIdx;
           didSlice = true;
-          const routeSliceStart = Math.min(nearestIdx, Math.max(0, coords.length - 2));
+          const routeSliceStart = Math.min(
+            nearestIdx,
+            Math.max(0, coords.length - 2),
+          );
           const activeCoords = coords.slice(routeSliceStart);
           activeRouteRef.current = {
             ...fullRouteRef.current,
-            features: [{
-              ...feature,
-              geometry: {
-                ...feature.geometry,
-                coordinates: activeCoords
-              }
-            }]
+            features: [
+              {
+                ...feature,
+                geometry: {
+                  ...feature.geometry,
+                  coordinates: activeCoords,
+                },
+              },
+            ],
           };
         }
 
         // ── Destination arrival detection ──────────────────────────────
-        const distToDestinationMeters = calcDistance(
-          location,
-          { latitude: toWP.coordinate.latitude, longitude: toWP.coordinate.longitude }
-        );
+        const distToDestinationMeters = calcDistance(location, {
+          latitude: toWP.coordinate.latitude,
+          longitude: toWP.coordinate.longitude,
+        });
         const ARRIVAL_THRESHOLD_METERS = 10; // ~164 feet
-        if (distToDestinationMeters < ARRIVAL_THRESHOLD_METERS && !hasArrivedRef.current) {
+        if (
+          distToDestinationMeters < ARRIVAL_THRESHOLD_METERS &&
+          !hasArrivedRef.current
+        ) {
           hasArrivedRef.current = true;
           setShowArrivalPopup(true);
         }
 
-        setNavigationData(prev => {
+        setNavigationData((prev) => {
           const next = {
             distanceRemaining: `${distMi.toFixed(1)} mi`,
             timeRemaining: `${timeMin} min`,
@@ -966,18 +1212,20 @@ function MapScreen() {
             prev.arrivalTime === next.arrivalTime &&
             prev.nextInstruction.text === next.nextInstruction.text &&
             prev.nextInstruction.distance === next.nextInstruction.distance
-          ) return prev;
+          )
+            return prev;
           return next;
         });
       }
     } catch (err: unknown) {
-      console.error('CRASH PREVENTED in NavUpdate:', err);
+      console.error("CRASH PREVENTED in NavUpdate:", err);
     }
   }, [location, isNavigating, isCalculatingRoute, startActualNavigation]);
 
   // ── Exit navigation ─────────────────────────────────────────────────────────
   const handleExitNavigation = useCallback(() => {
-    const shouldGoBack = hasHandledNavParam.current !== false && router.canGoBack();
+    const shouldGoBack =
+      hasHandledNavParam.current !== false && router.canGoBack();
 
     activeRouteRef.current = null;
     fullRouteRef.current = null;
@@ -986,7 +1234,7 @@ function MapScreen() {
     router.setParams({
       routeToWaypointId: undefined,
       navigateToWaypointId: undefined,
-      navRequestId: undefined
+      navRequestId: undefined,
     } as any);
 
     hasHandledNavParam.current = false;
@@ -998,12 +1246,16 @@ function MapScreen() {
       setStartPoint(null);
       setDestinationPoint(null);
       setStopPoints([]);
-      setRouteVersion(v => v + 1);
+      setRouteVersion((v) => v + 1);
       setNavigationData({
-        distanceRemaining: '0.0 mi',
-        timeRemaining: '0 min',
-        arrivalTime: '--:--',
-        nextInstruction: { text: 'Continue Straight', distance: '0 FT', icon: "straight" as any } as any,
+        distanceRemaining: "0.0 mi",
+        timeRemaining: "0 min",
+        arrivalTime: "--:--",
+        nextInstruction: {
+          text: "Continue Straight",
+          distance: "0 FT",
+          icon: "straight" as any,
+        } as any,
       });
     });
 
@@ -1019,15 +1271,30 @@ function MapScreen() {
       handleExitNavigation();
       return true;
     };
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => { subscription.remove(); };
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress,
+    );
+    return () => {
+      subscription.remove();
+    };
   }, [isNavigating, handleExitNavigation]);
 
   // ── Memoized waypoint marker ────────────────────────────────────────────────
   const WaypointMarker = useMemo(() => {
     const WaypointMarkerComponent = ({
-      waypoint, isSelected, onPress, disabled, Marker: MarkerComp
-    }: { waypoint: Waypoint; isSelected: boolean; onPress: (w: Waypoint) => void; disabled?: boolean; Marker: any }) => (
+      waypoint,
+      isSelected,
+      onPress,
+      disabled,
+      Marker: MarkerComp,
+    }: {
+      waypoint: Waypoint;
+      isSelected: boolean;
+      onPress: (w: Waypoint) => void;
+      disabled?: boolean;
+      Marker: any;
+    }) => (
       <MarkerComp
         key={`waypoint-${waypoint.id}`}
         id={`waypoint-${waypoint.id}`}
@@ -1041,14 +1308,25 @@ function MapScreen() {
         >
           {waypoint.pin_icon_override ? (
             <Image
-              source={{ uri: typeof waypoint.pin_icon_override === 'string' ? waypoint.pin_icon_override : (waypoint.pin_icon_override as any).url }}
-              style={{ width: isSelected ? 32 : 24, height: isSelected ? 32 : 24 }}
+              source={{
+                uri:
+                  typeof waypoint.pin_icon_override === "string"
+                    ? waypoint.pin_icon_override
+                    : (waypoint.pin_icon_override as any).url,
+              }}
+              style={{
+                width: isSelected ? 32 : 24,
+                height: isSelected ? 32 : 24,
+              }}
               contentFit="contain"
             />
           ) : (
             <Image
-              source={require('../../assets/images/pin.png')}
-              style={{ width: isSelected ? 44 : 36, height: isSelected ? 44 : 36 }}
+              source={require("../../assets/images/pin.png")}
+              style={{
+                width: isSelected ? 44 : 36,
+                height: isSelected ? 44 : 36,
+              }}
               contentFit="contain"
             />
           )}
@@ -1056,71 +1334,103 @@ function MapScreen() {
       </MarkerComp>
     );
     const Memoized = React.memo(WaypointMarkerComponent);
-    Memoized.displayName = 'WaypointMarker';
+    Memoized.displayName = "WaypointMarker";
     return Memoized;
   }, [styles, colors.primary]);
 
   // ── Waypoint card renderer ──────────────────────────────────────────────────
-  const renderWaypointCard = useCallback(({ item }: { item: Waypoint }) => (
-    <View style={{ width: windowWidth, paddingHorizontal: 0, justifyContent: 'flex-end' }}>
-      <Pressable
-        style={[
-          styles.hotspotCard,
-          {
-            paddingBottom: insets.bottom + 12,
-            minHeight: 180 + insets.bottom,
-            justifyContent: 'space-between'
-          }
-        ]}
-        onPress={(e) => e.stopPropagation()}
+  const renderWaypointCard = useCallback(
+    ({ item }: { item: Waypoint }) => (
+      <View
+        style={{
+          width: windowWidth,
+          paddingHorizontal: 0,
+          justifyContent: "flex-end",
+        }}
       >
-        <View>
-          <View style={styles.cardHeaderRow}>
-            <View style={styles.titleContainer}>
-              <MaterialIcons name="place" size={20} color={isDark ? colors.onSurface : "black"} style={{ marginRight: 6 }} />
-              {isValidData(item.title) ? (
-                <AppText style={styles.hotspotTitle} numberOfLines={1}>
-                  {item.title}
-                </AppText>
-              ) : null}
+        <Pressable
+          style={[
+            styles.hotspotCard,
+            {
+              paddingBottom: insets.bottom + 12,
+              minHeight: 180 + insets.bottom,
+              justifyContent: "space-between",
+            },
+          ]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.titleContainer}>
+                <MaterialIcons
+                  name="place"
+                  size={20}
+                  color={isDark ? colors.onSurface : "black"}
+                  style={{ marginRight: 6 }}
+                />
+                {isValidData(item.title) ? (
+                  <AppText style={styles.hotspotTitle} numberOfLines={1}>
+                    {item.title}
+                  </AppText>
+                ) : null}
+              </View>
+              <TouchableOpacity
+                onPress={handleCloseCard}
+                style={styles.cardCloseButton}
+              >
+                <MaterialIcons name="close" size={14} color="white" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={handleCloseCard} style={styles.cardCloseButton}>
-              <MaterialIcons name="close" size={14} color="white" />
-            </TouchableOpacity>
+
+            {isValidData(item.description) ? (
+              <AppText style={styles.hotspotDescription} numberOfLines={3}>
+                {item.description}
+              </AppText>
+            ) : null}
           </View>
 
-          {isValidData(item.description) ? (
-            <AppText style={styles.hotspotDescription} numberOfLines={3}>
-              {item.description}
-            </AppText>
-          ) : null}
-        </View>
-
-        <View style={styles.cardFooterRow}>
-          <TouchableOpacity style={styles.viewMoreButton} onPress={handleViewDetails}>
-            <AppText style={styles.viewMoreButtonText}>View More</AppText>
-          </TouchableOpacity>
-        </View>
-      </Pressable>
-    </View>
-  ), [windowWidth, handleViewDetails, colors.onSurface, isDark, setSelectedWaypoint, insets.bottom]);
+          <View style={styles.cardFooterRow}>
+            <TouchableOpacity
+              style={styles.viewMoreButton}
+              onPress={handleViewDetails}
+            >
+              <AppText style={styles.viewMoreButtonText}>View More</AppText>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </View>
+    ),
+    [
+      windowWidth,
+      handleViewDetails,
+      colors.onSurface,
+      isDark,
+      setSelectedWaypoint,
+      insets.bottom,
+    ],
+  );
 
   // ── Loading / error guards ──────────────────────────────────────────────────
-  if (Platform.OS !== 'web' && !mapComponents && !isExpoGo) {
+  if (Platform.OS !== "web" && !mapComponents && !isExpoGo) {
     return (
       <View style={styles.container}>
-
         <View style={{ flex: 1, backgroundColor: colors.surface }} />
       </View>
     );
   }
 
-  if (Platform.OS !== 'web' && isExpoGo) {
+  if (Platform.OS !== "web" && isExpoGo) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <AppText style={{ textAlign: 'center', padding: 20, fontFamily: fonts.bodyMedium }}>
-            MapLibre requires a native build.{'\n'}Please run: npx expo run
+          <AppText
+            style={{
+              textAlign: "center",
+              padding: 20,
+              fontFamily: fonts.bodyMedium,
+            }}
+          >
+            MapLibre requires a native build.{"\n"}Please run: npx expo run
           </AppText>
         </View>
       </View>
@@ -1133,30 +1443,69 @@ function MapScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
         <AppText style={styles.loadingText}>Downloading Map Data...</AppText>
-        <AppText style={{ ...styles.loadingText, marginTop: 5, fontSize: 14, opacity: 0.8, marginBottom: 24 }}>
-          {downloadProgress < 0 ? 'Starting...' : `${Math.max(0, pct)}%`}
+        <AppText
+          style={{
+            ...styles.loadingText,
+            marginTop: 5,
+            fontSize: 14,
+            opacity: 0.8,
+            marginBottom: 24,
+          }}
+        >
+          {downloadProgress < 0 ? "Starting..." : `${Math.max(0, pct)}%`}
         </AppText>
         <TouchableOpacity
-          style={{ height: 44, paddingHorizontal: 24, backgroundColor: colors.surfaceContainerLowest, borderWidth: 1.5, borderColor: colors.error, justifyContent: 'center', alignItems: 'center', borderRadius: 8 }}
+          style={{
+            height: 44,
+            paddingHorizontal: 24,
+            backgroundColor: colors.surfaceContainerLowest,
+            borderWidth: 1.5,
+            borderColor: colors.error,
+            justifyContent: "center",
+            alignItems: "center",
+            borderRadius: 8,
+          }}
           onPress={() => cancelDownload()}
         >
-          <AppText style={{ fontSize: 14, fontFamily: fonts.bodyBold, color: colors.error }}>Cancel Download</AppText>
+          <AppText
+            style={{
+              fontSize: 14,
+              fontFamily: fonts.bodyBold,
+              color: colors.error,
+            }}
+          >
+            Cancel Download
+          </AppText>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const showMapPlaceholder = Platform.OS !== 'web' && (!mapComponents || apiStatus !== 'ready');
-  const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } = (mapComponents || {}) as any;
-  const showConsentOverlay = !hasMap && consentStatus !== 'dismissed' && !isInitializing && !isDownloading && !isNavigating && !isCalculatingRoute && !showPointPicker && !isSelectingPin && Platform.OS !== 'web';
-  const showDownloadErrorOverlay = mbtilesError && !hasMap && consentStatus !== 'dismissed' && Platform.OS !== 'web';
-
+  const showMapPlaceholder =
+    Platform.OS !== "web" && (!mapComponents || apiStatus !== "ready");
+  const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } =
+    (mapComponents || {}) as any;
+  const showConsentOverlay =
+    !hasMap &&
+    consentStatus !== "dismissed" &&
+    !isInitializing &&
+    !isDownloading &&
+    !isNavigating &&
+    !isCalculatingRoute &&
+    !showPointPicker &&
+    !isSelectingPin &&
+    Platform.OS !== "web";
+  const showDownloadErrorOverlay =
+    mbtilesError &&
+    !hasMap &&
+    consentStatus !== "dismissed" &&
+    Platform.OS !== "web";
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        {Platform.OS === 'web' ? (
+        {Platform.OS === "web" ? (
           <WebMapView
             currentRegion={currentRegion}
             waypoints={waypoints}
@@ -1168,7 +1517,10 @@ function MapScreen() {
             isDark={isDark}
             mainRouteCoordinates={mainRouteCoordinates as any}
             orangeRouteCoordinates={orangeRouteCoordinates as any}
-            activeRouteCoordinates={activeRouteRef.current?.features?.[0]?.geometry?.coordinates as any}
+            activeRouteCoordinates={
+              activeRouteRef.current?.features?.[0]?.geometry
+                ?.coordinates as any
+            }
             stopPoints={stopPoints}
             isSelectingPin={isSelectingPin}
             onRegionChange={(lat, lng) => {
@@ -1178,12 +1530,19 @@ function MapScreen() {
             onMapClick={() => {
               setSelectedWaypoint(null);
               setDestinationPoint(null);
-              setShowHeader(prev => !prev);
+              setShowHeader((prev) => !prev);
             }}
             cameraRef={cameraRef}
           />
         ) : showMapPlaceholder ? (
-          <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.surface,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
@@ -1192,7 +1551,7 @@ function MapScreen() {
             style={styles.map}
             mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
             compass={false}
-            onLayout={(e: import('react-native').LayoutChangeEvent) => {
+            onLayout={(e: import("react-native").LayoutChangeEvent) => {
               mapViewSizeRef.current = {
                 width: e.nativeEvent.layout.width,
                 height: e.nativeEvent.layout.height,
@@ -1205,33 +1564,38 @@ function MapScreen() {
               setSelectedWaypoint(null);
               setDestinationPoint(null);
               activeRouteRef.current = null;
-              setRouteVersion(v => v + 1);
+              setRouteVersion((v) => v + 1);
               setHighlightedRoute(null);
-              setShowHeader(prev => !prev);
+              setShowHeader((prev) => !prev);
             }}
             onRegionIsChanging={(feature: any) => {
               // Fires continuously during drag — update the pin marker in real-time
               // so it tracks the map center as the user pans.
               if (!isSelectingPinRef.current) return;
               // MapLibre passes a GeoJSON Feature: center is geometry.coordinates = [lng, lat]
-              const center = feature?.geometry?.coordinates
-                ?? feature?.nativeEvent?.center
-                ?? feature?.center;
+              const center =
+                feature?.geometry?.coordinates ??
+                feature?.nativeEvent?.center ??
+                feature?.center;
               if (Array.isArray(center) && center.length === 2) {
                 const [lng, lat] = center;
                 if (!isNaN(lng) && !isNaN(lat)) {
                   mapCenterRef.current = { lng, lat };
                   // Update the marker so it follows the map center live
-                  setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
+                  setDropPinPreviewCoordinate({
+                    longitude: lng,
+                    latitude: lat,
+                  });
                 }
               }
             }}
             onRegionDidChange={(feature: any) => {
               // MapLibre passes a GeoJSON Feature: center is geometry.coordinates = [lng, lat]
-              const center = feature?.geometry?.coordinates
-                ?? feature?.properties?.center
-                ?? feature?.nativeEvent?.center
-                ?? feature?.center;
+              const center =
+                feature?.geometry?.coordinates ??
+                feature?.properties?.center ??
+                feature?.nativeEvent?.center ??
+                feature?.center;
               if (Array.isArray(center) && center.length === 2) {
                 const [lng, lat] = center;
                 // Enforce boundary clamp [-170, 14, -52, 72]
@@ -1250,7 +1614,10 @@ function MapScreen() {
                 mapCenterRef.current = { lng, lat };
                 setMapCenter({ lng, lat });
                 if (isSelectingPinRef.current) {
-                  setDropPinPreviewCoordinate({ longitude: lng, latitude: lat });
+                  setDropPinPreviewCoordinate({
+                    longitude: lng,
+                    latitude: lat,
+                  });
                 }
               }
             }}
@@ -1258,10 +1625,24 @@ function MapScreen() {
             {currentRegion && (
               <Camera
                 ref={cameraRef}
-                padding={isSelectingPin ? { paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: 0 } : undefined}
+                padding={
+                  isSelectingPin
+                    ? {
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        paddingTop: 0,
+                        paddingBottom: 0,
+                      }
+                    : undefined
+                }
                 defaultSettings={{
-                  centerCoordinate: [currentRegion.longitude, currentRegion.latitude],
-                  zoomLevel: mapSettingsData?.default_zoom_level ? parseFloat(mapSettingsData.default_zoom_level) : 9,
+                  centerCoordinate: [
+                    currentRegion.longitude,
+                    currentRegion.latitude,
+                  ],
+                  zoomLevel: mapSettingsData?.default_zoom_level
+                    ? parseFloat(mapSettingsData.default_zoom_level)
+                    : 9,
                 }}
                 maxBounds={AMERICA_MAX_BOUNDS}
                 minZoom={3.5}
@@ -1290,12 +1671,14 @@ function MapScreen() {
                     style={[
                       styles.userArrowInner,
                       {
-                        transform: [{
-                          rotate: headingAnim.interpolate({
-                            inputRange: [-720, 720],
-                            outputRange: ['-720deg', '720deg'],
-                          }),
-                        }],
+                        transform: [
+                          {
+                            rotate: headingAnim.interpolate({
+                              inputRange: [-720, 720],
+                              outputRange: ["-720deg", "720deg"],
+                            }),
+                          },
+                        ],
                       },
                     ]}
                   >
@@ -1318,26 +1701,45 @@ function MapScreen() {
               onRoutePress={handleRoutePress}
             />
 
-
-
             {/* Territory labels */}
-            <GeoJSONSource id="territory-label-source" data={territoryLabelFeature}>
+            <GeoJSONSource
+              id="territory-label-source"
+              data={territoryLabelFeature}
+            >
               <Layer
                 id="territory-labels"
                 type="symbol"
                 layout={{
-                  'text-field': ['get', 'name'],
-                  'text-size': ['interpolate', ['linear'], ['zoom'], 7, 12, 11, 18],
-                  'text-font': ['Open Sans Bold'],
-                  'text-letter-spacing': 0.05,
-                  'text-transform': 'uppercase',
-                  'text-allow-overlap': false,
+                  "text-field": ["get", "name"],
+                  "text-size": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    7,
+                    12,
+                    11,
+                    18,
+                  ],
+                  "text-font": ["Open Sans Bold"],
+                  "text-letter-spacing": 0.05,
+                  "text-transform": "uppercase",
+                  "text-allow-overlap": false,
                 }}
                 paint={{
-                  'text-color': '#4f5f4b',
-                  'text-halo-color': '#eef1e7',
-                  'text-halo-width': 2,
-                  'text-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.75, 10, 0.45, 12, 0],
+                  "text-color": "#4f5f4b",
+                  "text-halo-color": "#eef1e7",
+                  "text-halo-width": 2,
+                  "text-opacity": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    7,
+                    0.75,
+                    10,
+                    0.45,
+                    12,
+                    0,
+                  ],
                 }}
               />
             </GeoJSONSource>
@@ -1356,7 +1758,7 @@ function MapScreen() {
 
             {/* Intermediate stop point markers (rendered ONLY for dropped pins) */}
             {stopPoints
-              .filter((stop) => stop.title === 'Dropped Pin' || stop.id < 0)
+              .filter((stop) => stop.title === "Dropped Pin" || stop.id < 0)
               .map((stop, idx) => (
                 <Marker
                   key={`stop-point-${stop.id}-${idx}`}
@@ -1370,21 +1772,42 @@ function MapScreen() {
                     activeOpacity={isNavigating ? 1 : 0.8}
                     style={styles.routePinBadgeContainer}
                   >
-                    <View style={[styles.routePinBadge, { backgroundColor: '#E65100' }]}>
+                    <View
+                      style={[
+                        styles.routePinBadge,
+                        { backgroundColor: "#E65100" },
+                      ]}
+                    >
                       <MaterialIcons name="place" size={14} color="#FFFFFF" />
-                      <AppText style={styles.routePinBadgeText}>{`Stop ${idx + 1}`}</AppText>
+                      <AppText
+                        style={styles.routePinBadgeText}
+                      >{`Stop ${idx + 1}`}</AppText>
                     </View>
-                    <View style={[styles.routePinPinhead, { borderTopColor: '#E65100' }]} />
+                    <View
+                      style={[
+                        styles.routePinPinhead,
+                        { borderTopColor: "#E65100" },
+                      ]}
+                    />
                   </TouchableOpacity>
                 </Marker>
               ))}
-
           </Map>
         )}
 
         {/* Absolute loader overlay to hide initial [0, 0] Africa loading frame and camera snap */}
-        {Platform.OS !== 'web' && !showMapPlaceholder && !isMapReady && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', zIndex: 999 }]}>
+        {Platform.OS !== "web" && !showMapPlaceholder && !isMapReady && (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: colors.surface,
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 999,
+              },
+            ]}
+          >
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
@@ -1395,7 +1818,6 @@ function MapScreen() {
             {"© OpenStreetMap contributors | © CARTO"}
           </AppText>
         </View>
-
 
         {/* ── Drop-pin mode: crosshair ── */}
         {isSelectingPin && (
@@ -1408,13 +1830,47 @@ function MapScreen() {
           </View>
         )}
 
-
         {/* ── Processing Indicator (Floating on Map) ── */}
         {isCalculatingRoute && !showPointPicker && (
-          <View style={{ position: 'absolute', top: 350, left: 0, right: 0, alignItems: 'center', zIndex: 100 }} pointerEvents="none">
-            <View style={{ backgroundColor: isDark ? '#2E3B2F' : '#FFFFFF', padding: 12, borderRadius: 22, alignItems: 'center', flexDirection: 'row', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 }}>
-              <ActivityIndicator size="small" color={brandPrimary || colors.primary} style={{ marginRight: 12 }} />
-              <AppText style={{ fontSize: 14, fontFamily: 'OpenSans-SemiBold', color: isDark ? '#FFFFFF' : '#000000' }}>Processing...</AppText>
+          <View
+            style={{
+              position: "absolute",
+              top: 350,
+              left: 0,
+              right: 0,
+              alignItems: "center",
+              zIndex: 100,
+            }}
+            pointerEvents="none"
+          >
+            <View
+              style={{
+                backgroundColor: isDark ? "#2E3B2F" : "#FFFFFF",
+                padding: 12,
+                borderRadius: 22,
+                alignItems: "center",
+                flexDirection: "row",
+                elevation: 4,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+              }}
+            >
+              <ActivityIndicator
+                size="small"
+                color={brandPrimary || colors.primary}
+                style={{ marginRight: 12 }}
+              />
+              <AppText
+                style={{
+                  fontSize: 14,
+                  fontFamily: "OpenSans-SemiBold",
+                  color: isDark ? "#FFFFFF" : "#000000",
+                }}
+              >
+                Processing...
+              </AppText>
             </View>
           </View>
         )}
@@ -1423,36 +1879,60 @@ function MapScreen() {
         {!isNavigating && !showPointPicker && !isSelectingPin && (
           <>
             <Reanimated.View
-              style={[styles.fullWidthHeaderContainer, headerContainerAnimatedStyle]}
+              style={[
+                styles.fullWidthHeaderContainer,
+                headerContainerAnimatedStyle,
+              ]}
             >
-              <Reanimated.View style={[navAreaAnimatedStyle, { overflow: 'hidden' }]} pointerEvents={showHeader ? 'auto' : 'none'}>
+              <Reanimated.View
+                style={[navAreaAnimatedStyle, { overflow: "hidden" }]}
+                pointerEvents={showHeader ? "auto" : "none"}
+              >
                 <Navbar />
                 <View>
                   <QuickLinks />
                 </View>
               </Reanimated.View>
 
-
               {!isSearching ? (
-                <View style={styles.fullWidthHeaderRow} {...headerPanResponder.panHandlers}>
+                <View
+                  style={styles.fullWidthHeaderRow}
+                  {...headerPanResponder.panHandlers}
+                >
                   <View style={{ flex: 1, marginTop: 4 }}>
                     <SectionHeader
-                      title={isValidData(mapSettingsData?.screen_title) ? (mapSettingsData?.screen_title ?? "") : ""}
-                      iconSource={require('../../assets/images/mapicon.png')}
+                      title={
+                        isValidData(mapSettingsData?.screen_title)
+                          ? (mapSettingsData?.screen_title ?? "")
+                          : ""
+                      }
+                      iconSource={require("../../assets/images/mapicon.png")}
                       primaryColor={brandPrimary || "#000000"}
                       secondaryColor={brandSecondary || "#ea0b0b"}
                       isDark={isDark}
                       showToggleArrow={true}
                       isCollapsed={!showHeader}
-                      onPress={() => setShowHeader(prev => !prev)}
+                      onPress={() => setShowHeader((prev) => !prev)}
                     />
                     {/* ── Processing Indicator removed from here ── */}
                   </View>
                 </View>
               ) : (
-                <View style={{ marginHorizontal: 16, marginBottom: 12, position: 'relative', zIndex: 110 }}>
+                <View
+                  style={{
+                    marginHorizontal: 16,
+                    marginBottom: 12,
+                    position: "relative",
+                    zIndex: 110,
+                  }}
+                >
                   <View style={styles.searchBar}>
-                    <MaterialIcons name="search" size={22} color={colors.onSurfaceVariant} style={styles.searchIcon} />
+                    <MaterialIcons
+                      name="search"
+                      size={22}
+                      color={colors.onSurfaceVariant}
+                      style={styles.searchIcon}
+                    />
                     <TextInput
                       style={styles.searchInput}
                       placeholder="Search viewing areas..."
@@ -1463,7 +1943,9 @@ function MapScreen() {
                         setSearchQuery(text);
                         setShowSearchResults(text.length > 0);
                       }}
-                      onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
+                      onFocus={() =>
+                        searchQuery.length > 0 && setShowSearchResults(true)
+                      }
                       onBlur={() => {
                         // Small timeout so item presses register before blur hides it
                         setTimeout(() => {
@@ -1475,21 +1957,32 @@ function MapScreen() {
                       }}
                     />
 
-                    <TouchableOpacity onPress={() => {
-                      if (searchQuery.length > 0) {
-                        setSearchQuery('');
-                        setShowSearchResults(false);
-                      } else {
-                        setIsSearching(false);
-                      }
-                    }}>
-                      <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (searchQuery.length > 0) {
+                          setSearchQuery("");
+                          setShowSearchResults(false);
+                        } else {
+                          setIsSearching(false);
+                        }
+                      }}
+                    >
+                      <MaterialIcons
+                        name="close"
+                        size={20}
+                        color={colors.onSurfaceVariant}
+                      />
                     </TouchableOpacity>
                   </View>
 
                   {/* Search results dropdown relative to the searchBar */}
                   {showSearchResults && searchResults.length > 0 && (
-                    <View style={[styles.searchResultsDropdown, { top: 56, left: 0, right: 0 }]}>
+                    <View
+                      style={[
+                        styles.searchResultsDropdown,
+                        { top: 56, left: 0, right: 0 },
+                      ]}
+                    >
                       {searchResults.slice(0, 5).map((wp) => (
                         <TouchableOpacity
                           key={wp.id}
@@ -1499,10 +1992,24 @@ function MapScreen() {
                             setIsSearching(false);
                           }}
                         >
-                          <MaterialIcons name="place" size={18} color={brandPrimary || colors.primary} />
+                          <MaterialIcons
+                            name="place"
+                            size={18}
+                            color={brandPrimary || colors.primary}
+                          />
                           <View style={styles.searchResultText}>
-                            <AppText style={styles.searchResultTitle} numberOfLines={1}>{wp.title}</AppText>
-                            <AppText style={styles.searchResultDesc} numberOfLines={1}>{wp.description}</AppText>
+                            <AppText
+                              style={styles.searchResultTitle}
+                              numberOfLines={1}
+                            >
+                              {wp.title}
+                            </AppText>
+                            <AppText
+                              style={styles.searchResultDesc}
+                              numberOfLines={1}
+                            >
+                              {wp.description}
+                            </AppText>
                           </View>
                         </TouchableOpacity>
                       ))}
@@ -1512,97 +2019,176 @@ function MapScreen() {
               )}
             </Reanimated.View>
 
-            <View style={[styles.sideControls, { bottom: selectedWaypoint ? insets.bottom + 245 : insets.bottom + 90 }]}>
-              <TouchableOpacity style={styles.sideButton} onPress={() => handleNavigate(selectedWaypoint || undefined)}>
-                <MaterialIcons name="navigation" size={24} color={colors.error} style={{ transform: [{ rotate: '45deg' }] }} />
+            <View
+              style={[
+                styles.sideControls,
+                {
+                  bottom: selectedWaypoint
+                    ? insets.bottom + 245
+                    : insets.bottom + 90,
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.sideButton}
+                onPress={() => handleNavigate(selectedWaypoint || undefined)}
+              >
+                <MaterialIcons
+                  name="navigation"
+                  size={24}
+                  color={colors.error}
+                  style={{ transform: [{ rotate: "45deg" }] }}
+                />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sideButton} onPress={handleRecenter}>
-                <MaterialIcons name="my-location" size={24} color={colors.onSurface} />
+              <TouchableOpacity
+                style={styles.sideButton}
+                onPress={handleRecenter}
+              >
+                <MaterialIcons
+                  name="my-location"
+                  size={24}
+                  color={colors.onSurface}
+                />
               </TouchableOpacity>
             </View>
           </>
         )}
 
         {/* ── Offline indicator with coordinates (Bottom-Left) ── */}
-        {netInfo.isConnected === false && !isNavigating && !showPointPicker && !isSelectingPin && (
-          <Reanimated.View
-            entering={FadeInDown.duration(300)}
-            exiting={FadeOutDown.duration(200)}
-            style={[
-              styles.offlineIndicatorContainer,
-              { bottom: (selectedWaypoint ? insets.bottom + 205 : insets.bottom + 90) + (highlightedRoute ? 52 : 0) }
-            ]}
-          >
-            <View style={styles.offlineIndicatorCard}>
-              <MaterialIcons name="wifi-off" size={16} color={isDark ? '#ff6b6b' : '#d93838'} />
-              <View>
-                <AppText style={styles.offlineIndicatorTitle}>Offline Mode</AppText>
-                {location ? (
-                  <AppText style={styles.offlineIndicatorCoords}>
-                    {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+        {netInfo.isConnected === false &&
+          !isNavigating &&
+          !showPointPicker &&
+          !isSelectingPin && (
+            <Reanimated.View
+              entering={FadeInDown.duration(300)}
+              exiting={FadeOutDown.duration(200)}
+              style={[
+                styles.offlineIndicatorContainer,
+                {
+                  bottom:
+                    (selectedWaypoint
+                      ? insets.bottom + 205
+                      : insets.bottom + 90) + (highlightedRoute ? 52 : 0),
+                },
+              ]}
+            >
+              <View style={styles.offlineIndicatorCard}>
+                <MaterialIcons
+                  name="wifi-off"
+                  size={16}
+                  color={isDark ? "#ff6b6b" : "#d93838"}
+                />
+                <View>
+                  <AppText style={styles.offlineIndicatorTitle}>
+                    Offline Mode
                   </AppText>
-                ) : (
-                  <AppText style={styles.offlineIndicatorCoords}>Acquiring GPS...</AppText>
-                )}
+                  {location ? (
+                    <AppText style={styles.offlineIndicatorCoords}>
+                      {location.latitude.toFixed(5)},{" "}
+                      {location.longitude.toFixed(5)}
+                    </AppText>
+                  ) : (
+                    <AppText style={styles.offlineIndicatorCoords}>
+                      Acquiring GPS...
+                    </AppText>
+                  )}
+                </View>
               </View>
-            </View>
-          </Reanimated.View>
-        )}
+            </Reanimated.View>
+          )}
 
         {/* ── Route Tooltip (Custom Bottom-Left Message) ── */}
-        {highlightedRoute && !isNavigating && !showPointPicker && !isSelectingPin && (
-          <Reanimated.View
-            entering={FadeInDown.duration(300)}
-            exiting={FadeOutDown.duration(200)}
-            style={[styles.routeTooltipContainer, { bottom: selectedWaypoint ? insets.bottom + 205 : insets.bottom + 90 }]}
-          >
-            <View style={styles.routeTooltipCard}>
-              <View style={[
-                styles.routeTooltipDot,
-                { backgroundColor: highlightedRoute === 'main' ? '#FFD700' : '#ff8a00' }
-              ]} />
-              <View>
-                <AppText style={styles.routeTooltipTitle}>
-                  {highlightedRoute === 'main' ? 'Elk Scenic Drive' : 'Alternate Route'}
-                </AppText>
+        {highlightedRoute &&
+          !isNavigating &&
+          !showPointPicker &&
+          !isSelectingPin && (
+            <Reanimated.View
+              entering={FadeInDown.duration(300)}
+              exiting={FadeOutDown.duration(200)}
+              style={[
+                styles.routeTooltipContainer,
+                {
+                  bottom: selectedWaypoint
+                    ? insets.bottom + 205
+                    : insets.bottom + 90,
+                },
+              ]}
+            >
+              <View style={styles.routeTooltipCard}>
+                <View
+                  style={[
+                    styles.routeTooltipDot,
+                    {
+                      backgroundColor:
+                        highlightedRoute === "main" ? "#FFD700" : "#ff8a00",
+                    },
+                  ]}
+                />
+                <View>
+                  <AppText style={styles.routeTooltipTitle}>
+                    {highlightedRoute === "main"
+                      ? "Elk Scenic Drive"
+                      : "Alternate Route"}
+                  </AppText>
+                </View>
+                <TouchableOpacity
+                  style={styles.routeTooltipClose}
+                  onPress={() => setHighlightedRoute(null)}
+                >
+                  <MaterialIcons
+                    name="close"
+                    size={16}
+                    color={colors.onSurfaceVariant}
+                  />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.routeTooltipClose}
-                onPress={() => setHighlightedRoute(null)}
-              >
-                <MaterialIcons name="close" size={16} color={colors.onSurfaceVariant} />
-              </TouchableOpacity>
-            </View>
-          </Reanimated.View>
-        )}
+            </Reanimated.View>
+          )}
 
         {/* ── Waypoint carousel (hidden during navigation and pin selection) ── */}
-        {selectedWaypoint && !isNavigating && !showPointPicker && !isSelectingPin && (
-          <Reanimated.View
-            entering={FadeInDown.duration(300).delay(150)}
-            exiting={FadeOutDown.duration(200)}
-            style={[styles.hotspotCardContainer, { bottom: 0 }]}
-          >
-            <FlatList
-              ref={flatListRef}
-              data={waypoints}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={handleScrollEnd}
-              keyExtractor={(item) => `hotspot-${item.id}`}
-              getItemLayout={(_, index) => ({ length: windowWidth, offset: windowWidth * index, index })}
-              initialScrollIndex={waypoints.findIndex(w => w.id === selectedWaypoint.id) !== -1 ? waypoints.findIndex(w => w.id === selectedWaypoint.id) : 0}
-              removeClippedSubviews={false}
-              initialNumToRender={waypoints.length}
-              maxToRenderPerBatch={waypoints.length}
-              onScrollToIndexFailed={(info) => {
-                setTimeout(() => { flatListRef.current?.scrollToIndex({ index: info.index, animated: false }); }, 50);
-              }}
-              renderItem={renderWaypointCard}
-            />
-          </Reanimated.View>
-        )}
+        {selectedWaypoint &&
+          !isNavigating &&
+          !showPointPicker &&
+          !isSelectingPin && (
+            <Reanimated.View
+              entering={FadeInDown.duration(300).delay(150)}
+              exiting={FadeOutDown.duration(200)}
+              style={[styles.hotspotCardContainer, { bottom: 0 }]}
+            >
+              <FlatList
+                ref={flatListRef}
+                data={waypoints}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={handleScrollEnd}
+                keyExtractor={(item) => `hotspot-${item.id}`}
+                getItemLayout={(_, index) => ({
+                  length: windowWidth,
+                  offset: windowWidth * index,
+                  index,
+                })}
+                initialScrollIndex={
+                  waypoints.findIndex((w) => w.id === selectedWaypoint.id) !==
+                  -1
+                    ? waypoints.findIndex((w) => w.id === selectedWaypoint.id)
+                    : 0
+                }
+                removeClippedSubviews={false}
+                initialNumToRender={waypoints.length}
+                maxToRenderPerBatch={waypoints.length}
+                onScrollToIndexFailed={(info) => {
+                  setTimeout(() => {
+                    flatListRef.current?.scrollToIndex({
+                      index: info.index,
+                      animated: false,
+                    });
+                  }, 50);
+                }}
+                renderItem={renderWaypointCard}
+              />
+            </Reanimated.View>
+          )}
 
         {/* ── Route planner (full-screen picker) ── */}
         <RoutePlanner
@@ -1616,13 +2202,17 @@ function MapScreen() {
           onClose={() => setShowPointPicker(false)}
           onSetStartPoint={setStartPoint}
           onSetDestinationPoint={setDestinationPoint}
-          onAddStop={(wp) => setStopPoints(prev => [...prev, wp])}
-          onRemoveStop={(idx) => setStopPoints(prev => prev.filter((_, i) => i !== idx))}
-          onUpdateStop={(idx, wp) => setStopPoints(prev => prev.map((s, i) => i === idx ? wp : s))}
+          onAddStop={(wp) => setStopPoints((prev) => [...prev, wp])}
+          onRemoveStop={(idx) =>
+            setStopPoints((prev) => prev.filter((_, i) => i !== idx))
+          }
+          onUpdateStop={(idx, wp) =>
+            setStopPoints((prev) => prev.map((s, i) => (i === idx ? wp : s)))
+          }
           onSetPickerType={setPickerType}
           onSelectOnMap={(type, stopIndex) => {
             setPinPickerType(type);
-            if (type === 'stop' && stopIndex !== undefined) {
+            if (type === "stop" && stopIndex !== undefined) {
               setPinPickerStopIndex(stopIndex);
             }
             // Reset camera padding so MapLibre center is 100% aligned with physical screen center
@@ -1630,17 +2220,22 @@ function MapScreen() {
               const currentCenter = mapCenterRef.current
                 ? [mapCenterRef.current.lng, mapCenterRef.current.lat]
                 : currentRegion
-                ? [currentRegion.longitude, currentRegion.latitude]
-                : undefined;
+                  ? [currentRegion.longitude, currentRegion.latitude]
+                  : undefined;
               if (currentCenter && cameraRef.current?.easeTo) {
                 cameraRef.current.easeTo({
                   center: currentCenter,
-                  padding: { paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: 0 },
+                  padding: {
+                    paddingLeft: 0,
+                    paddingRight: 0,
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                  },
                   duration: 150,
                 });
               }
             } catch (e) {
-              console.warn('[DropPin] Reset camera padding failed:', e);
+              console.warn("[DropPin] Reset camera padding failed:", e);
             }
             // Set the initial pin coordinate immediately from the current map center
             // so the Marker mounts ONCE at activation, not on the first pan event.
@@ -1670,8 +2265,8 @@ function MapScreen() {
         {isNavigating && (
           <>
             <NavigationHeader
-              fromTitle={startPoint?.title ?? 'Starting point'}
-              toTitle={destinationPoint?.title ?? 'Destination'}
+              fromTitle={startPoint?.title ?? "Starting point"}
+              toTitle={destinationPoint?.title ?? "Destination"}
               onExit={handleExitNavigation}
             />
             <NavigationOverlay
@@ -1684,11 +2279,30 @@ function MapScreen() {
               onRecenter={handleRecenter}
             />
             {/* Compass direction badge */}
-            <View style={[styles.navCompassBadge, { top: insets.top + 90 }]} pointerEvents="none">
-              <Animated.View style={[styles.navCompassArrow, { transform: [{ rotate: headingAnim.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] }) }] }]}>
+            <View
+              style={[styles.navCompassBadge, { top: insets.top + 90 }]}
+              pointerEvents="none"
+            >
+              <Animated.View
+                style={[
+                  styles.navCompassArrow,
+                  {
+                    transform: [
+                      {
+                        rotate: headingAnim.interpolate({
+                          inputRange: [-360, 360],
+                          outputRange: ["-360deg", "360deg"],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
                 <MaterialIcons name="navigation" size={20} color="white" />
               </Animated.View>
-              <AppText style={styles.navCompassLabel}>{headingCardinal}</AppText>
+              <AppText style={styles.navCompassLabel}>
+                {headingCardinal}
+              </AppText>
             </View>
           </>
         )}
@@ -1698,14 +2312,21 @@ function MapScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.arrivalCard}>
               <View style={styles.arrivalIconContainer}>
-                <MaterialIcons name="location-on" size={40} color={colors.onPrimary} />
+                <MaterialIcons
+                  name="location-on"
+                  size={40}
+                  color={colors.onPrimary}
+                />
               </View>
-              <AppText style={styles.arrivalTitle}>{"You've Reached Your Destination"}</AppText>
+              <AppText style={styles.arrivalTitle}>
+                {"You've Reached Your Destination"}
+              </AppText>
               <AppText style={styles.arrivalSubtitle}>
-                {destinationPoint?.title ?? 'Your destination'}
+                {destinationPoint?.title ?? "Your destination"}
               </AppText>
               <AppText style={styles.arrivalDescription}>
-                Enjoy your time in elk country. Remember to follow wildlife safety guidelines and respect viewing area rules.
+                Enjoy your time in elk country. Remember to follow wildlife
+                safety guidelines and respect viewing area rules.
               </AppText>
               <TouchableOpacity
                 style={styles.arrivalButton}
@@ -1714,7 +2335,11 @@ function MapScreen() {
                   handleExitNavigation();
                 }}
               >
-                <MaterialIcons name="check-circle" size={20} color={colors.onPrimary} />
+                <MaterialIcons
+                  name="check-circle"
+                  size={20}
+                  color={colors.onPrimary}
+                />
                 <AppText style={styles.arrivalButtonText}>Done</AppText>
               </TouchableOpacity>
             </View>
@@ -1723,29 +2348,61 @@ function MapScreen() {
 
         {isSelectingPin && (
           <>
-
             {/* Top label */}
             <View style={[styles.pinLabelBar, { top: insets.top + 12 }]}>
-              <MaterialIcons name="location-searching" size={18} color={colors.primary} />
+              <MaterialIcons
+                name="location-searching"
+                size={18}
+                color={colors.primary}
+              />
               <AppText style={styles.pinLabelText}>
-                Move map to place {pinPickerType === 'start' ? 'start' : pinPickerType === 'stop' ? 'stop' : 'destination'}
+                Move map to place{" "}
+                {pinPickerType === "start"
+                  ? "start"
+                  : pinPickerType === "stop"
+                    ? "stop"
+                    : "destination"}
               </AppText>
             </View>
             {/* Compass direction indicator */}
             {location && (
               <View style={[styles.compassContainer, { top: insets.top + 60 }]}>
-                <Animated.View style={[styles.compassArrow, { transform: [{ rotate: headingAnim.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] }) }] }]}>
-                  <MaterialIcons name="navigation" size={22} color={colors.primary} />
+                <Animated.View
+                  style={[
+                    styles.compassArrow,
+                    {
+                      transform: [
+                        {
+                          rotate: headingAnim.interpolate({
+                            inputRange: [-360, 360],
+                            outputRange: ["-360deg", "360deg"],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name="navigation"
+                    size={22}
+                    color={colors.primary}
+                  />
                 </Animated.View>
                 <AppText style={styles.compassLabel}>{headingCardinal}</AppText>
               </View>
             )}
 
             {/* Bottom confirm / cancel */}
-            <View style={[styles.pinActionBar, { bottom: insets.bottom + 100 }]}>
+            <View
+              style={[styles.pinActionBar, { bottom: insets.bottom + 100 }]}
+            >
               <TouchableOpacity
                 style={styles.pinCancelBtn}
-                onPress={() => { isSelectingPinRef.current = false; setIsSelectingPin(false); setShowPointPicker(true); }}
+                onPress={() => {
+                  isSelectingPinRef.current = false;
+                  setIsSelectingPin(false);
+                  setShowPointPicker(true);
+                }}
               >
                 <MaterialIcons name="close" size={20} color={colors.primary} />
                 <AppText style={styles.pinCancelText}>Cancel</AppText>
@@ -1753,27 +2410,37 @@ function MapScreen() {
               <TouchableOpacity
                 style={styles.pinConfirmBtn}
                 onPress={() => {
-                  const lng = dropPinPreviewCoordinate?.longitude ?? mapCenterRef.current?.lng ?? (currentRegion?.longitude ?? 0);
-                  const lat = dropPinPreviewCoordinate?.latitude ?? mapCenterRef.current?.lat ?? (currentRegion?.latitude ?? 0);
+                  const lng =
+                    dropPinPreviewCoordinate?.longitude ??
+                    mapCenterRef.current?.lng ??
+                    currentRegion?.longitude ??
+                    0;
+                  const lat =
+                    dropPinPreviewCoordinate?.latitude ??
+                    mapCenterRef.current?.lat ??
+                    currentRegion?.latitude ??
+                    0;
 
                   const pin: Waypoint = {
                     id: -Date.now(),
-                    title: 'Dropped Pin',
+                    title: "Dropped Pin",
                     coordinate: { longitude: lng, latitude: lat },
-                    description: 'Custom point selected on map',
+                    description: "Custom point selected on map",
                   };
                   setDropPinPreviewCoordinate(pin.coordinate);
-                  if (pinPickerType === 'start') {
+                  if (pinPickerType === "start") {
                     setStartPoint(pin);
-                  }
-                  else if (pinPickerType === 'stop') {
+                  } else if (pinPickerType === "stop") {
                     if (pinPickerStopIndex !== null) {
-                      setStopPoints(prev => prev.map((s, i) => i === pinPickerStopIndex ? pin : s));
+                      setStopPoints((prev) =>
+                        prev.map((s, i) =>
+                          i === pinPickerStopIndex ? pin : s,
+                        ),
+                      );
                     } else {
-                      setStopPoints(prev => [...prev, pin]);
+                      setStopPoints((prev) => [...prev, pin]);
                     }
-                  }
-                  else {
+                  } else {
                     setDestinationPoint(pin);
                   }
                   setPinPickerStopIndex(null);
@@ -1783,7 +2450,9 @@ function MapScreen() {
                 }}
               >
                 <MaterialIcons name="check" size={20} color="white" />
-                <AppText style={styles.pinConfirmText}>Confirm Location</AppText>
+                <AppText style={styles.pinConfirmText}>
+                  Confirm Location
+                </AppText>
               </TouchableOpacity>
             </View>
           </>
@@ -1791,11 +2460,22 @@ function MapScreen() {
         {/* ── Download consent overlay ── */}
         {showConsentOverlay && (
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalCard, { width: windowWidth * 0.95, height: windowWidth * 0.82, padding: 24, justifyContent: 'center', maxWidth: '100%' }]}>
+            <View
+              style={[
+                styles.modalCard,
+                {
+                  width: windowWidth * 0.95,
+                  height: windowWidth * 0.82,
+                  padding: 24,
+                  justifyContent: "center",
+                  maxWidth: "100%",
+                },
+              ]}
+            >
               {/* Close Button */}
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => saveConsent('dismissed', true)}
+                onPress={() => saveConsent("dismissed", true)}
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="close" size={18} color="#FFFFFF" />
@@ -1804,16 +2484,46 @@ function MapScreen() {
               {/* <View style={[styles.modalIconContainer, { marginBottom: 16, marginTop: 0 }]}>
                 <MaterialIcons name="download-for-offline" size={32} color={colors.inversePrimary} />
               </View> */}
-              <AppText style={[styles.modalTitle, { fontSize: 22, fontFamily: fonts.bodyBold, marginBottom: 12 }]}>Explore Without Limits</AppText>
-              <AppText style={[styles.modalDescription, { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 }]}>
-                Cellular signal is weak in Elk Country. Download this region now to ensure navigation and safety features work offline.
+              <AppText
+                style={[
+                  styles.modalTitle,
+                  {
+                    fontSize: 22,
+                    fontFamily: fonts.bodyBold,
+                    marginBottom: 12,
+                  },
+                ]}
+              >
+                Explore Without Limits
+              </AppText>
+              <AppText
+                style={[
+                  styles.modalDescription,
+                  { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 },
+                ]}
+              >
+                Cellular signal is weak in Elk Country. Download this region now
+                to ensure navigation and safety features work offline.
               </AppText>
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  style={[styles.modalButtonPrimary, { height: 44, width: '85%', alignSelf: 'center' }]}
-                  onPress={() => { saveConsent('yes'); downloadMap(); }}
+                  style={[
+                    styles.modalButtonPrimary,
+                    { height: 44, width: "85%", alignSelf: "center" },
+                  ]}
+                  onPress={() => {
+                    saveConsent("yes");
+                    downloadMap();
+                  }}
                 >
-                  <AppText style={[styles.modalButtonTextPrimary, { fontSize: 14, fontFamily: fonts.bodyBold }]}>Download Offline Map</AppText>
+                  <AppText
+                    style={[
+                      styles.modalButtonTextPrimary,
+                      { fontSize: 14, fontFamily: fonts.bodyBold },
+                    ]}
+                  >
+                    Download Offline Map
+                  </AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1824,14 +2534,29 @@ function MapScreen() {
         {showDownloadErrorOverlay && (
           <View style={styles.errorToastContainer}>
             <View style={styles.errorToastIcon}>
-              <MaterialIcons name="error-outline" size={24} color={colors.error} />
+              <MaterialIcons
+                name="error-outline"
+                size={24}
+                color={colors.error}
+              />
             </View>
             <View style={styles.errorToastTextContent}>
-              <AppText style={styles.errorToastTitle}>Something went wrong</AppText>
-              <AppText style={styles.errorToastDescription}>Map download failed. Online map active.</AppText>
+              <AppText style={styles.errorToastTitle}>
+                Something went wrong
+              </AppText>
+              <AppText style={styles.errorToastDescription}>
+                Map download failed. Online map active.
+              </AppText>
             </View>
-            <TouchableOpacity onPress={() => saveConsent('dismissed', true)} style={styles.errorToastClose}>
-              <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+            <TouchableOpacity
+              onPress={() => saveConsent("dismissed", true)}
+              style={styles.errorToastClose}
+            >
+              <MaterialIcons
+                name="close"
+                size={20}
+                color={colors.onSurfaceVariant}
+              />
             </TouchableOpacity>
           </View>
         )}
@@ -1841,42 +2566,57 @@ function MapScreen() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean, brandPrimary: string | undefined, brandSecondary: string | undefined) =>
+const createStyles = (
+  colors: typeof LIGHT_COLORS,
+  fonts: typeof LIGHT_FONTS,
+  isDark: boolean,
+  brandPrimary: string | undefined,
+  brandSecondary: string | undefined,
+) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF', height: '100%' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface },
-    loadingText: { marginTop: 10, fontFamily: fonts.bodyMedium, color: colors.onSurfaceVariant },
+    container: { flex: 1, backgroundColor: "#FFFFFF", height: "100%" },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+    },
+    loadingText: {
+      marginTop: 10,
+      fontFamily: fonts.bodyMedium,
+      color: colors.onSurfaceVariant,
+    },
     map: { ...StyleSheet.absoluteFillObject },
     topHeaderContainer: {
-      backgroundColor: '#FFFFFF',
+      backgroundColor: "#FFFFFF",
       borderBottomWidth: 1,
-      borderBottomColor: '#E0E0E0',
+      borderBottomColor: "#E0E0E0",
       zIndex: 50,
       elevation: 50,
     },
     mapContainer: {
       flex: 1,
-      position: 'relative',
-      height: '100%',
+      position: "relative",
+      height: "100%",
     },
 
     // Floating Title
     floatingTitleContainer: {
-      position: 'absolute',
+      position: "absolute",
       top: 16,
       left: 0,
       right: 0,
-      alignItems: 'center',
+      alignItems: "center",
       zIndex: 15,
     },
     floatingTitleCapsule: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
       borderRadius: 99,
       paddingHorizontal: 20,
       paddingVertical: 10,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 6,
@@ -1885,35 +2625,45 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     floatingTitleText: {
       fontFamily: fonts.bodyBold,
       fontSize: 16,
-      color: isDark ? colors.onSurface : '#000000',
+      color: isDark ? colors.onSurface : "#000000",
     },
 
     // Search bar
     fullWidthHeaderContainer: {
-      position: 'absolute', left: 0, right: 0, top: 0, zIndex: 10,
-      backgroundColor: isDark ? colors.surface : '#FFFFFF',
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-      borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '40',
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: 0,
+      zIndex: 10,
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.outlineVariant + "40",
     },
 
     // Offline indicator
     offlineIndicatorContainer: {
-      position: 'absolute',
+      position: "absolute",
       left: 16,
       zIndex: 90,
     },
     offlineIndicatorCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 8,
-      backgroundColor: isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      backgroundColor: isDark
+        ? "rgba(30, 30, 30, 0.9)"
+        : "rgba(255, 255, 255, 0.9)",
       paddingVertical: 6,
       paddingHorizontal: 12,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-      shadowColor: '#000',
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.08)",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 8,
@@ -1922,7 +2672,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     offlineIndicatorTitle: {
       fontFamily: fonts.bodyBold,
       fontSize: 12,
-      color: isDark ? '#ff6b6b' : '#d93838',
+      color: isDark ? "#ff6b6b" : "#d93838",
     },
     offlineIndicatorCoords: {
       fontFamily: fonts.caption,
@@ -1933,24 +2683,24 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
 
     // Route Tooltip
     routeTooltipContainer: {
-      position: 'absolute',
+      position: "absolute",
       left: 16,
       zIndex: 90,
     },
     routeTooltipCard: {
-      flexDirection: 'row',
-      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+      flexDirection: "row",
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
       padding: 8,
       paddingRight: 12,
       borderRadius: 99,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 10,
       elevation: 6,
       borderWidth: 1,
-      borderColor: brandPrimary + '30',
-      alignItems: 'center',
+      borderColor: brandPrimary + "30",
+      alignItems: "center",
     },
     routeTooltipDot: {
       width: 14,
@@ -1967,107 +2717,156 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     routeTooltipClose: {
       padding: 6,
       marginLeft: 10,
-      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
+      backgroundColor: isDark ? colors.surfaceContainer : "#F2F4F3",
       borderRadius: 16,
     },
     fullWidthHeaderRow: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     searchIconButton: {
-      width: 44, height: 44, borderRadius: 22,
-      justifyContent: 'center', alignItems: 'center',
-      marginRight: 16, marginBottom: 12,
-      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 16,
+      marginBottom: 12,
+      backgroundColor: isDark ? colors.surfaceContainer : "#F2F4F3",
     },
     searchBar: {
-      flexDirection: 'row', alignItems: 'center',
-      backgroundColor: isDark ? colors.surfaceContainer : '#F2F4F3',
-      borderRadius: 99, paddingHorizontal: 16, height: 52,
-      width: 'auto',
-      borderWidth: 1, borderColor: colors.outlineVariant + '1a', // 10% opacity
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: isDark ? colors.surfaceContainer : "#F2F4F3",
+      borderRadius: 99,
+      paddingHorizontal: 16,
+      height: 52,
+      width: "auto",
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + "1a", // 10% opacity
     },
     searchIcon: { marginRight: 12 },
-    searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.onSurface, padding: 0 },
+    searchInput: {
+      flex: 1,
+      fontFamily: fonts.body,
+      fontSize: 16,
+      color: colors.onSurface,
+      padding: 0,
+    },
     searchResultsDropdown: {
-      position: 'absolute', left: 16, right: 16,
+      position: "absolute",
+      left: 16,
+      right: 16,
       backgroundColor: colors.surface,
       borderRadius: 16,
-      borderWidth: 1, borderColor: colors.outlineVariant + '33',
-      shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.3 : 0.15, shadowRadius: 16, elevation: 8,
-      maxHeight: 280, overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + "33",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.3 : 0.15,
+      shadowRadius: 16,
+      elevation: 8,
+      maxHeight: 280,
+      overflow: "hidden",
     },
     searchResultItem: {
-      flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12,
-      borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '1a',
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 14,
+      gap: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.outlineVariant + "1a",
     },
     searchResultText: { flex: 1 },
-    searchResultTitle: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.onSurface, textTransform: 'capitalize' },
-    searchResultDesc: { fontFamily: fonts.body, fontSize: 12, color: colors.onSurfaceVariant, marginTop: 2 },
+    searchResultTitle: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 14,
+      color: colors.onSurface,
+      textTransform: "capitalize",
+    },
+    searchResultDesc: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.onSurfaceVariant,
+      marginTop: 2,
+    },
 
     // Side controls
-    sideControls: { position: 'absolute', right: 24, zIndex: 10, gap: 16 },
+    sideControls: { position: "absolute", right: 24, zIndex: 10, gap: 16 },
     sideButton: {
-      width: 48, height: 48, borderRadius: 24,
-      backgroundColor: colors.surface + 'f2', // 95% opacity
-      justifyContent: 'center', alignItems: 'center',
-      borderWidth: 1, borderColor: colors.outlineVariant + '33', // 20% opacity
-      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.25 : 0.1, shadowRadius: 12, elevation: 4,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.surface + "f2", // 95% opacity
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.outlineVariant + "33", // 20% opacity
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.1,
+      shadowRadius: 12,
+      elevation: 4,
     },
 
     // Waypoint carousel
-    hotspotCardContainer: { position: 'absolute', left: 0, right: 0, zIndex: 10 },
+    hotspotCardContainer: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
     hotspotCard: {
-      backgroundColor: isDark ? colors.surface : '#FFFFFF',
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
       borderRadius: 0,
       padding: 20,
       borderWidth: 1,
-      borderColor: colors.outlineVariant + '33',
-      shadowColor: '#000',
+      borderColor: colors.outlineVariant + "33",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.1,
       shadowRadius: 16,
       elevation: 8,
     },
     cardHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 8,
     },
     titleContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       flex: 1,
       marginRight: 12,
     },
     hotspotTitle: {
       fontFamily: fonts.bodyBold,
       fontSize: 14,
-      color: isDark ? colors.onSurface : '#000000',
+      color: isDark ? colors.onSurface : "#000000",
       flex: 1,
-      textTransform: 'capitalize',
+      textTransform: "capitalize",
     },
     cardCloseButton: {
       width: 24,
       height: 24,
       borderRadius: 12,
-      backgroundColor: '#000000',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "#000000",
+      justifyContent: "center",
+      alignItems: "center",
     },
     hotspotDescription: {
       fontFamily: fonts.body,
       fontSize: 12,
-      color: isDark ? colors.onSurfaceVariant : '#333333',
+      color: isDark ? colors.onSurfaceVariant : "#333333",
       lineHeight: 18,
       marginBottom: 16,
     },
     cardFooterRow: {
-      flexDirection: 'row',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "flex-start",
+      alignItems: "center",
     },
     viewMoreButton: {
       backgroundColor: isDark ? colors.surfaceVariant : brandPrimary,
@@ -2076,32 +2875,42 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       paddingHorizontal: 20,
     },
     viewMoreButtonText: {
-      fontFamily: 'OpenSans-Regular',
-      fontWeight: '400',
-      fontStyle: 'normal',
+      fontFamily: "OpenSans-Regular",
+      fontWeight: "400",
+      fontStyle: "normal",
       fontSize: 14,
       lineHeight: 14,
       letterSpacing: 0,
-      color: isDark ? colors.onSurface : '#ffffff',
+      color: isDark ? colors.onSurface : "#ffffff",
     },
 
     // Drop-pin crosshair
     crosshairContainer: {
-      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-      justifyContent: 'center', alignItems: 'center', zIndex: 500,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 500,
     },
     crosshairTarget: {
       width: 42,
       height: 42,
       borderRadius: 21,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     crosshairOuter: {
-      width: 42, height: 42, borderRadius: 21,
-      borderWidth: 2.5, borderColor: brandPrimary,
-      backgroundColor: addOpacity(brandPrimary, '1f'), // 12% opacity
-      justifyContent: 'center', alignItems: 'center',
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      borderWidth: 2.5,
+      borderColor: brandPrimary,
+      backgroundColor: addOpacity(brandPrimary, "1f"), // 12% opacity
+      justifyContent: "center",
+      alignItems: "center",
     },
     crosshairInner: {
       width: 10,
@@ -2109,62 +2918,115 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderRadius: 5,
       backgroundColor: colors.error,
       borderWidth: 2,
-      borderColor: isDark ? colors.surface : 'white',
+      borderColor: isDark ? colors.surface : "white",
     },
     pinLabelBar: {
-      position: 'absolute', left: 24, right: 24, zIndex: 600,
-      flexDirection: 'row', alignItems: 'center', gap: 8,
-      backgroundColor: addOpacity(colors.surface, 'f2'), // 95% opacity
-      paddingHorizontal: 16, paddingVertical: 10,
+      position: "absolute",
+      left: 24,
+      right: 24,
+      zIndex: 600,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: addOpacity(colors.surface, "f2"), // 95% opacity
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 99,
-      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.25 : 0.1, shadowRadius: 10, elevation: 6,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.1,
+      shadowRadius: 10,
+      elevation: 6,
     },
-    pinLabelText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: brandPrimary, flex: 1 },
+    pinLabelText: {
+      fontFamily: fonts.bodyMedium,
+      fontSize: 14,
+      color: brandPrimary,
+      flex: 1,
+    },
     compassContainer: {
-      position: 'absolute', right: 16, zIndex: 600,
-      alignItems: 'center',
-      backgroundColor: colors.surface + 'f2',
-      width: 56, height: 56, borderRadius: 28,
-      justifyContent: 'center',
-      shadowColor: '#000', shadowOpacity: isDark ? 0.25 : 0.12, shadowRadius: 8, elevation: 4,
-      borderWidth: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.08)',
+      position: "absolute",
+      right: 16,
+      zIndex: 600,
+      alignItems: "center",
+      backgroundColor: colors.surface + "f2",
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: isDark ? 0.25 : 0.12,
+      shadowRadius: 8,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0,0,0,0.08)",
     },
     compassArrow: { marginBottom: 1 },
-    compassLabel: { fontFamily: fonts.caption, fontSize: 10, color: brandPrimary, letterSpacing: 0.5 },
+    compassLabel: {
+      fontFamily: fonts.caption,
+      fontSize: 10,
+      color: brandPrimary,
+      letterSpacing: 0.5,
+    },
     pinActionBar: {
-      position: 'absolute', left: 16, right: 16, zIndex: 600,
-      flexDirection: 'row', gap: 12,
+      position: "absolute",
+      left: 16,
+      right: 16,
+      zIndex: 600,
+      flexDirection: "row",
+      gap: 12,
     },
     pinCancelBtn: {
-      flex: 1, height: 52, borderRadius: 12,
-      borderWidth: 1.5, borderColor: colors.outline,
-      backgroundColor: colors.surface + 'f7',
-      flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
+      flex: 1,
+      height: 52,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.outline,
+      backgroundColor: colors.surface + "f7",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 6,
     },
-    pinCancelText: { fontFamily: fonts.bodyBold, fontSize: 16, color: brandPrimary },
+    pinCancelText: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 16,
+      color: brandPrimary,
+    },
     pinConfirmBtn: {
-      flex: 2, height: 52, borderRadius: 12,
+      flex: 2,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: brandPrimary,
-      flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6,
-      shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 6,
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
-    pinConfirmText: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.onPrimary },
+    pinConfirmText: {
+      fontFamily: fonts.bodyBold,
+      fontSize: 16,
+      color: colors.onPrimary,
+    },
 
     // Route & Stop point pin badge styles
     routePinBadgeContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
     },
     routePinBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 8,
       paddingVertical: 5,
       borderRadius: 12,
       gap: 4,
       elevation: 6,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
       shadowRadius: 3,
@@ -2172,79 +3034,126 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     routePinBadgeText: {
       fontFamily: fonts.bodyBold,
       fontSize: 12,
-      color: '#FFFFFF',
+      color: "#FFFFFF",
       maxWidth: 110,
     },
     routePinPinhead: {
       width: 0,
       height: 0,
-      backgroundColor: 'transparent',
-      borderStyle: 'solid',
+      backgroundColor: "transparent",
+      borderStyle: "solid",
       borderLeftWidth: 5,
       borderRightWidth: 5,
       borderTopWidth: 6,
-      borderLeftColor: 'transparent',
-      borderRightColor: 'transparent',
+      borderLeftColor: "transparent",
+      borderRightColor: "transparent",
       marginTop: -1,
     },
 
     // Navigation compass badge
     navCompassBadge: {
-      position: 'absolute', right: 16, zIndex: 95,
-      alignItems: 'center',
+      position: "absolute",
+      right: 16,
+      zIndex: 95,
+      alignItems: "center",
       backgroundColor: brandPrimary,
-      width: 56, height: 56, borderRadius: 28,
-      justifyContent: 'center',
-      shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 8, elevation: 6,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 6,
     },
     navCompassArrow: { marginBottom: 1 },
-    navCompassLabel: { fontFamily: fonts.caption, fontSize: 10, color: colors.onPrimary + 'cc', letterSpacing: 0.5 },
+    navCompassLabel: {
+      fontFamily: fonts.caption,
+      fontSize: 10,
+      color: colors.onPrimary + "cc",
+      letterSpacing: 0.5,
+    },
 
     // User heading arrow (navigation mode)
     userArrowContainer: {
-      width: 48, height: 48,
-      marginTop: -24, marginLeft: -24,
-      justifyContent: 'center', alignItems: 'center',
+      width: 48,
+      height: 48,
+      marginTop: -24,
+      marginLeft: -24,
+      justifyContent: "center",
+      alignItems: "center",
     },
     userArrowPulse: {
-      position: 'absolute',
-      top: 0, left: 0, right: 0, bottom: 0,
-      width: 48, height: 48, borderRadius: 24,
-      backgroundColor: addOpacity(brandPrimary, '26'), // 15% opacity
-      borderWidth: 2, borderColor: addOpacity(brandPrimary, '4d'), // 30% opacity
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: addOpacity(brandPrimary, "26"), // 15% opacity
+      borderWidth: 2,
+      borderColor: addOpacity(brandPrimary, "4d"), // 30% opacity
     },
     userArrowInner: {
-      width: 36, height: 36, borderRadius: 18,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       backgroundColor: brandPrimary,
-      justifyContent: 'center', alignItems: 'center',
-      shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 6, elevation: 6,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 6,
     },
 
     // Waypoint markers
-    waypointCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: brandPrimary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#111413' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.22, shadowRadius: 3, elevation: 4 },
-    waypointCircleSelected: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.tertiaryContainer, borderColor: brandPrimary },
-    waypointText: { color: colors.onPrimary, fontSize: 12, fontWeight: 'bold' },
+    waypointCircle: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: brandPrimary,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: isDark ? "#111413" : "white",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.22,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    waypointCircleSelected: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.tertiaryContainer,
+      borderColor: brandPrimary,
+    },
+    waypointText: { color: colors.onPrimary, fontSize: 12, fontWeight: "bold" },
 
     // Modals
     // Modals
     modalOverlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0, 0, 0, 0.65)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: isDark ? "rgba(0,0,0,0.65)" : "rgba(0, 0, 0, 0.65)",
+      justifyContent: "center",
+      alignItems: "center",
       zIndex: 100,
     },
     modalCard: {
-      width: '95%',
+      width: "95%",
       maxWidth: 400,
-      backgroundColor: colors.surface + 'f2',
+      backgroundColor: colors.surface + "f2",
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: '#CCCCCC',
-      overflow: 'hidden',
+      borderColor: "#CCCCCC",
+      overflow: "hidden",
       padding: 32,
-      alignItems: 'center',
-      shadowColor: '#000',
+      alignItems: "center",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 12 },
       shadowOpacity: 0.2,
       shadowRadius: 32,
@@ -2262,49 +3171,113 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       alignItems: "center",
       zIndex: 10,
     },
-    modalIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primaryContainer, justifyContent: 'center', alignItems: 'center', marginBottom: 24, marginTop: 12 },
-    modalTitle: { fontFamily: fonts.headingBold, fontSize: 32, color: brandPrimary, textAlign: 'center', marginBottom: 16 },
-    modalDescription: { fontFamily: fonts.body, fontSize: 16, color: colors.onSurfaceVariant, textAlign: 'center', lineHeight: 24, marginBottom: 32, paddingHorizontal: 8 },
-    modalActions: { width: '100%', gap: 12 },
-    modalButtonPrimary: { backgroundColor: brandPrimary, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
-    modalButtonTextPrimary: { color: colors.onPrimary, fontFamily: fonts.bodySemiBold, fontSize: 16 },
-    modalButtonSecondary: { height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', width: '100%' },
-    modalButtonTextSecondary: { color: brandPrimary, fontFamily: fonts.bodySemiBold, fontSize: 16 },
-    checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 32, gap: 8 },
-    checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: colors.outline, justifyContent: 'center', alignItems: 'center' },
-    checkboxChecked: { backgroundColor: brandPrimary, borderColor: brandPrimary },
-    checkboxLabel: { fontFamily: fonts.caption, fontSize: 12, color: colors.onSurfaceVariant },
+    modalIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.primaryContainer,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 24,
+      marginTop: 12,
+    },
+    modalTitle: {
+      fontFamily: fonts.headingBold,
+      fontSize: 32,
+      color: brandPrimary,
+      textAlign: "center",
+      marginBottom: 16,
+    },
+    modalDescription: {
+      fontFamily: fonts.body,
+      fontSize: 16,
+      color: colors.onSurfaceVariant,
+      textAlign: "center",
+      lineHeight: 24,
+      marginBottom: 32,
+      paddingHorizontal: 8,
+    },
+    modalActions: { width: "100%", gap: 12 },
+    modalButtonPrimary: {
+      backgroundColor: brandPrimary,
+      height: 52,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      width: "100%",
+    },
+    modalButtonTextPrimary: {
+      color: colors.onPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 16,
+    },
+    modalButtonSecondary: {
+      height: 48,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+      width: "100%",
+    },
+    modalButtonTextSecondary: {
+      color: brandPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 16,
+    },
+    checkboxContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 32,
+      gap: 8,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.outline,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    checkboxChecked: {
+      backgroundColor: brandPrimary,
+      borderColor: brandPrimary,
+    },
+    checkboxLabel: {
+      fontFamily: fonts.caption,
+      fontSize: 12,
+      color: colors.onSurfaceVariant,
+    },
 
     // Error Toast
     errorToastContainer: {
-      position: 'absolute',
+      position: "absolute",
       bottom: 40,
-      alignSelf: 'center',
-      width: '90%',
+      alignSelf: "center",
+      width: "90%",
       maxWidth: 400,
       backgroundColor: colors.surface,
       borderRadius: 100, // Pill shape for modern look
       padding: 12,
       paddingRight: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 12,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.15,
       shadowRadius: 24,
       elevation: 8,
       borderWidth: 1,
-      borderColor: colors.outlineVariant + '40',
+      borderColor: colors.outlineVariant + "40",
       zIndex: 100,
     },
     errorToastIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.error + '26', // 15% opacity of error color
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: colors.error + "26", // 15% opacity of error color
+      justifyContent: "center",
+      alignItems: "center",
     },
     errorToastTextContent: {
       flex: 1,
@@ -2326,18 +3299,17 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderRadius: 20,
     },
 
-
     // Arrival popup
     arrivalCard: {
-      width: '100%',
+      width: "100%",
       maxWidth: 380,
-      backgroundColor: colors.surface + 'f7',
+      backgroundColor: colors.surface + "f7",
       borderRadius: 28,
       padding: 32,
-      alignItems: 'center',
+      alignItems: "center",
       borderWidth: 1,
-      borderColor: colors.outlineVariant + '33',
-      shadowColor: '#000',
+      borderColor: colors.outlineVariant + "33",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 16 },
       shadowOpacity: isDark ? 0.4 : 0.2,
       shadowRadius: 40,
@@ -2348,10 +3320,10 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       height: 80,
       borderRadius: 40,
       backgroundColor: brandPrimary,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginBottom: 24,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: isDark ? 0.3 : 0.15,
       shadowRadius: 16,
@@ -2361,7 +3333,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       fontFamily: fonts.headingBold,
       fontSize: 26,
       color: brandPrimary,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 8,
       lineHeight: 32,
     },
@@ -2369,14 +3341,14 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       fontFamily: fonts.headingSemiBold,
       fontSize: 18,
       color: colors.tertiary,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     arrivalDescription: {
       fontFamily: fonts.body,
       fontSize: 16,
       color: colors.onSurfaceVariant,
-      textAlign: 'center',
+      textAlign: "center",
       lineHeight: 22,
       marginBottom: 28,
       paddingHorizontal: 8,
@@ -2385,12 +3357,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       backgroundColor: brandPrimary,
       height: 56,
       borderRadius: 14,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
       gap: 8,
-      width: '100%',
-      shadowColor: '#000',
+      width: "100%",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: isDark ? 0.3 : 0.15,
       shadowRadius: 12,
@@ -2402,20 +3374,22 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       fontSize: 18,
     },
     attributionContainer: {
-      position: 'absolute',
+      position: "absolute",
       bottom: 8,
       left: 12,
-      backgroundColor: isDark ? 'rgba(46, 59, 47, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+      backgroundColor: isDark
+        ? "rgba(46, 59, 47, 0.75)"
+        : "rgba(255, 255, 255, 0.75)",
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 4,
       zIndex: 10,
       borderWidth: 1,
-      borderColor: colors.outlineVariant + '33',
+      borderColor: colors.outlineVariant + "33",
     },
     attributionText: {
       fontSize: 10,
       fontFamily: fonts.body,
-      color: isDark ? '#FFFFFF' : '#333333',
+      color: isDark ? "#FFFFFF" : "#333333",
     },
   });

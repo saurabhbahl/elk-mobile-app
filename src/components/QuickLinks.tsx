@@ -12,20 +12,34 @@ const MENU_PADDING = 16;
 const MENU_GAP = 12;
 const MAX_CARD_WIDTH = 175;
 
+// Default aspect ratio reference based on 2.1 card width (~166.67px) and 88px image height
+const DEFAULT_CARD_WIDTH = 166.67;
+const DEFAULT_IMAGE_HEIGHT = 88;
+const IMAGE_ASPECT_RATIO = DEFAULT_CARD_WIDTH / DEFAULT_IMAGE_HEIGHT; // ~1.894
+
 export default function QuickLinks() {
     const { colors, fonts, isDark } = useTheme();
     const { width: screenWidth } = useWindowDimensions();
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+    const isSmallScreen = screenWidth < 380;
 
-    // Calculate dynamic card width: 2.1 cards on mobile screens (< 600px),
+    // Calculate dynamic card width: 2.4 cards on small phones (< 380px),
+    // 2.1 cards on standard mobile screens (380px - 599px),
     // and 4.2 cards on iPad/wider screens (>= 600px).
     const isWiderScreen = screenWidth >= 600;
-    const visibleCards = isWiderScreen ? 4.2 : 2.1;
+    const visibleCards = isWiderScreen ? 4.2 : (isSmallScreen ? 2.4 : 2.1);
     const gapCount = isWiderScreen ? 4 : 2;
     const calculatedWidth = (screenWidth - MENU_PADDING - gapCount * MENU_GAP) / visibleCards;
     const cardWidth = isWiderScreen
         ? Math.max(120, calculatedWidth)
-        : Math.min(MAX_CARD_WIDTH, Math.max(120, calculatedWidth));
+        : Math.min(MAX_CARD_WIDTH, Math.max(isSmallScreen ? 100 : 120, calculatedWidth));
+
+    // Calculate image height responsively using the 2.1 card aspect ratio
+    const cardImageHeight = Math.round(cardWidth / IMAGE_ASPECT_RATIO);
+
+    const styles = React.useMemo(
+        () => createStyles(colors, fonts, isDark, cardImageHeight, cardWidth),
+        [colors, fonts, isDark, cardImageHeight, cardWidth]
+    );
 
     const { navigationData, brandData } = useAppContent();
     const pathname = usePathname();
@@ -118,48 +132,60 @@ export default function QuickLinks() {
     );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
-    container: {
-        backgroundColor: colors.surface,
-    },
-    horizontalMenu: {
-        paddingHorizontal: MENU_PADDING,
-        paddingVertical: 12,
-        gap: MENU_GAP,
-        alignItems: 'stretch',
-    },
-    menuCard: {
-        borderRadius: 12,
-        borderBottomWidth: 4,
-        borderBottomColor: 'transparent',
-        backgroundColor: colors.surface,
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 1.24 },
-        shadowOpacity: 0.25,
-        shadowRadius: 2.47,
-        elevation: 2,
-    },
-    menuCardImage: {
-        height: 88,
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
-        overflow: 'hidden',
-    },
-    menuCardTitleContainer: {
-        flexGrow: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: colors.surface,
-        paddingHorizontal: 6,
-        paddingVertical: 8,
-        borderBottomLeftRadius: 8,
-        borderBottomRightRadius: 8,
-    },
-    menuCardTitle: {
-        fontSize: 14,
-        fontFamily: 'OpenSans-SemiBold',
-        color: colors.onSurface,
-        textAlign: 'center',
-        width: '100%',
-    },
-});
+const createStyles = (
+    colors: typeof LIGHT_COLORS,
+    fonts: typeof LIGHT_FONTS,
+    isDark: boolean,
+    cardImageHeight: number,
+    cardWidth: number
+) => {
+    const isSmall = cardWidth < 145;
+    const titleFontSize = isSmall ? 12 : 14;
+    const verticalPadding = isSmall ? 6 : 8;
+
+    return StyleSheet.create({
+        container: {
+            backgroundColor: colors.surface,
+        },
+        horizontalMenu: {
+            paddingHorizontal: MENU_PADDING,
+            paddingVertical: isSmall ? 8 : 12,
+            gap: MENU_GAP,
+            alignItems: 'stretch',
+        },
+        menuCard: {
+            borderRadius: 12,
+            borderBottomWidth: 4,
+            borderBottomColor: 'transparent',
+            backgroundColor: colors.surface,
+            shadowColor: "#000000",
+            shadowOffset: { width: 0, height: 1.24 },
+            shadowOpacity: 0.25,
+            shadowRadius: 2.47,
+            elevation: 2,
+        },
+        menuCardImage: {
+            height: cardImageHeight,
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+            overflow: 'hidden',
+        },
+        menuCardTitleContainer: {
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: colors.surface,
+            paddingHorizontal: isSmall ? 4 : 6,
+            paddingVertical: verticalPadding,
+            borderBottomLeftRadius: 8,
+            borderBottomRightRadius: 8,
+        },
+        menuCardTitle: {
+            fontSize: titleFontSize,
+            fontFamily: 'OpenSans-SemiBold',
+            color: colors.onSurface,
+            textAlign: 'center',
+            width: '100%',
+        },
+    });
+};

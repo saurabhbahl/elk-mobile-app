@@ -1,24 +1,23 @@
-import { Image } from "expo-image";
 import AppText from "@/src/components/AppText";
 import ItemNotFoundScreen from "@/src/components/ItemNotFoundScreen";
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
-    ActivityIndicator,
-    InteractionManager,
-    Linking,
-    Platform,
-    StatusBar,
-    StyleSheet,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  InteractionManager,
+  StatusBar,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import AppRenderHTML from "@/src/components/AppRenderHTML";
 import CachedImage from "@/src/components/CachedImage";
 import PrimaryButton from "@/src/components/PrimaryButton";
 import SectionHeader from "@/src/components/SectionHeader";
@@ -26,321 +25,398 @@ import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { ProgramsData, useAppContent } from "@/src/contexts/AppContentContext";
 import { formatProgramScheduleDate } from "@/src/utils/dateUtils";
-import AppRenderHTML from "@/src/components/AppRenderHTML";
 import { extractPoiId, navigateToPoi } from "../../src/utils/mapUtils";
 import { isValidData } from "../../src/utils/validation";
 
-import { parseLinkObject, handleLinkPress } from "@/src/utils/linkUtils";
+import { handleLinkPress, parseLinkObject } from "@/src/utils/linkUtils";
 
 const getValidColor = (color: string | undefined) => {
-    if (!color) return undefined;
-    return color.startsWith("#") ? color : `#${color}`;
+  if (!color) return undefined;
+  return color.startsWith("#") ? color : `#${color}`;
 };
 
 export default function ProgramDetailScreen() {
-    const { colors, fonts, isDark } = useTheme();
-    const { id } = useLocalSearchParams();
-    const { brandData, programsData, poisData, apiStatus } = useAppContent();
-    const primaryColor = getValidColor(brandData?.brand_color_primary) || "#000000";
-    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
+  const { colors, fonts, isDark } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const isTablet = screenWidth >= 600;
+  const iconBoxHeight = 20 + (isTablet ? 4 : 0);
+  const iconBoxWidth = 24 + (isTablet ? 4 : 0);
+  const calendarIconSize = 14 + (isTablet ? 4 : 0);
+  const locationIconSize = 16 + (isTablet ? 4 : 0);
+  const { id } = useLocalSearchParams();
+  const { brandData, programsData, poisData, apiStatus } = useAppContent();
+  const primaryColor =
+    getValidColor(brandData?.brand_color_primary) || "#000000";
+  const secondaryColor =
+    getValidColor(brandData?.brand_color_secondary) || "#ea0b0b";
 
-    const styles = React.useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
+  const styles = React.useMemo(
+    () => createStyles(colors, fonts, isDark),
+    [colors, fonts, isDark],
+  );
 
-    const program = programsData?.find(
-        (p: ProgramsData, index: number) => String(p.id || index) === String(id)
-    );
+  const program = programsData?.find(
+    (p: ProgramsData, index: number) => String(p.id || index) === String(id),
+  );
 
-    const poiId = React.useMemo(() => extractPoiId(program?.location_poi_link || program?.location), [program?.location_poi_link, program?.location]);
-    const relatedPoi = React.useMemo(() => {
-        if (poiId === null || !poisData) return null;
-        return poisData.find(p => String(p.id) === String(poiId)) || null;
-    }, [poiId, poisData]);
+  const poiId = React.useMemo(
+    () => extractPoiId(program?.location_poi_link || program?.location),
+    [program?.location_poi_link, program?.location],
+  );
+  const relatedPoi = React.useMemo(() => {
+    if (poiId === null || !poisData) return null;
+    return poisData.find((p) => String(p.id) === String(poiId)) || null;
+  }, [poiId, poisData]);
 
-    const poiName = relatedPoi?.poi_name || relatedPoi?.title || null;
-    const poiAddress = relatedPoi?.address || null;
+  const poiName = relatedPoi?.poi_name || relatedPoi?.title || null;
+  const poiAddress = relatedPoi?.address || null;
 
-    const regLinkObj = React.useMemo(() => {
-        return parseLinkObject(program?.registration_link, "More Info");
-    }, [program?.registration_link]);
+  const regLinkObj = React.useMemo(() => {
+    return parseLinkObject(program?.registration_link, "More Info");
+  }, [program?.registration_link]);
 
-    const handleRegistrationPress = React.useCallback(() => {
-        if (regLinkObj?.url) {
-            handleLinkPress(regLinkObj.url, router);
-        }
-    }, [regLinkObj]);
-
-    const [isTransitioning, setIsTransitioning] = React.useState(true);
-
-    React.useEffect(() => {
-        const interaction = InteractionManager.runAfterInteractions(() => {
-            setIsTransitioning(false);
-        });
-        return () => interaction.cancel();
-    }, []);
-
-    if (apiStatus === "fetching" || isTransitioning) {
-        return (
-            <SafeAreaView style={styles.container} edges={["left", "right"]}>
-                <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={primaryColor} />
-                </View>
-            </SafeAreaView>
-        );
+  const handleRegistrationPress = React.useCallback(() => {
+    if (regLinkObj?.url) {
+      handleLinkPress(regLinkObj.url, router);
     }
+  }, [regLinkObj]);
 
-    if (!program) {
-        return (
-            <ItemNotFoundScreen
-                title="Program Not Found"
-                message="This program is no longer available or may have been deleted."
-            />
-        );
-    }
+  const [isTransitioning, setIsTransitioning] = React.useState(true);
 
-    const rawDescription = program.full_description || "";
+  React.useEffect(() => {
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      setIsTransitioning(false);
+    });
+    return () => interaction.cancel();
+  }, []);
 
+  if (apiStatus === "fetching" || isTransitioning) {
     return (
-        <SafeAreaView
-            style={styles.container}
-            edges={["left", "right"]}
-        >
-            <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
-
-            <Animated.ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                <Navbar />
-                <QuickLinks />
-
-                {/* Heading Row */}
-                {isValidData(program.program_name) ? (
-                    <View >
-                        <SectionHeader
-                            title={program.program_name as string}
-                            iconSource={require("../../assets/images/programicon.png")}
-                            primaryColor={primaryColor || "#000000"}
-                            secondaryColor={secondaryColor || "#ea0b0b"}
-                            isDark={isDark}
-                        />
-                    </View>
-                ) : null}
-
-                {/* Banner Image */}
-                {isValidData(program.thumbnail_image) ? (
-                    <View style={[styles.bannerContainer, { position: 'relative' }]}>
-                        <CachedImage
-                            uri={program.thumbnail_image?.url as string}
-                            style={[styles.bannerImage, { aspectRatio: 4 / 3, height: undefined }]}
-                            contentFit="cover"
-                        />
-                        {poiId !== null ? (
-                            <View style={{ position: 'absolute', bottom: 12, right: 28, zIndex: 10 }}>
-                                <PrimaryButton title="Get Directions" onPress={() => navigateToPoi(router, poiId)} />
-                            </View>
-                        ) : null}
-                    </View>
-                ) : null}
-
-                {/* Details Section */}
-                <View style={styles.detailsContent}>
-                    {/* Schedule / Date & Time */}
-                    {isValidData(program.schedule_dates) ? (
-                        <View style={[styles.infoRow, { alignItems: 'flex-start' }]}>
-                            <Image
-                                source={require("@/assets/images/eventicon.png")}
-                                style={{
-                                    width: 14,
-                                    height: 14,
-                                    marginRight: 8,
-                                    marginLeft: 2,
-                                    marginTop: Platform.OS === 'ios' ? 3 : 7,
-                                    tintColor: secondaryColor
-                                }}
-                                contentFit="contain"
-                            />
-                            <AppText style={[styles.scheduleText, { fontFamily: 'OpenSans-Regular', fontSize: 14, lineHeight: 20, fontWeight: '400', marginBottom: 0, flex: 1 }]}>
-                                {formatProgramScheduleDate(program.schedule_dates)}
-                            </AppText>
-                        </View>
-                    ) : null}
-
-                    {/* Short Description */}
-                    {isValidData(program.short_description) ? (
-                        <AppText style={{ fontFamily: 'OpenSans-Bold', fontSize: 14, lineHeight: 18, fontWeight: '700', color: colors.onSurface, marginBottom: 8 }}>
-                            {program.short_description}
-                        </AppText>
-                    ) : null}
-
-                    {/* Location */}
-                    {(isValidData(poiName) || isValidData(poiAddress)) ? (
-                        <View style={styles.infoRow}>
-                            <Ionicons name="location-outline" size={16} color={secondaryColor} style={styles.infoIcon} />
-                            <View style={{ flex: 1 }}>
-                                {isValidData(poiName) ? (
-                                    <AppText style={styles.locationNameText}>{poiName}</AppText>
-                                ) : null}
-                            </View>
-                        </View>
-                    ) : null}
-
-                    {/* Description Paragraph */}
-                    {isValidData(rawDescription) ? (
-                        <AppRenderHTML
-                            html={typeof rawDescription === "string" ? rawDescription : ""}
-                            contentWidth={width - 32}
-                            baseStyle={{
-                                fontFamily: 'OpenSans-Regular',
-                                fontSize: 14,
-                                color: colors.onSurface,
-                                lineHeight: 20,
-                                textAlign: "left",
-                            }}
-                        />
-                    ) : null}
-
-                    {/* Registration Link Button */}
-                    {regLinkObj ? (
-                        <View style={{ marginTop: 20, marginBottom: 16, alignItems: 'flex-start' }}>
-                            <PrimaryButton
-                                title={regLinkObj.title}
-                                onPress={handleRegistrationPress}
-                            />
-                        </View>
-                    ) : null}
-                </View>
-            </Animated.ScrollView>
-        </SafeAreaView>
+      <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={primaryColor} />
+        </View>
+      </SafeAreaView>
     );
+  }
+
+  if (!program) {
+    return (
+      <ItemNotFoundScreen
+        title="Program Not Found"
+        message="This program is no longer available or may have been deleted."
+      />
+    );
+  }
+
+  const rawDescription = program.full_description || "";
+
+  return (
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
+
+      <Animated.ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Navbar />
+        <QuickLinks />
+
+        {/* Heading Row */}
+        {isValidData(program.program_name) ? (
+          <View>
+            <SectionHeader
+              title={program.program_name as string}
+              iconSource={require("../../assets/images/programicon.png")}
+              primaryColor={primaryColor || "#000000"}
+              secondaryColor={secondaryColor || "#ea0b0b"}
+              isDark={isDark}
+            />
+          </View>
+        ) : null}
+
+        {/* Banner Image */}
+        {isValidData(program.thumbnail_image) ? (
+          <View style={[styles.bannerContainer, { position: "relative" }]}>
+            <CachedImage
+              uri={program.thumbnail_image?.url as string}
+              style={[
+                styles.bannerImage,
+                { aspectRatio: 4 / 3, height: undefined },
+              ]}
+              contentFit="cover"
+            />
+            {poiId !== null ? (
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 12,
+                  right: 28,
+                  zIndex: 10,
+                }}
+              >
+                <PrimaryButton
+                  title="Get Directions"
+                  onPress={() => navigateToPoi(router, poiId)}
+                />
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Details Section */}
+        <View style={styles.detailsContent}>
+          {/* Schedule / Date & Time */}
+          {isValidData(program.schedule_dates) ? (
+            <View style={[styles.infoRow, { alignItems: "flex-start" }]}>
+              <View
+                style={{
+                  width: iconBoxWidth,
+                  height: iconBoxHeight,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 4,
+                }}
+              >
+                <Image
+                  source={require("@/assets/images/eventicon.png")}
+                  style={{
+                    width: calendarIconSize,
+                    height: calendarIconSize,
+                    tintColor: secondaryColor,
+                  }}
+                  contentFit="contain"
+                />
+              </View>
+              <AppText
+                style={{
+                  fontFamily: "OpenSans-Regular",
+                  fontSize: 14,
+                  lineHeight: 20,
+                  fontWeight: "400",
+                  color: colors.onSurface,
+                  flex: 1,
+                }}
+              >
+                {formatProgramScheduleDate(program.schedule_dates)}
+              </AppText>
+            </View>
+          ) : null}
+
+          {/* Short Description */}
+          {isValidData(program.short_description) ? (
+            <AppText
+              style={{
+                fontFamily: "OpenSans-Bold",
+                fontSize: 14,
+                lineHeight: 18,
+                fontWeight: "700",
+                color: colors.onSurface,
+                marginBottom: 8,
+              }}
+            >
+              {program.short_description}
+            </AppText>
+          ) : null}
+
+          {/* Location */}
+          {isValidData(poiName) || isValidData(poiAddress) ? (
+            <View style={[styles.infoRow, { alignItems: "flex-start" }]}>
+              <View
+                style={{
+                  width: iconBoxWidth,
+                  height: iconBoxHeight,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 4,
+                }}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={locationIconSize}
+                  color={secondaryColor}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                {isValidData(poiName) ? (
+                  <AppText
+                    style={[styles.locationNameText, { lineHeight: 20 }]}
+                  >
+                    {poiName}
+                  </AppText>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
+          {/* Description Paragraph */}
+          {isValidData(rawDescription) ? (
+            <AppRenderHTML
+              html={typeof rawDescription === "string" ? rawDescription : ""}
+              contentWidth={width - 32}
+              baseStyle={{
+                fontFamily: "OpenSans-Regular",
+                fontSize: 14,
+                color: colors.onSurface,
+                lineHeight: 20,
+                textAlign: "left",
+              }}
+            />
+          ) : null}
+
+          {/* Registration Link Button */}
+          {regLinkObj ? (
+            <View
+              style={{
+                marginTop: 20,
+                marginBottom: 16,
+                alignItems: "flex-start",
+              }}
+            >
+              <PrimaryButton
+                title={regLinkObj.title}
+                onPress={handleRegistrationPress}
+              />
+            </View>
+          ) : null}
+        </View>
+      </Animated.ScrollView>
+    </SafeAreaView>
+  );
 }
 
-const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, isDark: boolean) => StyleSheet.create({
+const createStyles = (
+  colors: typeof LIGHT_COLORS,
+  fonts: typeof LIGHT_FONTS,
+  isDark: boolean,
+) =>
+  StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: colors.surface,
+      flex: 1,
+      backgroundColor: colors.surface,
     },
 
     loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
     },
 
     errorContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 24,
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 24,
     },
 
     errorText: {
-        fontSize: 16,
-        color: colors.onSurfaceVariant,
-        marginBottom: 16,
+      fontSize: 16,
+      color: colors.onSurfaceVariant,
+      marginBottom: 16,
     },
 
     backTextButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 8,
     },
 
     backTextButtonText: {
-        color: colors.surface,
-        fontWeight: "bold",
-        fontSize: 14,
+      color: colors.surface,
+      fontWeight: "bold",
+      fontSize: 14,
     },
 
     scrollContent: {
-        paddingBottom: 40,
+      paddingBottom: 40,
     },
 
     headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 16,
     },
 
     backButton: {
-        marginRight: 8,
-        padding: 4,
+      marginRight: 8,
+      padding: 4,
     },
 
     headerIcon: {
-        width: 18,
-        height: 18,
-        marginRight: 6,
+      width: 18,
+      height: 18,
+      marginRight: 6,
     },
 
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: "bold",
+      fontSize: 16,
+      fontWeight: "bold",
     },
 
     bannerContainer: {
-        paddingHorizontal: 16,
-        marginBottom: 20,
+      paddingHorizontal: 16,
+      marginBottom: 20,
     },
 
     bannerImage: {
-        width: "100%",
-        aspectRatio: 4 / 3,
-        borderRadius: 12,
-        backgroundColor: colors.outlineVariant,
+      width: "100%",
+      aspectRatio: 4 / 3,
+      borderRadius: 12,
+      backgroundColor: colors.outlineVariant,
     },
 
     detailsContent: {
-        paddingHorizontal: 16,
+      paddingHorizontal: 16,
     },
 
     scheduleText: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: colors.onSurface,
-        marginBottom: 14,
+      fontSize: 14,
+      fontWeight: "bold",
+      color: colors.onSurface,
+      marginBottom: 14,
     },
 
     infoRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
     },
 
     infoIcon: {
-        marginRight: 8,
+      marginRight: 8,
     },
 
     locationNameText: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: colors.onSurface,
-        textTransform: 'capitalize',
+      fontSize: 14,
+      fontWeight: "bold",
+      color: colors.onSurface,
+      textTransform: "capitalize",
     },
 
     locationAddressText: {
-        fontSize: 14,
-        color: colors.onSurfaceVariant,
-        marginTop: 2,
+      fontSize: 14,
+      color: colors.onSurfaceVariant,
+      marginTop: 2,
     },
 
     descriptionText: {
-        fontSize: 14,
-        color: colors.onSurface,
-        lineHeight: 22,
+      fontSize: 14,
+      color: colors.onSurface,
+      lineHeight: 22,
     },
     headerTitleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        gap: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 16,
+      gap: 8,
     },
     backIconButton: {
-        padding: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
+      padding: 4,
+      justifyContent: "center",
+      alignItems: "center",
     },
-});
+  });

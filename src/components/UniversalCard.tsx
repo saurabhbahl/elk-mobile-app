@@ -4,13 +4,10 @@ import { isValidData } from '@/src/utils/validation';
 import { ImageBackground } from 'expo-image';
 import { router } from 'expo-router';
 import React from 'react';
-import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import AppText from './AppText';
 import CachedImage from './CachedImage';
 import SkeletonPlaceholder from './SkeletonPlaceholder';
-
-const { width } = Dimensions.get('window');
-const cardWidth = (width - 44) / 2;
 
 type UniversalCardProps = {
     type: 'program' | 'event' | 'rental';
@@ -22,6 +19,8 @@ type UniversalCardProps = {
 };
 
 export default function UniversalCard({ type, item, variant, primaryColor, onPress, hideBadge }: UniversalCardProps) {
+    const { width: screenWidth } = useWindowDimensions();
+
     // Parse date for programs and events
     let badge: { month?: string; day?: string; text?: string } | null = null;
 
@@ -49,7 +48,7 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
         }
     }
 
-    const styles = React.useMemo(() => createStyles(primaryColor), [primaryColor]);
+    const styles = React.useMemo(() => createStyles(primaryColor, variant, screenWidth), [primaryColor, variant, screenWidth]);
 
     const handlePress = () => {
         if (onPress) {
@@ -134,145 +133,153 @@ export default function UniversalCard({ type, item, variant, primaryColor, onPre
     );
 }
 
-const createStyles = (primaryColor: string) => StyleSheet.create({
-    horizontalCard: {
-        width: Math.min(286, width - 48),
-        aspectRatio: 286 / 250,
-        borderRadius: 10,
-        overflow: "hidden",
-        backgroundColor: primaryColor,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-        flexDirection: 'column',
-    },
-    featuredCard: {
-        aspectRatio: 343 / 269.33,
-        borderRadius: 10,
-        overflow: "hidden",
-        backgroundColor: primaryColor,
-        marginHorizontal: 16,
-        marginBottom: 24,
-        flexDirection: 'column',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    gridCard: {
-        width: cardWidth,
-        aspectRatio: 165.5 / 220,
-        borderRadius: 12,
-        overflow: "hidden",
-        backgroundColor: primaryColor,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-        flexDirection: 'column',
-    },
-    listCard: {
-        width: "100%",
-        aspectRatio: 343 / 269.33,
-        borderRadius: 10,
-        overflow: "hidden",
-        backgroundColor: primaryColor,
-        marginBottom: 24,
-        flexDirection: 'column',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
-    },
+const createStyles = (primaryColor: string, variant: string, width: number) => {
+    const cardWidth = (width - 44) / 2;
+    // Keep standard size for home screen cards (featured & horizontal) on iPad
+    const isHomeCard = variant === 'featured' || variant === 'horizontal';
+    const isScaleUp = width >= 600 && !isHomeCard;
 
-    imageContainer: {
-        flex: 1,
-        width: '100%',
-        position: 'relative',
-    },
-    bottomSection: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 20,
-        justifyContent: 'space-between',
-        backgroundColor: primaryColor,
-        overflow: 'hidden',
-    },
-    textCol: {
-        flex: 1,
-        paddingRight: 12,
-        justifyContent: 'center',
-    },
-    cardName: {
-        fontSize: width < 390 ? 12 : 14,
-        fontFamily: 'OpenSans-Bold',
-        color: "#FFFFFF",
-        textTransform: 'capitalize',
-    },
-    cardLocation: {
-        fontSize: width < 380 ? 10 : 12,
-        fontWeight: 400,
-        letterSpacing: 0,
-        fontFamily: 'OpenSans-Regular',
-        color: '#ffffff',
-        marginTop: 2,
-    },
+    return StyleSheet.create({
+        horizontalCard: {
+            width: Math.min(286, width - 48),
+            aspectRatio: 286 / 250,
+            borderRadius: 10,
+            overflow: "hidden",
+            backgroundColor: primaryColor,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            flexDirection: 'column',
+        },
+        featuredCard: {
+            width: width - 32,
+            aspectRatio: 343 / 269.33,
+            borderRadius: 10,
+            overflow: "hidden",
+            backgroundColor: primaryColor,
+            marginHorizontal: 16,
+            marginBottom: 24,
+            flexDirection: 'column',
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+        },
+        gridCard: {
+            width: cardWidth,
+            aspectRatio: 165.5 / 220,
+            borderRadius: 12,
+            overflow: "hidden",
+            backgroundColor: primaryColor,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+            flexDirection: 'column',
+        },
+        listCard: {
+            width: "100%",
+            aspectRatio: 343 / 269.33,
+            borderRadius: 10,
+            overflow: "hidden",
+            backgroundColor: primaryColor,
+            marginBottom: 24,
+            flexDirection: 'column',
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 3,
+        },
 
-    cardBadge: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderBottomLeftRadius: 10,
-        alignItems: 'center',
-        zIndex: 5,
-    },
-    cardBadgeMonth: {
-        fontSize: 10,
-        fontFamily: 'OpenSans-Bold',
-        color: '#FFFFFF',
-        letterSpacing: 0.5,
-        textAlign: 'center',
-        textTransform: 'uppercase'
-    },
-    cardBadgeDay: {
-        fontSize: 20,
-        fontFamily: 'OpenSans-Bold',
-        color: '#FFFFFF',
-        marginTop: -4,
-        textAlign: 'center',
-    },
-    cardBadgeText: {
-        fontSize: 10,
-        fontFamily: 'OpenSans-Bold',
-        color: '#FFFFFF',
-        letterSpacing: 0.3,
-        textAlign: 'center',
-        textTransform: 'uppercase',
-        maxWidth: 70,
-    },
-    cardViewButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
-        shadowColor: '#ffffff',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 2,
-        backgroundColor: '#ffffff'
-    },
-    cardViewButtonText: {
-        fontSize: 12,
-        fontFamily: 'OpenSans-Bold',
-        color: '#000000',
-    },
-});
+        imageContainer: {
+            flex: 1,
+            width: '100%',
+            position: 'relative',
+        },
+        bottomSection: {
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: isScaleUp ? 24 : (width < 380 ? 12 : 16),
+            paddingVertical: isScaleUp ? 26 : (width < 380 ? 14 : 20),
+            justifyContent: 'space-between',
+            backgroundColor: '#000000',
+            overflow: 'hidden',
+        },
+        textCol: {
+            flex: 1,
+            paddingRight: 12,
+            justifyContent: 'center',
+        },
+        cardName: {
+            fontSize: isScaleUp ? 18 : (width < 390 ? 12 : 14),
+            fontFamily: 'OpenSans-Bold',
+            color: "#FFFFFF",
+            textTransform: 'capitalize',
+        },
+        cardLocation: {
+            fontSize: isScaleUp ? 14 : (width < 380 ? 10 : 12),
+            fontWeight: '400',
+            letterSpacing: 0,
+            fontFamily: 'OpenSans-Regular',
+            color: '#ffffff',
+            marginTop: 2,
+        },
+
+        cardBadge: {
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            paddingHorizontal: isScaleUp ? 14 : (width < 380 ? 8 : 10),
+            paddingVertical: isScaleUp ? 12 : (width < 380 ? 6 : 8),
+            borderBottomLeftRadius: isScaleUp ? 14 : 10,
+            alignItems: 'center',
+            zIndex: 5,
+        },
+        cardBadgeMonth: {
+            fontSize: isScaleUp ? 14 : (width < 380 ? 8 : 10),
+            fontFamily: 'OpenSans-Bold',
+            color: '#FFFFFF',
+            letterSpacing: 0.5,
+            textAlign: 'center',
+            textTransform: 'uppercase'
+        },
+        cardBadgeDay: {
+            fontSize: isScaleUp ? 28 : (width < 380 ? 16 : 20),
+            fontFamily: 'OpenSans-Bold',
+            color: '#FFFFFF',
+            marginTop: isScaleUp ? -4 : (width < 380 ? -2 : -4),
+            textAlign: 'center',
+        },
+        cardBadgeText: {
+            fontSize: isScaleUp ? 14 : (width < 380 ? 8 : 10),
+            fontFamily: 'OpenSans-Bold',
+            color: '#FFFFFF',
+            letterSpacing: 0.3,
+            textAlign: 'center',
+            textTransform: 'uppercase',
+            maxWidth: isScaleUp ? 110 : (width < 380 ? 56 : 70),
+        },
+        cardViewButton: {
+            paddingHorizontal: isScaleUp ? 28 : 20,
+            paddingVertical: isScaleUp ? 12 : 8,
+            borderRadius: 20,
+            shadowColor: '#ffffff',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 3,
+            elevation: 2,
+            backgroundColor: '#ffffff'
+        },
+        cardViewButtonText: {
+            fontSize: isScaleUp ? 16 : 12,
+            fontFamily: 'OpenSans-Bold',
+            color: '#000000',
+        },
+    });
+};

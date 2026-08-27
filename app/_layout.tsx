@@ -1,61 +1,94 @@
-if (!__DEV__) {
-  console.log = () => { };
-  console.warn = () => { };
-  console.error = () => { };
-  console.info = () => { };
-  console.debug = () => { };
-}
-
-import { Lexend_500Medium } from '@expo-google-fonts/lexend';
+import { Lexend_500Medium } from "@expo-google-fonts/lexend";
 import {
   OpenSans_400Regular,
   OpenSans_600SemiBold,
   OpenSans_700Bold,
-} from '@expo-google-fonts/open-sans';
+} from "@expo-google-fonts/open-sans";
 import {
   Roboto_400Regular,
   Roboto_500Medium,
   Roboto_700Bold,
-} from '@expo-google-fonts/roboto';
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack, usePathname, useSegments, router } from "expo-router";
-import * as SplashScreen from 'expo-splash-screen';
+} from "@expo-google-fonts/roboto";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { router, Stack, usePathname, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, AppStateStatus, BackHandler, Platform, View } from "react-native";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  ActivityIndicator,
+  AppState,
+  AppStateStatus,
+  BackHandler,
+  Platform,
+  View,
+} from "react-native";
 
 import OfflinePopup from "@/src/components/OfflinePopup";
 
-import { useAppContentData, useAppContentSync } from "@/src/contexts/AppContentContext";
+import {
+  AppContentProvider,
+  useAppContentData,
+  useAppContentSync
+} from "@/src/contexts/AppContentContext";
 
 import {
   EBGaramond_500Medium,
   EBGaramond_600SemiBold,
   EBGaramond_700Bold,
   useFonts,
-} from '@expo-google-fonts/eb-garamond';
+} from "@expo-google-fonts/eb-garamond";
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
-} from '@expo-google-fonts/inter';
+} from "@expo-google-fonts/inter";
 
-import "react-native-reanimated";
-import { interpolate, SharedValue, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import {
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
-import { ThemeProvider as CustomThemeProvider, useTheme } from "@/src/context/ThemeContext";
-import { AppContentProvider } from "@/src/contexts/AppContentContext";
+import {
+  ThemeProvider as CustomThemeProvider,
+  useTheme,
+} from "@/src/context/ThemeContext";
 import { createTables, inspectDatabaseSchema } from "@/src/database/schema";
 import { useColorScheme } from "@/src/hooks/use-color-scheme";
 import { useNetInfo } from "@react-native-community/netinfo";
 
+import BottomNavbar from "@/src/components/BottomNavbar";
+
+if (!__DEV__) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
+
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export const MapResetContext = createContext<{ mapKey: number; resetMap: () => void }>({
+export const MapResetContext = createContext<{
+  mapKey: number;
+  resetMap: () => void;
+}>({
   mapKey: 0,
-  resetMap: () => { },
+  resetMap: () => {},
 });
 
 export function useMapReset() {
@@ -71,17 +104,15 @@ export const NavigationModeContext = createContext<{
   navbarVisibility: SharedValue<number>;
 }>({
   isNavigating: false,
-  setIsNavigating: () => { },
+  setIsNavigating: () => {},
   isBottomNavbarHidden: false,
-  setIsBottomNavbarHidden: () => { },
+  setIsBottomNavbarHidden: () => {},
   navbarVisibility: { value: 0 } as SharedValue<number>,
 });
 
 export function useNavigationMode() {
   return useContext(NavigationModeContext);
 }
-
-
 
 export const unstable_settings = {
   anchor: "(home)",
@@ -99,24 +130,24 @@ export default function RootLayout() {
   const navbarVisibility = useSharedValue(0);
 
   const [fontsLoaded] = useFonts({
-    'EBGaramond-Medium': EBGaramond_500Medium,
-    'EBGaramond-SemiBold': EBGaramond_600SemiBold,
-    'EBGaramond-Bold': EBGaramond_700Bold,
-    'Inter-Regular': Inter_400Regular,
-    'Inter-Medium': Inter_500Medium,
-    'Inter-SemiBold': Inter_600SemiBold,
-    'Inter-Bold': Inter_700Bold,
-    'Lexend_500Medium': Lexend_500Medium,
-    'OpenSans-Regular': OpenSans_400Regular,
-    'OpenSans-SemiBold': OpenSans_600SemiBold,
-    'OpenSans-Bold': OpenSans_700Bold,
-    'Roboto-Regular': Roboto_400Regular,
-    'Roboto-Medium': Roboto_500Medium,
-    'Roboto-Bold': Roboto_700Bold,
+    "EBGaramond-Medium": EBGaramond_500Medium,
+    "EBGaramond-SemiBold": EBGaramond_600SemiBold,
+    "EBGaramond-Bold": EBGaramond_700Bold,
+    "Inter-Regular": Inter_400Regular,
+    "Inter-Medium": Inter_500Medium,
+    "Inter-SemiBold": Inter_600SemiBold,
+    "Inter-Bold": Inter_700Bold,
+    Lexend_500Medium: Lexend_500Medium,
+    "OpenSans-Regular": OpenSans_400Regular,
+    "OpenSans-SemiBold": OpenSans_600SemiBold,
+    "OpenSans-Bold": OpenSans_700Bold,
+    "Roboto-Regular": Roboto_400Regular,
+    "Roboto-Medium": Roboto_500Medium,
+    "Roboto-Bold": Roboto_700Bold,
   });
 
   const resetMap = useCallback(() => {
-    setMapKey(k => k + 1);
+    setMapKey((k) => k + 1);
     setIsNavigating(false);
   }, []);
 
@@ -129,7 +160,6 @@ export default function RootLayout() {
     } catch (error) {
       console.log("Database Error:", error);
     }
-
   }, []);
 
   useEffect(() => {
@@ -159,18 +189,22 @@ export default function RootLayout() {
     <AppContentProvider>
       <CustomThemeProvider>
         <MapResetContext.Provider value={{ mapKey, resetMap }}>
-          <NavigationModeContext.Provider value={{ isNavigating, setIsNavigating, isBottomNavbarHidden, setIsBottomNavbarHidden, navbarVisibility }}>
-            <RootLayoutContent
-              isNavigating={isNavigating}
-            />
+          <NavigationModeContext.Provider
+            value={{
+              isNavigating,
+              setIsNavigating,
+              isBottomNavbarHidden,
+              setIsBottomNavbarHidden,
+              navbarVisibility,
+            }}
+          >
+            <RootLayoutContent isNavigating={isNavigating} />
           </NavigationModeContext.Provider>
         </MapResetContext.Provider>
       </CustomThemeProvider>
     </AppContentProvider>
   );
 }
-
-import BottomNavbar from "@/src/components/BottomNavbar";
 
 function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
   const { colors, isDark } = useTheme();
@@ -190,15 +224,19 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
   const QUICKLINKS_HEIGHT = 114;
   const quickLinksStyle = useAnimatedStyle(() => {
     return {
-      height: interpolate(navbarVisibility.value, [0, 1], [QUICKLINKS_HEIGHT, 0]),
+      height: interpolate(
+        navbarVisibility.value,
+        [0, 1],
+        [QUICKLINKS_HEIGHT, 0],
+      ),
       opacity: interpolate(navbarVisibility.value, [0, 1], [1, 0]),
-      overflow: 'hidden',
+      overflow: "hidden",
     };
   });
 
   // 2. Active Polling & Foreground Sync
   useEffect(() => {
-    if (apiStatus !== 'ready') return;
+    if (apiStatus !== "ready") return;
 
     // 30 minute active polling sync (30 * 60 * 1000)
     const timer = setInterval(() => {
@@ -209,13 +247,16 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
     // Foreground listener
     let lastState = AppState.currentState;
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (lastState.match(/inactive|background/) && nextAppState === 'active') {
+      if (lastState.match(/inactive|background/) && nextAppState === "active") {
         console.log("[Sync] App foregrounded. Triggering delta update check.");
         refreshData();
       }
       lastState = nextAppState;
     };
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
 
     return () => {
       clearInterval(timer);
@@ -223,11 +264,9 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
     };
   }, [apiStatus]);
 
-
-
   // Hardware Back Button Handler for Android
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    if (Platform.OS !== "android") return;
 
     const onBackPress = () => {
       // 1. If currently navigating in Turn-by-Turn Map mode, let Map screen handle it
@@ -242,9 +281,13 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
       }
 
       // 3. If on a secondary tab/screen with no stack, return to Home tab
-      const isHome = pathname === '/' || pathname === '/(home)' || pathname === '/index' || pathname === '/(home)/index';
+      const isHome =
+        pathname === "/" ||
+        pathname === "/(home)" ||
+        pathname === "/index" ||
+        pathname === "/(home)/index";
       if (!isHome) {
-        router.replace('/(home)');
+        router.replace("/(home)");
         return true;
       }
 
@@ -252,66 +295,81 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
       return false;
     };
 
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress,
+    );
     return () => subscription.remove();
   }, [pathname, isNavigating]);
 
   // Hide headers on splash (index) and modal routes
-  const isSplash = (segments as any).length === 0 || ((segments as any).length === 1 && (segments as any)[0] === 'index');
-  const isModal = pathname === '/modal';
-  const isSettings = pathname === '/map/settings';
-  const shouldShowHeader = !isSplash && !isModal && !isSettings && !isNavigating;
+  const isSplash =
+    (segments as any).length === 0 ||
+    ((segments as any).length === 1 && (segments as any)[0] === "index");
+  const isModal = pathname === "/modal";
+  const isSettings = pathname === "/map/settings";
+  const shouldShowHeader =
+    !isSplash && !isModal && !isSettings && !isNavigating;
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      <View style={{ flex: 1, backgroundColor: isDark ? colors.background : "#F8F9FA" }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: isDark ? colors.background : "#F8F9FA",
+        }}
+      >
         <OfflinePopup />
         <View style={{ flex: 1 }}>
           <Stack>
             <Stack.Screen
               name="index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="(home)"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="programs/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="programs/[id]"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="events/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="events/[id]"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="trails/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="rentals/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
+            />
+            <Stack.Screen
+              name="rentals/[id]"
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="plan-trip/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="map/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="map/[id]"
-              options={{ headerShown: false, animation: 'slide_from_bottom' }}
+              options={{ headerShown: false, animation: "slide_from_bottom" }}
             />
             <Stack.Screen
               name="map/settings"
@@ -321,25 +379,23 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
             />
             <Stack.Screen
               name="visitors/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="cameras/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="tips/index"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
               name="+not-found"
-              options={{ headerShown: false, animation: 'none' }}
+              options={{ headerShown: false, animation: "none" }}
             />
           </Stack>
         </View>
-        {shouldShowHeader && (
-          <BottomNavbar />
-        )}
+        {shouldShowHeader && <BottomNavbar />}
       </View>
     </ThemeProvider>
   );

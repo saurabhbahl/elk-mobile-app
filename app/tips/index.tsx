@@ -196,7 +196,7 @@ export default function TipsScreen() {
                         ) : null}
 
                         {galleryImages.length > 0 ? (
-                            <View style={{ marginHorizontal: 16, marginBottom: 16, alignItems: 'center' }}>
+                            <View style={{ marginBottom: 16 }}>
                                 <ImageGallerySlider images={galleryImages} width={width - 32} height={190} />
                             </View>
                         ) : null}
