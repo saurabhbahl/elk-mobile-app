@@ -390,6 +390,10 @@ function RootLayoutContent({ isNavigating }: { isNavigating: boolean }) {
               options={{ headerShown: false, animation: "none" }}
             />
             <Stack.Screen
+              name="browser/index"
+              options={{ headerShown: false, animation: "slide_from_right" }}
+            />
+            <Stack.Screen
               name="+not-found"
               options={{ headerShown: false, animation: "none" }}
             />

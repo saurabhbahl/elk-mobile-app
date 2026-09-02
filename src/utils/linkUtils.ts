@@ -1,4 +1,5 @@
 import { Linking } from 'react-native';
+import { router as defaultRouter } from 'expo-router';
 import { isValidData } from './validation';
 
 export interface LinkObject {
@@ -59,21 +60,94 @@ export function parseLinkObject(raw: any, defaultTitle = "More Info"): LinkObjec
 }
 
 /**
- * Global handler for opening external URLs or navigating to internal Expo Router paths.
+ * Checks if a given string is an external web URL (starts with http/https or contains a web domain format).
  */
-export function handleLinkPress(url: string, router: any) {
-    if (!url) return;
-    const cleanUrl = url.trim();
+export function isExternalUrl(url?: string | null): boolean {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim().toLowerCase();
+    if (trimmed.startsWith('tel:') || trimmed.startsWith('mailto:')) return false;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return true;
+    if (trimmed.startsWith('/')) return false;
+    // Check if it's a domain pattern like keystoneelkcountryalliance.com or www.google.com
+    return /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(?:\/.*)?$/i.test(trimmed);
+}
 
-    if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
-        Linking.openURL(cleanUrl).catch(() => { });
-    } else if (cleanUrl.startsWith("/")) {
+/**
+ * Normalizes a URL ensuring proper https:// prefix for external links.
+ */
+export function normalizeWebUrl(url: string): string {
+    const trimmed = url.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+    return `https://${trimmed}`;
+}
+
+/**
+ * Global handler for opening external URLs in the In-App WebView browser,
+ * navigating internal Expo Router paths, or opening tel/mailto intents.
+ */
+export function handleLinkPress(url?: string | null, router?: any, title?: string) {
+    if (!url || typeof url !== 'string') return;
+    const cleanUrl = url.trim();
+    if (!cleanUrl) return;
+
+    const activeRouter = router || defaultRouter;
+
+    // 1. Telephone and Email intents -> Native device handlers
+    if (cleanUrl.startsWith('tel:') || cleanUrl.startsWith('mailto:')) {
+        Linking.openURL(cleanUrl).catch((err) => {
+            console.error('Failed to open native intent URL:', err);
+        });
+        return;
+    }
+
+    // 2. Relative internal app route (e.g. /visitors, /events, /map, /tips, /programs)
+    if (cleanUrl.startsWith('/') && activeRouter) {
         try {
-            router.push(cleanUrl as any);
-        } catch {
-            Linking.openURL(cleanUrl).catch(() => { });
+            activeRouter.push(cleanUrl as any);
+            return;
+        } catch (routerErr) {
+            console.warn('Failed to route internally:', routerErr);
         }
+    }
+
+    // 3. External Web URL -> Open inside in-app WebView browser
+    if (isExternalUrl(cleanUrl)) {
+        const fullWebUrl = normalizeWebUrl(cleanUrl);
+        if (activeRouter) {
+            try {
+                activeRouter.push({
+                    pathname: '/browser',
+                    params: {
+                        url: fullWebUrl,
+                        title: title || ''
+                    }
+                });
+                return;
+            } catch (err) {
+                console.warn('Failed to push to in-app browser screen, falling back to Linking.openURL:', err);
+            }
+        }
+        Linking.openURL(fullWebUrl).catch(() => { });
+        return;
+    }
+
+    // 4. Default fallback: attempt in-app router or external linking
+    if (cleanUrl.startsWith('/') && activeRouter) {
+        activeRouter.push(cleanUrl as any);
     } else {
-        Linking.openURL(`https://${cleanUrl}`).catch(() => { });
+        const fullWebUrl = normalizeWebUrl(cleanUrl);
+        if (activeRouter) {
+            activeRouter.push({
+                pathname: '/browser',
+                params: {
+                    url: fullWebUrl,
+                    title: title || ''
+                }
+            });
+        } else {
+            Linking.openURL(fullWebUrl).catch(() => { });
+        }
     }
 }

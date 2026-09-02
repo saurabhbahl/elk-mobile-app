@@ -27,6 +27,7 @@ import {
     useAppContentData,
 } from "@/src/contexts/AppContentContext";
 import { openExternalLink } from "@/src/utils/openLink";
+import { handleLinkPress } from "@/src/utils/linkUtils";
 import { isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -86,17 +87,9 @@ export default function RentalDetailScreen() {
     return images;
   }, [featuredImageUrl, additionalImages]);
 
-  const handlePressLink = React.useCallback((url: string | undefined) => {
+  const handlePressLink = React.useCallback((url: string | undefined, title?: string) => {
     if (url) {
-      if (
-        url.startsWith("http") ||
-        url.startsWith("tel:") ||
-        url.startsWith("mailto:")
-      ) {
-        openExternalLink(url);
-      } else {
-        router.push(url as any);
-      }
+      handleLinkPress(url, router, title);
     }
   }, []);
 
@@ -323,14 +316,14 @@ export default function RentalDetailScreen() {
               {isValidData(rental.cta_1_link?.title) ? (
                 <PrimaryButton
                   title={rental.cta_1_link?.title as string}
-                  onPress={() => handlePressLink(rental.cta_1_link?.url)}
+                  onPress={() => handlePressLink(rental.cta_1_link?.url, rental.cta_1_link?.title)}
                 />
               ) : null}
 
               {isValidData(rental.cta_2_link?.title) ? (
                 <PrimaryButton
                   title={rental.cta_2_link?.title as string}
-                  onPress={() => handlePressLink(rental.cta_2_link?.url)}
+                  onPress={() => handlePressLink(rental.cta_2_link?.url, rental.cta_2_link?.title)}
                   style={{
                     backgroundColor: "transparent",
                     borderWidth: 1,

@@ -25,6 +25,7 @@ import { isValidData } from "@/src/utils/validation";
 import CachedImage from "@/src/components/CachedImage";
 import SkeletonPlaceholder from "@/src/components/SkeletonPlaceholder";
 import { openExternalLink } from "@/src/utils/openLink";
+import { handleLinkPress } from "@/src/utils/linkUtils";
 
 import PrimaryButton from "@/src/components/PrimaryButton";
 import { extractPoiId, navigateToPoi } from "@/src/utils/mapUtils";
@@ -63,13 +64,9 @@ export default function VisitorsCenterScreen() {
         });
     }
 
-    const handleOpenLink = (url: string | undefined) => {
+    const handleOpenLink = (url: string | undefined, title?: string) => {
         if (!url) return;
-        if (url.startsWith("http") || url.startsWith("tel:") || url.startsWith("mailto:")) {
-            openExternalLink(url);
-        } else {
-            router.push(url as any);
-        }
+        handleLinkPress(url, router, title);
     };
 
     const parsedHours = React.useMemo(() => {
@@ -173,7 +170,7 @@ export default function VisitorsCenterScreen() {
                                     activeOpacity={0.9}
                                     onPress={() => {
                                         if (isValidData(visitorsData?.cta_1_link?.url)) {
-                                            handleOpenLink(visitorsData?.cta_1_link?.url);
+                                            handleOpenLink(visitorsData?.cta_1_link?.url, visitorsData?.cta_1_title || visitorsData?.cta_1_link?.title);
                                         } else if (isValidData(visitorsData?.phone_number)) {
                                             handleOpenLink(`tel:${visitorsData?.phone_number}`);
                                         }
@@ -212,7 +209,7 @@ export default function VisitorsCenterScreen() {
                                 <TouchableOpacity
                                     style={[styles.ctaCard, hasBothCtas ? { flex: 1 } : { flex: 0, width: "48%" }]}
                                     activeOpacity={0.9}
-                                    onPress={() => handleOpenLink(visitorsData?.cta_2_link?.url)}
+                                    onPress={() => handleOpenLink(visitorsData?.cta_2_link?.url, visitorsData?.cta_2_title || visitorsData?.cta_2_link?.title)}
                                 >
                                     <View style={styles.ctaImagePlaceholder}>
                                         {isValidData(visitorsData?.cta_2_image?.url) ? (

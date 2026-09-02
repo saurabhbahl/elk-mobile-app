@@ -3,6 +3,7 @@ import AppText from "@/src/components/AppText";
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
 import { openExternalLink } from "@/src/utils/openLink";
+import { handleLinkPress } from "@/src/utils/linkUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { Image, ImageBackground } from "expo-image";
@@ -126,7 +127,7 @@ export default function HomeScreen() {
 
         {/* Welcome Banner Card */}
         {isValidData(homeData?.hero_cta_button_link?.title) ||
-        isValidData(homeData?.hero_intro_paragraph) ? (
+          isValidData(homeData?.hero_intro_paragraph) ? (
           <Animated.View entering={FadeInUp.duration(300).delay(30)}>
             <View style={styles.welcomeBannerContainer}>
               <ImageBackground
@@ -150,13 +151,7 @@ export default function HomeScreen() {
                       onPress={() => {
                         const url = homeData?.hero_cta_button_link?.url;
                         if (url) {
-                          if (url.startsWith("http")) {
-                            openExternalLink(url);
-                          } else {
-                            router.push(url as any);
-                          }
-                        } else {
-                          router.push("/visitors");
+                          handleLinkPress(url, router, homeData?.hero_cta_button_link?.title);
                         }
                       }}
                     >
@@ -344,7 +339,7 @@ export default function HomeScreen() {
 
         {/* Hit the Trails Section */}
         {isValidData(homeData?.trails_block_heading) &&
-        isValidData(homeData?.trails) ? (
+          isValidData(homeData?.trails) ? (
           <Animated.View entering={FadeInUp.duration(300).delay(150)}>
             <View style={styles.trailsSectionContainer}>
               <SectionHeader
@@ -487,11 +482,7 @@ export default function HomeScreen() {
                   if (ctaLink) {
                     hasDismissedPopupSession = true;
                     setShowPopup(false);
-                    if (ctaLink.startsWith("http")) {
-                      openExternalLink(ctaLink);
-                    } else {
-                      router.push(ctaLink as any);
-                    }
+                    handleLinkPress(ctaLink, router, popupData.popup_title || "");
                   }
                 }}
               >
@@ -510,7 +501,7 @@ export default function HomeScreen() {
                           {
                             backgroundColor:
                               popupData.close_button_style?.toLowerCase() ===
-                              "light"
+                                "light"
                                 ? "#FFFFFF"
                                 : "#000000",
                           },
@@ -526,7 +517,7 @@ export default function HomeScreen() {
                           size={18}
                           color={
                             popupData.close_button_style?.toLowerCase() ===
-                            "light"
+                              "light"
                               ? "#000000"
                               : "#FFFFFF"
                           }
@@ -570,7 +561,7 @@ export default function HomeScreen() {
                         {
                           backgroundColor:
                             popupData.close_button_style?.toLowerCase() ===
-                            "light"
+                              "light"
                               ? "#FFFFFF"
                               : "#000000",
                         },
@@ -586,7 +577,7 @@ export default function HomeScreen() {
                         size={18}
                         color={
                           popupData.close_button_style?.toLowerCase() ===
-                          "light"
+                            "light"
                             ? "#000000"
                             : "#FFFFFF"
                         }

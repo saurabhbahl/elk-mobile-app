@@ -12,6 +12,7 @@ import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
 import { normalizeHex } from '../../src/utils/colorUtils';
 import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
 import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
+import { handleLinkPress } from '@/src/utils/linkUtils';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -399,9 +400,7 @@ export default function SettingsScreen() {
           <TouchableOpacity
             style={styles.downloadButton}
             onPress={() => {
-              Linking.openURL('https://keystoneelkcountryalliance.com/privacy-policy/').catch(err =>
-                console.error("Couldn't open Privacy Policy URL", err)
-              );
+              handleLinkPress('https://keystoneelkcountryalliance.com/privacy-policy/', router, 'Privacy Policy');
             }}
           >
             <MaterialIcons name="security" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />

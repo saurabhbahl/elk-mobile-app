@@ -1,6 +1,8 @@
 import { width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContentData } from "@/src/contexts/AppContentContext";
+import { handleLinkPress } from "@/src/utils/linkUtils";
+import { router } from "expo-router";
 import React from "react";
 import { Dimensions } from "react-native";
 import RenderHTML, { defaultSystemFonts } from 'react-native-render-html';
@@ -101,6 +103,16 @@ export default function AppRenderHTML({ html, contentWidth = width - 32, baseSty
         },
     };
 
+    const renderersProps = React.useMemo(() => ({
+        a: {
+            onPress: (_event: any, href: string) => {
+                if (href) {
+                    handleLinkPress(href, router);
+                }
+            },
+        },
+    }), []);
+
     return (
         <RenderHTML
             systemFonts={systemFonts}
@@ -108,6 +120,8 @@ export default function AppRenderHTML({ html, contentWidth = width - 32, baseSty
             source={{ html: html || "" }}
             baseStyle={mergedBaseStyle as any}
             tagsStyles={mergedTagsStyles as any}
+            renderersProps={renderersProps}
         />
     );
 }
+
