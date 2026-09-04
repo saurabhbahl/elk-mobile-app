@@ -50,7 +50,17 @@
       "expo-asset",
       "expo-sqlite",
       "expo-video",
-      "./src/plugins/withCustomAndroidConfig.js"
+      "./src/plugins/withCustomAndroidConfig.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.swmansion.reanimated.** { *; }\n-keep class org.maplibre.android.** { *; }\n-dontwarn org.maplibre.android.**\n-keep class com.airbnb.android.react.maps.** { *; }\n-dontwarn com.airbnb.android.react.maps.**\n-keep class com.reactnativecommunity.webview.** { *; }"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
