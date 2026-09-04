@@ -12,6 +12,7 @@ type SectionHeaderProps = {
     secondaryColor: string;
     isDark: boolean;
     onPress?: () => void;
+    onTogglePress?: () => void;
     isFeatured?: boolean;
     actionLabel?: string;
     onActionPress?: () => void;
@@ -27,6 +28,7 @@ export default function SectionHeader({
     secondaryColor,
     isDark,
     onPress,
+    onTogglePress,
     isFeatured,
     actionLabel,
     onActionPress,
@@ -72,7 +74,7 @@ export default function SectionHeader({
                 </AppText>
             </TitleComponent>
             {showToggleArrow && (
-                <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.toggleArrowButton}>
+                <TouchableOpacity onPress={onTogglePress || onPress} activeOpacity={0.7} style={styles.toggleArrowButton}>
                     {isCollapsed ? (
                         <Feather
                             name="minimize-2"

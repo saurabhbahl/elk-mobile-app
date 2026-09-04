@@ -141,34 +141,13 @@ function MapScreen() {
     };
   });
 
-  const headerPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Detect vertical swipe instantly with minimal threshold
-        return (
-          Math.abs(gestureState.dy) > 5 &&
-          Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
-        );
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy < -5) {
-          // Slide UP -> Hide navbar & quicklinks
-          setShowHeader(false);
-        } else if (gestureState.dy > 5) {
-          // Slide DOWN -> Show navbar & quicklinks
-          setShowHeader(true);
-        }
-      },
-    }),
-  ).current;
 
   useEffect(() => {
     isAvailableAsync()
       .then((available) => {
-        if (available) activateKeepAwakeAsync().catch(() => {});
+        if (available) activateKeepAwakeAsync().catch(() => { });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const { colors, fonts, isDark } = useTheme();
@@ -557,18 +536,25 @@ function MapScreen() {
         return;
       }
 
-      // Dynamic bottom padding: if a waypoint details sheet is visible, use 300 to clear it; otherwise 120 is enough.
-      const bottomPadding = selectedWaypoint
-        ? insets.bottom + 300
-        : insets.bottom + 120;
+      const isAndroid = Platform.OS === "android";
+      const topPadding = isAndroid ? 50 : insets.top + 160;
+      const bottomPadding = isAndroid
+        ? selectedWaypoint
+          ? 160
+          : 60
+        : selectedWaypoint
+          ? insets.bottom + 300
+          : insets.bottom + 120;
+      const horizPadding = isAndroid ? 30 : 48;
 
       cameraRef.current?.fitBounds([minLng, minLat, maxLng, maxLat], {
         duration,
+        easing: "ease",
         padding: {
-          top: insets.top + 160,
-          right: 48,
+          top: topPadding,
+          right: horizPadding,
           bottom: bottomPadding,
-          left: 48,
+          left: horizPadding,
         },
       });
     },
@@ -738,6 +724,18 @@ function MapScreen() {
           flatListRef.current?.scrollToIndex({ index, animated: false });
         }, 50);
       }
+
+      // Smoothly zoom in to the selected waypoint pin (works on both Android and iOS)
+      requestAnimationFrame(() => {
+        cameraRef.current?.easeTo({
+          center: [
+            waypoint.coordinate.longitude,
+            waypoint.coordinate.latitude,
+          ],
+          zoom: 14,
+          duration: 800,
+        });
+      });
     },
     [isNavigating, waypoints],
   );
@@ -751,7 +749,7 @@ function MapScreen() {
           [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
       );
       setTimeout(() => {
-        fitRouteToCamera(coords, 1000);
+        fitRouteToCamera(coords, 800);
       }, 100);
     }
   }, [waypoints, fitRouteToCamera]);
@@ -1294,49 +1292,69 @@ function MapScreen() {
       onPress: (w: Waypoint) => void;
       disabled?: boolean;
       Marker: any;
-    }) => (
-      <MarkerComp
-        key={`waypoint-${waypoint.id}`}
-        id={`waypoint-${waypoint.id}`}
-        lngLat={toLngLat(waypoint.coordinate)}
-        anchor="bottom"
-      >
-        <TouchableOpacity
-          onPress={() => onPress(waypoint)}
-          disabled={disabled}
-          activeOpacity={disabled ? 1 : 0.7}
+    }) => {
+      const lastPressRef = useRef(0);
+      const handlePress = useCallback(() => {
+        if (disabled) return;
+        const now = Date.now();
+        if (now - lastPressRef.current < 250) return;
+        lastPressRef.current = now;
+        onPress(waypoint);
+      }, [disabled, onPress, waypoint]);
+
+      return (
+        <MarkerComp
+          key={`waypoint-${waypoint.id}`}
+          id={`waypoint-${waypoint.id}`}
+          lngLat={toLngLat(waypoint.coordinate)}
+          anchor="bottom"
+          onPress={handlePress}
         >
-          {waypoint.pin_icon_override ? (
-            <Image
-              source={{
-                uri:
-                  typeof waypoint.pin_icon_override === "string"
-                    ? waypoint.pin_icon_override
-                    : (waypoint.pin_icon_override as any).url,
-              }}
-              style={{
-                width: isSelected ? 32 : 24,
-                height: isSelected ? 32 : 24,
-              }}
-              contentFit="contain"
-            />
-          ) : (
-            <Image
-              source={require("../../assets/images/pin.png")}
-              style={{
-                width: isSelected ? 44 : 36,
-                height: isSelected ? 44 : 36,
-              }}
-              contentFit="contain"
-            />
-          )}
-        </TouchableOpacity>
-      </MarkerComp>
-    );
+          <TouchableOpacity
+            onPress={handlePress}
+            disabled={disabled}
+            activeOpacity={disabled ? 1 : 0.7}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+            style={{
+              minWidth: 48,
+              minHeight: 52,
+              justifyContent: "flex-end",
+              alignItems: "center",
+            }}
+          >
+            {waypoint.pin_icon_override ? (
+              <Image
+                source={{
+                  uri:
+                    typeof waypoint.pin_icon_override === "string"
+                      ? waypoint.pin_icon_override
+                      : (waypoint.pin_icon_override as any).url,
+                }}
+                style={{
+                  width: isSelected ? 36 : 28,
+                  height: isSelected ? 36 : 28,
+                  marginBottom: 2,
+                }}
+                contentFit="contain"
+              />
+            ) : (
+              <Image
+                source={require("../../assets/images/pin.png")}
+                style={{
+                  width: isSelected ? 44 : 36,
+                  height: isSelected ? 44 : 36,
+                }}
+                contentFit="contain"
+              />
+            )}
+          </TouchableOpacity>
+        </MarkerComp>
+      );
+    };
     const Memoized = React.memo(WaypointMarkerComponent);
     Memoized.displayName = "WaypointMarker";
     return Memoized;
-  }, [styles, colors.primary]);
+  }, []);
 
   // ── Waypoint card renderer ──────────────────────────────────────────────────
   const renderWaypointCard = useCallback(
@@ -1527,11 +1545,7 @@ function MapScreen() {
               mapCenterRef.current = { lat, lng };
               setMapCenter({ lat, lng });
             }}
-            onMapClick={() => {
-              setSelectedWaypoint(null);
-              setDestinationPoint(null);
-              setShowHeader((prev) => !prev);
-            }}
+            onMapClick={() => { }}
             cameraRef={cameraRef}
           />
         ) : showMapPlaceholder ? (
@@ -1561,12 +1575,6 @@ function MapScreen() {
             onPress={(event: any) => {
               if (isTappingMarker.current) return;
               if (isNavigating) return;
-              setSelectedWaypoint(null);
-              setDestinationPoint(null);
-              activeRouteRef.current = null;
-              setRouteVersion((v) => v + 1);
-              setHighlightedRoute(null);
-              setShowHeader((prev) => !prev);
             }}
             onRegionIsChanging={(feature: any) => {
               // Fires continuously during drag — update the pin marker in real-time
@@ -1628,11 +1636,11 @@ function MapScreen() {
                 padding={
                   isSelectingPin
                     ? {
-                        paddingLeft: 0,
-                        paddingRight: 0,
-                        paddingTop: 0,
-                        paddingBottom: 0,
-                      }
+                      paddingLeft: 0,
+                      paddingRight: 0,
+                      paddingTop: 0,
+                      paddingBottom: 0,
+                    }
                     : undefined
                 }
                 defaultSettings={{
@@ -1765,11 +1773,13 @@ function MapScreen() {
                   id={`stop-point-${stop.id}-${idx}`}
                   lngLat={[stop.coordinate.longitude, stop.coordinate.latitude]}
                   anchor={{ x: 0.5, y: 1.0 }}
+                  onPress={() => !isNavigating && setSelectedWaypoint(stop)}
                 >
                   <TouchableOpacity
                     onPress={() => setSelectedWaypoint(stop)}
                     disabled={isNavigating}
                     activeOpacity={isNavigating ? 1 : 0.8}
+                    hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                     style={styles.routePinBadgeContainer}
                   >
                     <View
@@ -1895,10 +1905,7 @@ function MapScreen() {
               </Reanimated.View>
 
               {!isSearching ? (
-                <View
-                  style={styles.fullWidthHeaderRow}
-                  {...headerPanResponder.panHandlers}
-                >
+                <View style={styles.fullWidthHeaderRow}>
                   <View style={{ flex: 1, marginTop: 4 }}>
                     <SectionHeader
                       title={
@@ -1912,7 +1919,7 @@ function MapScreen() {
                       isDark={isDark}
                       showToggleArrow={true}
                       isCollapsed={!showHeader}
-                      onPress={() => setShowHeader((prev) => !prev)}
+                      onTogglePress={() => setShowHeader((prev) => !prev)}
                     />
                     {/* ── Processing Indicator removed from here ── */}
                   </View>
@@ -2170,7 +2177,7 @@ function MapScreen() {
                 })}
                 initialScrollIndex={
                   waypoints.findIndex((w) => w.id === selectedWaypoint.id) !==
-                  -1
+                    -1
                     ? waypoints.findIndex((w) => w.id === selectedWaypoint.id)
                     : 0
                 }
