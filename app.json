@@ -14,7 +14,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.keystoneelk.explorer",
+      "bundleIdentifier": "com.experienceelkcountry.elkexplorer",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Your location is used to show your position on the Elk County map and help you navigate to trails, points of interest, and park features."
@@ -26,7 +26,7 @@
         "backgroundColor": "#000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.keystoneelk.explorer"
+      "package": "com.experienceelkcountry.elkexplorer"
     },
     "web": {
       "output": "static",
