@@ -76,14 +76,6 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
     const [syncStatusText, setSyncStatusText] = useState('');
     const [syncError, setSyncError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (initialSyncPhase === 'map' && isMapDownloading) {
-            const overallProgress = 0.3 + mapDownloadProgress * 0.7; // Scale 30% - 100%
-            setSyncProgress(overallProgress);
-            setSyncStatusText("Downloading map data...");
-        }
-    }, [initialSyncPhase, isMapDownloading, mapDownloadProgress]);
-
     // Load data from local Web Storage on web
     const loadFromWebStorage = (): boolean => {
         try {
@@ -253,10 +245,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         setSyncStatusText("Getting things ready...");
         setInitialSyncPhase('content');
 
-
         try {
             const success = await SyncManager.fetchAndStoreAll((progress, status) => {
-                setSyncProgress(progress * 0.3); // Scale content sync to 0% - 30%
+                setSyncProgress(progress);
                 setSyncStatusText(status);
                 // Load branding early if it has been written to the DB
                 try {
@@ -265,7 +256,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                         setBrandData(settingsMap.app_branding as AppBranding);
                     }
                 } catch (_) { }
-            });
+            }, false, undefined, false);
 
             if (!success) {
                 setSyncError("Please check your internet connection.");
@@ -276,27 +267,6 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                     setApiStatus('ready');
                 }
                 return false;
-            }
-
-            if (Platform.OS !== 'web') {
-                // Phase 2: Map sync
-                setInitialSyncPhase('map');
-                setSyncStatusText("Downloading map data...");
-                setSyncProgress(0.3);
-
-                try {
-                    await downloadMap();
-                    // Check if map downloaded successfully
-                    const mapValid = await checkMapStatus();
-                    if (mapValid) {
-                        // Save consent as yes on successful download
-                        await saveConsent('yes');
-                    } else {
-                        console.warn("[Sync] Map download did not complete successfully, but continuing initial sync.");
-                    }
-                } catch (mapErr) {
-                    console.warn("[Sync] Error downloading map during initial sync:", mapErr);
-                }
             }
 
             setInitialSyncPhase('complete');

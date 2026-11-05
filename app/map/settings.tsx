@@ -13,6 +13,8 @@ import { normalizeHex } from '../../src/utils/colorUtils';
 import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
 import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
 import { handleLinkPress } from '@/src/utils/linkUtils';
+import { safeStorage as AsyncStorage } from '@/src/utils/asyncStorage';
+import { appRepository } from '@/src/repositories/AppRepository';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -87,6 +89,73 @@ export default function SettingsScreen() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleDeleteMap = () => {
+    Alert.alert(
+      'Delete Offline Map?',
+      'This will remove the downloaded map tiles (~307 MB) from your device storage. You can download them again anytime.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Map',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteMap();
+            Alert.alert('Map Deleted', 'The offline map has been removed from storage.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleResetAllStorage = () => {
+    Alert.alert(
+      'Reset All App Storage?',
+      'This will delete all offline map tiles (~307 MB), cached routes, downloaded photos, and local data to restore the app to its fresh-install state.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              // 1. Delete offline map
+              await deleteMap();
+              // 2. Clear routes
+              await clearAllRoutes();
+              // 3. Clear image cache
+              await clearImageCache();
+              // 4. Clear AsyncStorage
+              await AsyncStorage.clear();
+              // 5. Clear SQLite database records
+              appRepository.clearAll();
+
+              Alert.alert(
+                'Storage Reset Complete',
+                'All app data and offline resources have been wiped from storage.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      router.replace('/' as any);
+                    },
+                  },
+                ]
+              );
+            } catch (err) {
+              console.error('[Settings] Reset failed:', err);
+              Alert.alert('Reset Failed', 'Failed to fully reset storage. Please try again.');
+            } finally {
+              setIsResetting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleClearCache = async () => {
@@ -255,7 +324,7 @@ export default function SettingsScreen() {
                 <MaterialIcons name="check-circle" size={20} color={isDark ? colors.primary : '#2e7d32'} />
                 <AppText style={styles.statusText}>Map is downloaded and ready.</AppText>
               </View>
-              <TouchableOpacity style={styles.deleteButton} onPress={deleteMap}>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteMap}>
                 <AppText style={styles.deleteButtonText}>Delete Offline Map</AppText>
               </TouchableOpacity>
             </View>
@@ -389,6 +458,28 @@ export default function SettingsScreen() {
               )}
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* ── Reset App Storage Section ────────────────────────────────────────── */}
+        <View style={[styles.section, { marginTop: 20 }]}>
+          <AppText style={styles.sectionTitle}>Reset App Storage</AppText>
+          <AppText style={styles.sectionDescription}>
+            Clear all downloaded maps (~307 MB), cached routes, photos, and preferences to restore the app to its fresh-install state.
+          </AppText>
+          <TouchableOpacity
+            style={[styles.deleteButton, isResetting && { opacity: 0.5 }]}
+            disabled={isResetting}
+            onPress={handleResetAllStorage}
+          >
+            {isResetting ? (
+              <ActivityIndicator size="small" color={colors.error} />
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="restart-alt" size={18} color={colors.error} style={{ marginRight: 6 }} />
+                <AppText style={styles.deleteButtonText}>Reset All Storage</AppText>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* ── Privacy Policy Section ─────────────────────────────────────────── */}

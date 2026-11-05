@@ -269,6 +269,7 @@ export class SyncManager {
     onProgress?: (progress: number, status: string) => void,
     isDelta = false,
     lastSyncTime?: string,
+    downloadImages = false,
   ): Promise<boolean> {
     if (onProgress) {
       SyncManager.progressListeners.add(onProgress);
@@ -293,7 +294,7 @@ export class SyncManager {
       }
 
       try {
-        SyncManager.notifyProgress(0.05, "Downloading app content...");
+        SyncManager.notifyProgress(0.1, "Getting things ready...");
 
         console.log(
           "[SyncManager] Fetching split sync data from endpoints parallelly...",
@@ -319,8 +320,8 @@ export class SyncManager {
               lastSyncTime,
             );
             completedEndpoints++;
-            const pct = 0.05 + (completedEndpoints / totalEndpoints) * 0.45;
-            SyncManager.notifyProgress(pct, "Downloading app content...");
+            const pct = 0.1 + (completedEndpoints / totalEndpoints) * 0.8;
+            SyncManager.notifyProgress(pct, "Getting things ready...");
             return { endpoint, data: res };
           } catch (err) {
             console.error(
@@ -386,7 +387,7 @@ export class SyncManager {
           } catch (webErr) {
             console.warn("Failed to save to web localStorage:", webErr);
           }
-          SyncManager.notifyProgress(1.0, "Sync complete!");
+          SyncManager.notifyProgress(1.0, "Ready!");
           return true;
         }
 
@@ -407,38 +408,38 @@ export class SyncManager {
           console.warn("Failed to save branding early:", err);
         }
 
-        SyncManager.notifyProgress(0.5, "Preparing app photos...");
-        const imagesToDownload = extractPreCacheUrls(mergedJson);
-        const totalImages = imagesToDownload.length;
-        let downloadedCount = 0;
+        if (downloadImages) {
+          SyncManager.notifyProgress(0.85, "Preparing app photos...");
+          const imagesToDownload = extractPreCacheUrls(mergedJson);
+          const totalImages = imagesToDownload.length;
+          let downloadedCount = 0;
 
-        if (totalImages > 0) {
-          const CONCURRENCY = 2;
-          let index = 0;
+          if (totalImages > 0) {
+            const CONCURRENCY = 2;
+            let index = 0;
 
-          const downloadWorker = async () => {
-            while (true) {
-              const currentIndex = index++;
-              if (currentIndex >= totalImages) break;
-              const item = imagesToDownload[currentIndex];
-              try {
-                await cacheImageIfNeeded(item.url);
-              } catch (err) {
-                console.warn(`Failed to pre-cache image: `, err);
+            const downloadWorker = async () => {
+              while (true) {
+                const currentIndex = index++;
+                if (currentIndex >= totalImages) break;
+                const item = imagesToDownload[currentIndex];
+                try {
+                  await cacheImageIfNeeded(item.url);
+                } catch (err) {
+                  console.warn(`Failed to pre-cache image: `, err);
+                }
+
+                downloadedCount++;
+                const pct = 0.85 + (downloadedCount / totalImages) * 0.1;
+                SyncManager.notifyProgress(pct, "Preparing app photos...");
               }
+            };
 
-              downloadedCount++;
-              const pct = 0.5 + (downloadedCount / totalImages) * 0.45;
-              SyncManager.notifyProgress(pct, "Downloading app photos");
-            }
-          };
-
-          const workers = Array(Math.min(CONCURRENCY, totalImages))
-            .fill(null)
-            .map(() => downloadWorker());
-          await Promise.all(workers);
-        } else {
-          SyncManager.notifyProgress(0.95, "Finalizing offline setup...");
+            const workers = Array(Math.min(CONCURRENCY, totalImages))
+              .fill(null)
+              .map(() => downloadWorker());
+            await Promise.all(workers);
+          }
         }
 
         if (!isDelta) {
@@ -536,7 +537,7 @@ export class SyncManager {
           appRepository.upsertMetadata("last_full_sync", syncTime);
         });
 
-        SyncManager.notifyProgress(1.0, "Sync complete!");
+        SyncManager.notifyProgress(1.0, "Ready!");
         return true;
       } catch (e) {
         console.error("Fetch and store error:", e);

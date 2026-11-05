@@ -51,5 +51,21 @@ export const safeStorage = {
       console.warn(`[AsyncStorage] Fallback to memory for removeItem(${key}):`, error);
       delete memoryStorage[key];
     }
+  },
+
+  async clear(): Promise<void> {
+    try {
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.clear();
+        }
+        Object.keys(memoryStorage).forEach(key => delete memoryStorage[key]);
+        return;
+      }
+      await AsyncStorage.clear();
+    } catch (error) {
+      console.warn('[AsyncStorage] Fallback to memory for clear():', error);
+      Object.keys(memoryStorage).forEach(key => delete memoryStorage[key]);
+    }
   }
 };

@@ -2509,14 +2509,14 @@ function MapScreen() {
                   { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 },
                 ]}
               >
-                Cellular signal is weak in Elk Country. Download this region now
+                Cellular signal is weak in Elk Country. Download this region now (~307 MB)
                 to ensure navigation and safety features work offline.
               </AppText>
-              <View style={styles.modalActions}>
+              <View style={[styles.modalActions, { flexDirection: "column", gap: 10, width: "100%" }]}>
                 <TouchableOpacity
                   style={[
                     styles.modalButtonPrimary,
-                    { height: 44, width: "85%", alignSelf: "center" },
+                    { height: 46, width: "100%", alignSelf: "center", backgroundColor: "#ea0b0b", borderRadius: 23 },
                   ]}
                   onPress={() => {
                     saveConsent("yes");
@@ -2526,10 +2526,35 @@ function MapScreen() {
                   <AppText
                     style={[
                       styles.modalButtonTextPrimary,
-                      { fontSize: 14, fontFamily: fonts.bodyBold },
+                      { fontSize: 14, fontFamily: fonts.bodyBold, color: "#FFFFFF" },
                     ]}
                   >
-                    Download Offline Map
+                    Continue
+                  </AppText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    height: 46,
+                    width: "100%",
+                    alignSelf: "center",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: 23,
+                    backgroundColor: "#FFFFFF",
+                    borderWidth: 1.5,
+                    borderColor: isDark ? "#FFFFFF" : "#D1D5DB",
+                  }}
+                  onPress={() => saveConsent("dismissed", true)}
+                >
+                  <AppText
+                    style={{
+                      fontSize: 14,
+                      fontFamily: fonts.bodyBold,
+                      color: "#111111",
+                    }}
+                  >
+                    Decline
                   </AppText>
                 </TouchableOpacity>
               </View>

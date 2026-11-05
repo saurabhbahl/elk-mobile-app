@@ -39,6 +39,7 @@ let globalDownloadProgress = 0;
 let globalIsDownloading = false;
 let globalIsPaused = false;
 let globalDownloadedMapFiles: string[] = [];
+let globalConsentStatus: string | null = null;
 
 let globalDownloadResumable: FileSystem.DownloadResumable | null = null;
 let globalActiveDownloadingFile: string | null = null;
@@ -117,7 +118,7 @@ export const useOfflineMap = () => {
   const [mbtilesError, setMbtilesErrorState] = useState(globalMbtilesError);
   const [downloadProgress, setDownloadProgressState] = useState(globalDownloadProgress);
   const [isDownloading, setIsDownloadingState] = useState(globalIsDownloading);
-  const [consentStatus, setConsentStatus] = useState<string | null>(null);
+  const [consentStatus, setConsentStatusState] = useState<string | null>(globalConsentStatus);
   const [isInitializing, setIsInitializing] = useState(true);
   const [downloadedMapFiles, setDownloadedMapFilesState] = useState(globalDownloadedMapFiles);
 
@@ -149,6 +150,10 @@ export const useOfflineMap = () => {
     globalDownloadedMapFiles = val;
     emit();
   };
+  const setConsentStatus = (val: string | null) => {
+    globalConsentStatus = val;
+    emit();
+  };
 
   // Subscribe to store updates on mount
   useEffect(() => {
@@ -159,6 +164,7 @@ export const useOfflineMap = () => {
       setDownloadProgressState(globalDownloadProgress);
       setIsDownloadingState(globalIsDownloading);
       setDownloadedMapFilesState(globalDownloadedMapFiles);
+      setConsentStatusState(globalConsentStatus);
     };
 
     listeners.add(handleStoreChange);
@@ -256,8 +262,8 @@ export const useOfflineMap = () => {
         return;
       }
       const stored = await AsyncStorage.getItem(CONSENT_KEY);
-      if (stored === 'dismissed') {
-        // Clear legacy persistent 'dismissed' status so it transitions to session-only
+      if (stored === 'dismissed' || stored === 'no') {
+        // Clear legacy or previous 'no' / 'dismissed' status so fresh app restarts prompt again
         await AsyncStorage.removeItem(CONSENT_KEY);
         setConsentStatus(null);
       } else {
@@ -270,9 +276,13 @@ export const useOfflineMap = () => {
 
   const saveConsent = async (status: 'yes' | 'no' | 'dismissed', persist: boolean = true) => {
     try {
-      if (status === 'dismissed') {
-        dismissedSession = true;
-        setConsentStatus('dismissed');
+      if (status === 'dismissed' || status === 'no') {
+        if (status === 'dismissed') {
+          dismissedSession = true;
+        }
+        // Do not persist 'no' or 'dismissed' across app cold starts, but remember in-session
+        await AsyncStorage.removeItem(CONSENT_KEY);
+        setConsentStatus(status);
       } else {
         if (persist) {
           await AsyncStorage.setItem(CONSENT_KEY, status);
