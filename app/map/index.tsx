@@ -109,7 +109,7 @@ function MapScreen() {
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { poisData, mapSettingsData, brandData, apiStatus } = useAppContent();
-  const waypoints = poisData || [];
+  const waypoints = useMemo(() => poisData || [], [poisData]);
   const netInfo = useNetInfo();
 
   const [showHeader, setShowHeader] = useState(true);
@@ -596,6 +596,39 @@ function MapScreen() {
       }, 300);
     }
   }, [isMapLoaded, waypoints, fitRouteToCamera, params]);
+
+  // Re-center on waypoints when offline map download completes
+  const prevHasMap = useRef(hasMap);
+  const prevIsDownloading = useRef(isDownloading);
+
+  useEffect(() => {
+    const justFinishedDownload = prevIsDownloading.current && !isDownloading;
+    const justGotMap = !prevHasMap.current && hasMap;
+
+    prevIsDownloading.current = isDownloading;
+    prevHasMap.current = hasMap;
+
+    if (
+      (justFinishedDownload || justGotMap) &&
+      waypoints.length > 0 &&
+      !isNavigating &&
+      !params.navigateToWaypointId &&
+      !params.routeToWaypointId
+    ) {
+      hasCenteredOnce.current = false;
+      const coords = waypoints.map(
+        (w) =>
+          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
+      );
+
+      const timer = setTimeout(() => {
+        fitRouteToCamera(coords, 0);
+        setIsMapReady(true);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasMap, isDownloading, waypoints, fitRouteToCamera, isNavigating, params]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1455,50 +1488,6 @@ function MapScreen() {
     );
   }
 
-  if (isDownloading) {
-    const pct = Math.round(downloadProgress * 100);
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <AppText style={styles.loadingText}>Downloading Map Data...</AppText>
-        <AppText
-          style={{
-            ...styles.loadingText,
-            marginTop: 5,
-            fontSize: 14,
-            opacity: 0.8,
-            marginBottom: 24,
-          }}
-        >
-          {downloadProgress < 0 ? "Starting..." : `${Math.max(0, pct)}%`}
-        </AppText>
-        <TouchableOpacity
-          style={{
-            height: 44,
-            paddingHorizontal: 24,
-            backgroundColor: colors.surfaceContainerLowest,
-            borderWidth: 1.5,
-            borderColor: colors.error,
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: 8,
-          }}
-          onPress={() => cancelDownload()}
-        >
-          <AppText
-            style={{
-              fontSize: 14,
-              fontFamily: fonts.bodyBold,
-              color: colors.error,
-            }}
-          >
-            Cancel Download
-          </AppText>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const showMapPlaceholder =
     Platform.OS !== "web" && (!mapComponents || apiStatus !== "ready");
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } =
@@ -1588,6 +1577,7 @@ function MapScreen() {
               if (Array.isArray(center) && center.length === 2) {
                 const [lng, lat] = center;
                 if (!isNaN(lng) && !isNaN(lat)) {
+                  if (Math.abs(lng) < 1 && Math.abs(lat) < 1) return;
                   mapCenterRef.current = { lng, lat };
                   // Update the marker so it follows the map center live
                   setDropPinPreviewCoordinate({
@@ -1606,6 +1596,29 @@ function MapScreen() {
                 feature?.center;
               if (Array.isArray(center) && center.length === 2) {
                 const [lng, lat] = center;
+                if (isNaN(lng) || isNaN(lat)) return;
+
+                // When MapLibre initializes or reloads a style, it emits [0, 0] (Null Island).
+                // Never clamp [0, 0] to [-52.0, 14.0] (which sends the camera to South America).
+                if (Math.abs(lng) < 1 && Math.abs(lat) < 1) {
+                  if (waypoints.length > 0 && cameraRef.current) {
+                    const coords = waypoints.map(
+                      (w) =>
+                        [w.coordinate.longitude, w.coordinate.latitude] as [
+                          number,
+                          number,
+                        ],
+                    );
+                    fitRouteToCamera(coords, 0);
+                  } else if (currentRegion && cameraRef.current) {
+                    cameraRef.current?.easeTo({
+                      center: [currentRegion.longitude, currentRegion.latitude],
+                      duration: 0,
+                    });
+                  }
+                  return;
+                }
+
                 // Enforce boundary clamp [-170, 14, -52, 72]
                 const clampedLng = Math.min(-52.0, Math.max(-170.0, lng));
                 const clampedLat = Math.min(72.0, Math.max(14.0, lat));
@@ -2559,6 +2572,61 @@ function MapScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        )}
+
+        {/* ── Download in-progress overlay ── */}
+        {isDownloading && (
+          <View
+            style={[
+              styles.loadingContainer,
+              StyleSheet.absoluteFillObject,
+              {
+                zIndex: 1000,
+                backgroundColor: colors.surface,
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
+          >
+            <ActivityIndicator size="large" color={colors.primary} />
+            <AppText style={styles.loadingText}>Downloading Map Data...</AppText>
+            <AppText
+              style={{
+                ...styles.loadingText,
+                marginTop: 5,
+                fontSize: 14,
+                opacity: 0.8,
+                marginBottom: 24,
+              }}
+            >
+              {downloadProgress < 0
+                ? "Starting..."
+                : `${Math.max(0, Math.round(downloadProgress * 100))}%`}
+            </AppText>
+            <TouchableOpacity
+              style={{
+                height: 44,
+                paddingHorizontal: 24,
+                backgroundColor: colors.surfaceContainerLowest,
+                borderWidth: 1.5,
+                borderColor: colors.error,
+                justifyContent: "center",
+                alignItems: "center",
+                borderRadius: 8,
+              }}
+              onPress={() => cancelDownload()}
+            >
+              <AppText
+                style={{
+                  fontSize: 14,
+                  fontFamily: fonts.bodyBold,
+                  color: colors.error,
+                }}
+              >
+                Cancel Download
+              </AppText>
+            </TouchableOpacity>
           </View>
         )}
 
