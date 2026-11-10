@@ -190,6 +190,7 @@ function MapScreen() {
     Layer: any;
     Marker: any;
     UserLocation: any;
+    LocationManager?: any;
   } | null>(() => {
     if (isExpoGo || Platform.OS === "web") return null;
     try {
@@ -221,6 +222,7 @@ function MapScreen() {
           Layer: ML.Layer,
           Marker: ML.Marker,
           UserLocation: ML.UserLocation,
+          LocationManager: ML.LocationManager,
         };
       }
     } catch {
@@ -475,17 +477,21 @@ function MapScreen() {
     let isMounted = true;
     let posSubscription: Location.LocationSubscription | null = null;
     let headingSubscription: Location.LocationSubscription | null = null;
+    let nativeLocationCallback: ((pos: any) => void) | null = null;
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (!isMounted || status !== "granted") return;
 
-      // Position — throttled (30m / 10s) to avoid re-render storms
+      // Position — high-frequency (1s / 1m) when navigating for real-time tracking,
+      // throttled (10s / 30m) when idle to conserve battery.
       const pos = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Balanced,
-          distanceInterval: 30,
-          timeInterval: 10000,
+          accuracy: isNavigating
+            ? Location.Accuracy.BestForNavigation
+            : Location.Accuracy.Balanced,
+          distanceInterval: isNavigating ? 1 : 30,
+          timeInterval: isNavigating ? 1000 : 10000,
         },
         (loc) => {
           if (isMounted) setLocation(loc.coords);
@@ -496,6 +502,34 @@ function MapScreen() {
         return;
       }
       posSubscription = pos;
+
+      // Connect native MapLibre location engine directly during navigation for high-performance zero-lag updates
+      const locationManager = mapComponents?.LocationManager;
+      if (
+        isNavigating &&
+        locationManager &&
+        typeof locationManager.addListener === "function"
+      ) {
+        try {
+          locationManager.setMinDisplacement(0);
+          nativeLocationCallback = (locEvent: any) => {
+            if (!isMounted || !locEvent?.coords) return;
+            setLocation((prev: any) => {
+              if (
+                !prev ||
+                prev.latitude !== locEvent.coords.latitude ||
+                prev.longitude !== locEvent.coords.longitude
+              ) {
+                return locEvent.coords;
+              }
+              return prev;
+            });
+          };
+          locationManager.addListener(nativeLocationCallback);
+        } catch {
+          // Fallback to Expo location watcher
+        }
+      }
 
       // Heading — fires on every compass change, animates smoothly via Animated.Value
       const heading = await Location.watchHeadingAsync((headingData) => {
@@ -537,8 +571,15 @@ function MapScreen() {
       isMounted = false;
       posSubscription?.remove();
       headingSubscription?.remove();
+      if (nativeLocationCallback && mapComponents?.LocationManager) {
+        try {
+          mapComponents.LocationManager.removeListener(nativeLocationCallback);
+        } catch {
+          // ignore
+        }
+      }
     };
-  }, []);
+  }, [isNavigating, mapComponents]);
 
   const handleRecenter = useCallback(() => {
     const cam = cameraRef.current;
