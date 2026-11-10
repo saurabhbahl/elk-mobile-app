@@ -11,6 +11,7 @@ import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
 import { useOfflineMap } from "@/src/hooks/useOfflineMap";
+import { getCachedImageLocalPath } from "@/src/utils/imageCache";
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
@@ -36,11 +37,19 @@ export default function LandingScreen() {
     const secondaryDelay = 300;
     const bgDuration = 800;
 
-    const bgImageUri = brandData?.splash_loading_screen_background
-        ? (typeof brandData.splash_loading_screen_background === 'string'
-            ? brandData.splash_loading_screen_background
-            : (brandData.splash_loading_screen_background as any)?.url ?? null)
-        : null;
+    const rawBg = brandData?.splash_loading_screen_background;
+    const bgUrl = typeof rawBg === 'string'
+        ? rawBg
+        : (rawBg as any)?.url ?? null;
+    const bgImageUri = bgUrl ? (getCachedImageLocalPath(bgUrl) || bgUrl) : null;
+
+    const rawLogo1 = brandData?.logo_primary;
+    const logo1Url = typeof rawLogo1 === 'string' ? rawLogo1 : (rawLogo1 as any)?.url ?? null;
+    const logo1Uri = logo1Url ? (getCachedImageLocalPath(logo1Url) || logo1Url) : null;
+
+    const rawLogo2 = brandData?.logo_secondary;
+    const logo2Url = typeof rawLogo2 === 'string' ? rawLogo2 : (rawLogo2 as any)?.url ?? null;
+    const logo2Uri = logo2Url ? (getCachedImageLocalPath(logo2Url) || logo2Url) : null;
 
     const styles = useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
@@ -91,9 +100,9 @@ export default function LandingScreen() {
             <View style={styles.content}>
                 {apiStatus !== 'fetching' && (
                     <>
-                        {(typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url) ? (
+                        {logo1Uri ? (
                             <AnimatedImage
-                                source={{ uri: typeof brandData?.logo_primary === 'string' ? brandData.logo_primary : (brandData?.logo_primary as any)?.url }}
+                                source={{ uri: logo1Uri }}
                                 style={styles.logo}
                                 contentFit="contain"
                                 entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
@@ -101,9 +110,9 @@ export default function LandingScreen() {
                             />
                         ) : null}
 
-                        {(typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url) ? (
+                        {logo2Uri ? (
                             <AnimatedImage
-                                source={{ uri: typeof brandData?.logo_secondary === 'string' ? brandData.logo_secondary : (brandData?.logo_secondary as any)?.url }}
+                                source={{ uri: logo2Uri }}
                                 style={styles.explorer}
                                 contentFit="contain"
                                 entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}

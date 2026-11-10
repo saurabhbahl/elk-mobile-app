@@ -256,7 +256,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                         setBrandData(settingsMap.app_branding as AppBranding);
                     }
                 } catch (_) { }
-            }, false, undefined, false);
+            }, false, undefined, true);
 
             if (!success) {
                 setSyncError("Please check your internet connection.");
