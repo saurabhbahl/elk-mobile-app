@@ -93,6 +93,33 @@ function headingToCardinal(deg: number): string {
   return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 }
 
+/** Filter and return valid POI coordinates for framing the map view */
+function getValidPoiCoords(pts: Waypoint[]): [number, number][] {
+  if (!pts || !pts.length) return [];
+  const valid = pts
+    .filter((w) => {
+      const lat = w?.coordinate?.latitude;
+      const lng = w?.coordinate?.longitude;
+      return (
+        typeof lat === "number" &&
+        typeof lng === "number" &&
+        !isNaN(lat) &&
+        !isNaN(lng) &&
+        !(Math.abs(lat) < 0.5 && Math.abs(lng) < 0.5)
+      );
+    })
+    .map(
+      (w) =>
+        [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
+    );
+
+  // If there are points in North America / Elk Country, prioritize them over outliers
+  const naPoints = valid.filter(
+    (c) => c[0] >= -170 && c[0] <= -52 && c[1] >= 14 && c[1] <= 72,
+  );
+  return naPoints.length > 0 ? naPoints : valid;
+}
+
 // ── Wrapper holds the reset key ───────────────────────────────────────────────
 export default function MapScreenWrapper() {
   const { mapKey } = useMapReset();
@@ -102,11 +129,6 @@ export default function MapScreenWrapper() {
 // ── MapScreen ─────────────────────────────────────────────────────────────────
 function MapScreen() {
   const insets = useSafeAreaInsets();
-  // North America map view restriction array: [swLng, swLat, neLng, neLat] (online and offline)
-  const AMERICA_MAX_BOUNDS: [number, number, number, number] = [
-    -170.0, 14.0, -52.0, 72.0,
-  ];
-
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { poisData, mapSettingsData, brandData, apiStatus } = useAppContent();
   const waypoints = useMemo(() => poisData || [], [poisData]);
@@ -513,26 +535,46 @@ function MapScreen() {
   const fitRouteToCamera = useCallback(
     (coords: [number, number][], duration = 1000) => {
       if (!coords.length) return;
-      if (coords.length === 1) {
-        cameraRef.current?.easeTo({ center: coords[0], zoom: 14, duration });
+
+      // Filter out any invalid / Null Island coordinates
+      let filtered = coords.filter(
+        (c) =>
+          Array.isArray(c) &&
+          c.length === 2 &&
+          !isNaN(c[0]) &&
+          !isNaN(c[1]) &&
+          !(Math.abs(c[0]) < 0.5 && Math.abs(c[1]) < 0.5),
+      );
+      if (!filtered.length) return;
+
+      // If there are coordinates in North America / Elk Country, prioritize them over outliers
+      const naCoords = filtered.filter(
+        (c) => c[0] >= -170 && c[0] <= -52 && c[1] >= 14 && c[1] <= 72,
+      );
+      if (naCoords.length > 0) {
+        filtered = naCoords;
+      }
+
+      if (filtered.length === 1) {
+        cameraRef.current?.easeTo({ center: filtered[0], zoom: 14, duration });
         return;
       }
 
-      let minLng = coords[0][0],
-        maxLng = coords[0][0];
-      let minLat = coords[0][1],
-        maxLat = coords[0][1];
-      for (let i = 1; i < coords.length; i++) {
-        minLng = Math.min(minLng, coords[i][0]);
-        maxLng = Math.max(maxLng, coords[i][0]);
-        minLat = Math.min(minLat, coords[i][1]);
-        maxLat = Math.max(maxLat, coords[i][1]);
+      let minLng = filtered[0][0],
+        maxLng = filtered[0][0];
+      let minLat = filtered[0][1],
+        maxLat = filtered[0][1];
+      for (let i = 1; i < filtered.length; i++) {
+        minLng = Math.min(minLng, filtered[i][0]);
+        maxLng = Math.max(maxLng, filtered[i][0]);
+        minLat = Math.min(minLat, filtered[i][1]);
+        maxLat = Math.max(maxLat, filtered[i][1]);
       }
 
       const lngSpan = Math.abs(maxLng - minLng);
       const latSpan = Math.abs(maxLat - minLat);
       if (lngSpan < 0.0004 && latSpan < 0.0004) {
-        cameraRef.current?.easeTo({ center: coords[0], zoom: 15, duration });
+        cameraRef.current?.easeTo({ center: filtered[0], zoom: 15, duration });
         return;
       }
 
@@ -581,19 +623,16 @@ function MapScreen() {
         }, 300);
         return;
       }
-      hasCenteredOnce.current = true;
-      const coords = waypoints.map(
-        (w) =>
-          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
-      );
 
-      // Snap instantly (duration: 0) to POI pins bounding box
-      fitRouteToCamera(coords, 0);
-
-      // Delay dismissing the loading cover slightly so the native thread completes layout snap
-      setTimeout(() => {
-        setIsMapReady(true);
-      }, 300);
+      const validCoords = getValidPoiCoords(waypoints);
+      if (validCoords.length > 0) {
+        hasCenteredOnce.current = true;
+        // Delay slightly so the native thread completes layout snap
+        setTimeout(() => {
+          fitRouteToCamera(validCoords, 500);
+          setIsMapReady(true);
+        }, 200);
+      }
     }
   }, [isMapLoaded, waypoints, fitRouteToCamera, params]);
 
@@ -616,17 +655,15 @@ function MapScreen() {
       !params.routeToWaypointId
     ) {
       hasCenteredOnce.current = false;
-      const coords = waypoints.map(
-        (w) =>
-          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
-      );
+      const validCoords = getValidPoiCoords(waypoints);
+      if (validCoords.length > 0) {
+        const timer = setTimeout(() => {
+          fitRouteToCamera(validCoords, 500);
+          setIsMapReady(true);
+        }, 300);
 
-      const timer = setTimeout(() => {
-        fitRouteToCamera(coords, 0);
-        setIsMapReady(true);
-      }, 300);
-
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
   }, [hasMap, isDownloading, waypoints, fitRouteToCamera, isNavigating, params]);
 
@@ -777,13 +814,12 @@ function MapScreen() {
     setSelectedWaypoint(null);
     setDestinationPoint(null);
     if (waypoints.length > 0) {
-      const coords = waypoints.map(
-        (w) =>
-          [w.coordinate.longitude, w.coordinate.latitude] as [number, number],
-      );
-      setTimeout(() => {
-        fitRouteToCamera(coords, 800);
-      }, 100);
+      const validCoords = getValidPoiCoords(waypoints);
+      if (validCoords.length > 0) {
+        setTimeout(() => {
+          fitRouteToCamera(validCoords, 800);
+        }, 100);
+      }
     }
   }, [waypoints, fitRouteToCamera]);
 
@@ -1494,7 +1530,7 @@ function MapScreen() {
     (mapComponents || {}) as any;
   const showConsentOverlay =
     !hasMap &&
-    consentStatus !== "dismissed" &&
+    consentStatus === null &&
     !isInitializing &&
     !isDownloading &&
     !isNavigating &&
@@ -1560,7 +1596,17 @@ function MapScreen() {
                 height: e.nativeEvent.layout.height,
               };
             }}
-            onDidFinishLoadingMap={() => setIsMapLoaded(true)}
+            onDidFinishLoadingMap={() => {
+              setIsMapLoaded(true);
+              const validCoords = getValidPoiCoords(waypoints);
+              if (validCoords.length > 0 && !hasCenteredOnce.current) {
+                hasCenteredOnce.current = true;
+                setTimeout(() => {
+                  fitRouteToCamera(validCoords, 500);
+                  setIsMapReady(true);
+                }, 200);
+              }
+            }}
             onPress={(event: any) => {
               if (isTappingMarker.current) return;
               if (isNavigating) return;
@@ -1599,35 +1645,17 @@ function MapScreen() {
                 if (isNaN(lng) || isNaN(lat)) return;
 
                 // When MapLibre initializes or reloads a style, it emits [0, 0] (Null Island).
-                // Never clamp [0, 0] to [-52.0, 14.0] (which sends the camera to South America).
+                // Snap directly to POI coordinates or default region
                 if (Math.abs(lng) < 1 && Math.abs(lat) < 1) {
-                  if (waypoints.length > 0 && cameraRef.current) {
-                    const coords = waypoints.map(
-                      (w) =>
-                        [w.coordinate.longitude, w.coordinate.latitude] as [
-                          number,
-                          number,
-                        ],
-                    );
-                    fitRouteToCamera(coords, 0);
+                  const validCoords = getValidPoiCoords(waypoints);
+                  if (validCoords.length > 0 && cameraRef.current) {
+                    fitRouteToCamera(validCoords, 0);
                   } else if (currentRegion && cameraRef.current) {
                     cameraRef.current?.easeTo({
                       center: [currentRegion.longitude, currentRegion.latitude],
                       duration: 0,
                     });
                   }
-                  return;
-                }
-
-                // Enforce boundary clamp [-170, 14, -52, 72]
-                const clampedLng = Math.min(-52.0, Math.max(-170.0, lng));
-                const clampedLat = Math.min(72.0, Math.max(14.0, lat));
-
-                if (clampedLng !== lng || clampedLat !== lat) {
-                  cameraRef.current?.easeTo({
-                    center: [clampedLng, clampedLat],
-                    duration: 300,
-                  });
                   return;
                 }
 
@@ -1656,16 +1684,15 @@ function MapScreen() {
                     }
                     : undefined
                 }
-                defaultSettings={{
-                  centerCoordinate: [
+                initialViewState={{
+                  center: [
                     currentRegion.longitude,
                     currentRegion.latitude,
                   ],
-                  zoomLevel: mapSettingsData?.default_zoom_level
+                  zoom: mapSettingsData?.default_zoom_level
                     ? parseFloat(mapSettingsData.default_zoom_level)
                     : 9,
                 }}
-                maxBounds={AMERICA_MAX_BOUNDS}
                 minZoom={3.5}
               />
             )}
@@ -2495,7 +2522,13 @@ function MapScreen() {
               {/* Close Button */}
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => saveConsent("dismissed", true)}
+                onPress={() => {
+                  saveConsent("dismissed", true);
+                  const validCoords = getValidPoiCoords(waypoints);
+                  if (validCoords.length > 0) {
+                    fitRouteToCamera(validCoords, 500);
+                  }
+                }}
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="close" size={18} color="#FFFFFF" />
@@ -2558,7 +2591,13 @@ function MapScreen() {
                     borderWidth: 1.5,
                     borderColor: isDark ? "#FFFFFF" : "#D1D5DB",
                   }}
-                  onPress={() => saveConsent("dismissed", true)}
+                  onPress={() => {
+                    saveConsent("dismissed", true);
+                    const validCoords = getValidPoiCoords(waypoints);
+                    if (validCoords.length > 0) {
+                      fitRouteToCamera(validCoords, 500);
+                    }
+                  }}
                 >
                   <AppText
                     style={{

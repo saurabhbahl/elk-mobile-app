@@ -56,7 +56,6 @@ import * as SQLite from 'expo-sqlite';
 /** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
 async function isValidMbtiles(uri: string): Promise<boolean> {
   if (Platform.OS === 'web') return true;
-  let tempDb: SQLite.SQLiteDatabase | null = null;
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
     if (!fileInfo.exists || fileInfo.size < 1024 * 1024) {
@@ -64,19 +63,41 @@ async function isValidMbtiles(uri: string): Promise<boolean> {
       return false;
     }
 
+    try {
+      // Fast check: Read first 16 bytes - must match SQLite 3 magic header ("SQLite format 3\0")
+      const header = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+        length: 16,
+        position: 0,
+      });
+      if (header && header.startsWith('U1FMaXRlIGZvcm1hdCAzAA')) {
+        return true;
+      }
+    } catch {
+      // If reading header via FileSystem fails, fall back to SQLite open
+    }
+
     const cleanPath = uri.replace('file://', '');
-    tempDb = SQLite.openDatabaseSync(cleanPath);
-    tempDb.execSync('SELECT count(*) FROM sqlite_master;');
-    return true;
+    const lastSlash = cleanPath.lastIndexOf('/');
+    const dir = lastSlash !== -1 ? cleanPath.substring(0, lastSlash) : undefined;
+    const fileName = lastSlash !== -1 ? cleanPath.substring(lastSlash + 1) : cleanPath;
+    let tempDb: SQLite.SQLiteDatabase | null = null;
+    try {
+      tempDb = SQLite.openDatabaseSync(fileName, undefined, dir);
+      tempDb.execSync('SELECT count(*) FROM sqlite_master;');
+      return true;
+    } catch {
+      return false;
+    } finally {
+      if (tempDb) {
+        try {
+          tempDb.closeSync();
+        } catch {}
+      }
+    }
   } catch (e) {
     console.warn(`[useOfflineMap] MBTiles database validation failed for ${uri}:`, e);
     return false;
-  } finally {
-    if (tempDb) {
-      try {
-        tempDb.closeSync();
-      } catch {}
-    }
   }
 }
 

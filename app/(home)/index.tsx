@@ -2,7 +2,6 @@ import AppRenderHTML from "@/src/components/AppRenderHTML";
 import AppText from "@/src/components/AppText";
 import SectionHeader from "@/src/components/SectionHeader";
 import UniversalCard from "@/src/components/UniversalCard";
-import { openExternalLink } from "@/src/utils/openLink";
 import { handleLinkPress } from "@/src/utils/linkUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
@@ -32,6 +31,7 @@ import {
   TrailsData,
   useAppContentData,
 } from "@/src/contexts/AppContentContext";
+import { getCachedImageLocalPath } from "@/src/utils/imageCache";
 import { formatTrailDistance, isValidData } from "@/src/utils/validation";
 
 const getValidColor = (color: string | undefined) => {
@@ -193,7 +193,12 @@ export default function HomeScreen() {
             <View style={styles.mapCardContainer}>
               {isValidData(homeData?.map_preview_image?.url) ? (
                 <ImageBackground
-                  source={{ uri: homeData?.map_preview_image?.url as string }}
+                  source={{
+                    uri:
+                      getCachedImageLocalPath(
+                        homeData?.map_preview_image?.url as string,
+                      ) || (homeData?.map_preview_image?.url as string),
+                  }}
                   style={styles.mapCard}
                   imageStyle={{ borderRadius: 10.69 }}
                 >
@@ -420,7 +425,11 @@ export default function HomeScreen() {
                   }}
                 >
                   <Image
-                    source={{ uri: grantLogoUrl as string }}
+                    source={{
+                      uri:
+                        getCachedImageLocalPath(grantLogoUrl as string) ||
+                        (grantLogoUrl as string),
+                    }}
                     style={{ width: "100%", height: "100%" }}
                     contentFit="contain"
                     cachePolicy="disk"
@@ -488,7 +497,11 @@ export default function HomeScreen() {
               >
                 {popupData.popup_image?.url ? (
                   <ImageBackground
-                    source={{ uri: popupData.popup_image.url }}
+                    source={{
+                      uri:
+                        getCachedImageLocalPath(popupData.popup_image.url) ||
+                        popupData.popup_image.url,
+                    }}
                     alt={(popupData as any)?.image_alt_text}
                     style={styles.modalCardBackground}
                     contentFit="cover"

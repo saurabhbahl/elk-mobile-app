@@ -6,20 +6,6 @@ import { appRepository } from "../repositories/AppRepository";
 import { isDateExpired } from "../utils/dateUtils";
 import { cacheImageIfNeeded, clearImageCache } from "../utils/imageCache";
 
-// Helper to set nested object properties in-place
-function setNestedValue(
-  obj: Record<string, unknown>,
-  path: string[],
-  value: unknown,
-) {
-  let current = obj;
-  for (let i = 0; i < path.length - 1; i++) {
-    if (!current[path[i]]) return;
-    current = current[path[i]] as Record<string, unknown>;
-  }
-  current[path[path.length - 1]] = value;
-}
-
 // Generate simple hash of a string
 function hashString(str: string): string {
   let hash = 0;
@@ -30,160 +16,64 @@ function hashString(str: string): string {
   return String(Math.abs(hash));
 }
 
-// Extract featured images to pre-cache
+// Extract all image URLs from synced data to pre-cache locally for offline use
 function extractPreCacheUrls(
   data: Record<string, unknown> | unknown,
-): { path: string[]; url: string }[] {
-  const list: { path: string[]; url: string }[] = [];
+): string[] {
+  const urlSet = new Set<string>();
 
-  const addImage = (obj: Record<string, unknown> | unknown, path: string[]) => {
-    if (!obj) return;
-    if (typeof obj === "string" && obj.startsWith("http")) {
-      list.push({ path, url: obj });
-    } else if (
-      typeof obj === "object" &&
-      (obj as Record<string, string>).url &&
-      typeof (obj as Record<string, string>).url === "string" &&
-      (obj as Record<string, string>).url.startsWith("http")
-    ) {
-      list.push({
-        path: [...path, "url"],
-        url: (obj as Record<string, string>).url,
-      });
+  const isImageUrl = (val: string): boolean => {
+    if (typeof val !== "string" || !val.startsWith("http")) return false;
+    const lower = val.toLowerCase();
+    return (
+      lower.includes("/wp-content/uploads/") ||
+      lower.includes(".jpg") ||
+      lower.includes(".jpeg") ||
+      lower.includes(".png") ||
+      lower.includes(".webp") ||
+      lower.includes(".gif") ||
+      lower.includes(".svg")
+    );
+  };
+
+  const addCandidate = (val: unknown) => {
+    if (!val) return;
+    if (typeof val === "string") {
+      if (isImageUrl(val)) urlSet.add(val);
+    } else if (typeof val === "object" && val !== null) {
+      const rec = val as Record<string, unknown>;
+      if (typeof rec.url === "string" && isImageUrl(rec.url)) {
+        urlSet.add(rec.url);
+      }
+      if (typeof rec.image_url === "string" && isImageUrl(rec.image_url)) {
+        urlSet.add(rec.image_url);
+      }
     }
   };
 
-  const d = data as Record<string, unknown>;
-
-  // 1. App Branding
-  if (d.app_branding) {
-    const branding = d.app_branding as Record<string, unknown>;
-    addImage(branding.logo_primary, ["app_branding", "logo_primary"]);
-    addImage(branding.logo_secondary, ["app_branding", "logo_secondary"]);
-    addImage(branding.splash_loading_screen_background, [
-      "app_branding",
-      "splash_loading_screen_background",
-    ]);
-  }
-  // 2. Popup Content
-  if (d.popup_content) {
-    const popup = d.popup_content as Record<string, unknown>;
-    addImage(popup.popup_image, ["popup_content", "popup_image"]);
-  }
-  // 2b. Plan Your Trip Hero & Gallery
-  if (d.plan_your_trip) {
-    const trip = d.plan_your_trip as Record<string, unknown>;
-    if (trip.hero_image)
-      addImage(trip.hero_image, ["plan_your_trip", "hero_image"]);
-    if (Array.isArray(trip.image_gallery)) {
-      trip.image_gallery.forEach((img, idx) => {
-        addImage(img, ["plan_your_trip", "image_gallery", String(idx)]);
-      });
+  // Recursively inspect any object or array to ensure no image is missed
+  const traverse = (current: unknown, depth = 0) => {
+    if (!current || depth > 8) return;
+    if (typeof current === "string") {
+      if (isImageUrl(current)) urlSet.add(current);
+      return;
     }
-  }
-  // 2c. Tips Settings Icon
-  if (d.tips_screen_settings) {
-    const tipsS = d.tips_screen_settings as Record<string, unknown>;
-    if (tipsS.header_icon)
-      addImage(tipsS.header_icon, ["tips_screen_settings", "header_icon"]);
-  }
-  // 3. Home Screen
-  const hs = d.home_screen as Record<string, unknown>;
-  if (hs?.featured_event && Array.isArray(hs.featured_event)) {
-    hs.featured_event.forEach((ev: Record<string, unknown>, idx: number) => {
-      addImage(ev.thumbnail_image, [
-        "home_screen",
-        "featured_event",
-        String(idx),
-        "thumbnail_image",
-      ]);
-    });
-  }
-  if (hs?.programs && Array.isArray(hs.programs)) {
-    hs.programs.forEach((prog: Record<string, unknown>, idx: number) => {
-      addImage(prog.thumbnail_image, [
-        "home_screen",
-        "programs",
-        String(idx),
-        "thumbnail_image",
-      ]);
-    });
-  }
-  if (hs?.sponsorship_information) {
-    const sp = hs.sponsorship_information as Record<string, unknown>;
-    if (sp.grant_logo) {
-      addImage(sp.grant_logo, [
-        "home_screen",
-        "sponsorship_information",
-        "grant_logo",
-      ]);
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        traverse(item, depth + 1);
+      }
+      return;
     }
-  }
-  if (hs?.map_preview_image) {
-    addImage(hs.map_preview_image, ["home_screen", "map_preview_image"]);
-  }
-
-  // General Arrays
-  const checkArray = (key: string) => {
-    if (d[key] && Array.isArray(d[key])) {
-      (d[key] as Record<string, unknown>[]).forEach(
-        (item: Record<string, unknown>, idx: number) => {
-          addImage(
-            item.thumbnail_image || item.featured_image || item.nav_image,
-            [
-              key,
-              String(idx),
-              item.thumbnail_image
-                ? "thumbnail_image"
-                : item.featured_image
-                  ? "featured_image"
-                  : "nav_image",
-            ],
-          );
-
-          // Rentals use the first image in 'additional_images' as their listing featured image
-          if (
-            key === "rentals" &&
-            item.additional_images &&
-            Array.isArray(item.additional_images) &&
-            item.additional_images.length > 0
-          ) {
-            addImage(item.additional_images[0], [
-              key,
-              String(idx),
-              "additional_images",
-              "0",
-            ]);
-          }
-
-          // Tips use 'tip_icon_image' for their listing screen icon
-          if (key === "tips" && item.tip_icon_image) {
-            addImage(item.tip_icon_image, [key, String(idx), "tip_icon_image"]);
-          }
-
-          // POIs custom map pin icons
-          if (key === "pois" && item.pin_icon_override) {
-            addImage(item.pin_icon_override, [
-              key,
-              String(idx),
-              "pin_icon_override",
-            ]);
-          }
-        },
-      );
+    if (typeof current === "object" && current !== null) {
+      addCandidate(current);
+      for (const key of Object.keys(current as Record<string, unknown>)) {
+        traverse((current as Record<string, unknown>)[key], depth + 1);
+      }
     }
   };
-  [
-    "programs",
-    "events",
-    "trails",
-    "rentals",
-    "tips",
-    "pois",
-    "navigation",
-  ].forEach(checkArray);
 
-  return list;
+  traverse(data);
+  return Array.from(urlSet);
 }
 
 export class SyncManager {
@@ -218,7 +108,7 @@ export class SyncManager {
         console.log(
           "[SyncManager] Missing or corrupt local data. Forcing FULL sync.",
         );
-        const res = await this.fetchAndStoreAll();
+        const res = await this.fetchAndStoreAll(undefined, false, undefined, true);
         console.log(
           "[SyncManager] Background full sync completed. Result:",
           res,
@@ -226,7 +116,7 @@ export class SyncManager {
         return res;
       }
 
-      const res = await this.fetchAndStoreAll(undefined, true, lastSyncTime);
+      const res = await this.fetchAndStoreAll(undefined, true, lastSyncTime, true);
       console.log(
         "[SyncManager] Background delta sync completed. Result:",
         res,
@@ -269,7 +159,7 @@ export class SyncManager {
     onProgress?: (progress: number, status: string) => void,
     isDelta = false,
     lastSyncTime?: string,
-    downloadImages = false,
+    downloadImages = true,
   ): Promise<boolean> {
     if (onProgress) {
       SyncManager.progressListeners.add(onProgress);
@@ -294,7 +184,7 @@ export class SyncManager {
       }
 
       try {
-        SyncManager.notifyProgress(0.1, "Getting things ready...");
+        SyncManager.notifyProgress(0.05, "Getting things ready...");
 
         console.log(
           "[SyncManager] Fetching split sync data from endpoints parallelly...",
@@ -320,7 +210,7 @@ export class SyncManager {
               lastSyncTime,
             );
             completedEndpoints++;
-            const pct = 0.1 + (completedEndpoints / totalEndpoints) * 0.8;
+            const pct = 0.05 + (completedEndpoints / totalEndpoints) * 0.45;
             SyncManager.notifyProgress(pct, "Getting things ready...");
             return { endpoint, data: res };
           } catch (err) {
@@ -409,29 +299,35 @@ export class SyncManager {
         }
 
         if (downloadImages) {
-          SyncManager.notifyProgress(0.85, "Preparing app photos...");
+          SyncManager.notifyProgress(0.5, "Getting things ready...");
           const imagesToDownload = extractPreCacheUrls(mergedJson);
           const totalImages = imagesToDownload.length;
           let downloadedCount = 0;
 
           if (totalImages > 0) {
-            const CONCURRENCY = 2;
+            console.log(
+              `[SyncManager] Pre-caching ${totalImages} images for offline use...`,
+            );
+            const CONCURRENCY = 4;
             let index = 0;
 
             const downloadWorker = async () => {
               while (true) {
                 const currentIndex = index++;
                 if (currentIndex >= totalImages) break;
-                const item = imagesToDownload[currentIndex];
+                const url = imagesToDownload[currentIndex];
                 try {
-                  await cacheImageIfNeeded(item.url);
+                  await cacheImageIfNeeded(url);
                 } catch (err) {
-                  console.warn(`Failed to pre-cache image: `, err);
+                  console.warn(
+                    `[SyncManager] Failed to pre-cache image (${url}):`,
+                    err,
+                  );
                 }
 
                 downloadedCount++;
-                const pct = 0.85 + (downloadedCount / totalImages) * 0.1;
-                SyncManager.notifyProgress(pct, "Preparing app photos...");
+                const pct = 0.5 + (downloadedCount / totalImages) * 0.45;
+                SyncManager.notifyProgress(pct, "Getting things ready...");
               }
             };
 
@@ -439,6 +335,9 @@ export class SyncManager {
               .fill(null)
               .map(() => downloadWorker());
             await Promise.all(workers);
+            console.log(
+              `[SyncManager] Finished pre-caching ${downloadedCount}/${totalImages} images.`,
+            );
           }
         }
 
