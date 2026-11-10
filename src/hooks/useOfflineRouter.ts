@@ -177,8 +177,8 @@ async function fetchFromOSRM(
 ): Promise<{ polyline: string; duration: number; distance: number } | null> {
   const fromCoord = `${from.longitude},${from.latitude}`;
   const toCoord = `${to.longitude},${to.latitude}`;
-  const osrmBase = process.env.EXPO_PUBLIC_OSRM_URL || '';
-  const url = `${osrmBase.replace(/\/$/, '')}/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
+  const osrmBase = (process.env.EXPO_PUBLIC_OSRM_URL || '').replace(/\/$/, '');
+  const url = `${osrmBase}/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
 
   console.log(`[OSRM] Fetching: ${url}`);
   try {

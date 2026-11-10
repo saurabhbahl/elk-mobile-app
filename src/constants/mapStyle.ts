@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { MBTILES_FILE_PATH } from '../hooks/useOfflineMap';
 
 export const OFFLINE_VECTOR_SOURCE_ID = 'elk-vector-source';
@@ -53,19 +54,8 @@ export const ONLINE_FALLBACK_STYLE = {
 export const BASE_OFFLINE_STYLE = {
   version: 8,
   name: 'Elk County Heritage Offline',
-  // Glyphs are cached by MapLibre after first online use, available offline.
   glyphs: process.env.EXPO_PUBLIC_GLYPHS_URL || 'https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
   sources: {
-    'osm-raster': {
-      type: 'raster',
-      tiles: [
-        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      ],
-      tileSize: 256,
-      maxzoom: 19,
-    },
     // Primary vector source — overridden at runtime in getMapStyle()
     [OFFLINE_VECTOR_SOURCE_ID]: {
       type: 'vector',
@@ -83,16 +73,6 @@ export const BASE_OFFLINE_STYLE = {
       id: 'background',
       type: 'background',
       paint: { 'background-color': '#dce8d2' },
-    },
-
-    // OSM raster: hybrid background online, silent fail offline.
-    // Semi-transparent so vector always dominates.
-    {
-      id: 'osm-base',
-      type: 'raster',
-      source: 'osm-raster',
-      maxzoom: 14,
-      paint: { 'raster-opacity': 0.5 },
     },
 
     // ── Water ───────────────────────────────────────────────────────────────
@@ -339,6 +319,12 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       type: 'vector',
       url: `mbtiles://${secondary}`,
     };
+
+    // Point to locally downloaded glyphs on disk so the map never requires internet to load on first launch
+    const docDir = FileSystem.documentDirectory || '';
+    if (docDir) {
+      style.glyphs = `${docDir}glyphs/{fontstack}/{range}.pbf`;
+    }
   }
 
   if (!isDark) {

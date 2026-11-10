@@ -29,6 +29,51 @@ export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
 const isExpoGo = Constants.appOwnership === 'expo';
 const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
 
+export const GLYPHS_DIR = `${docDir}glyphs/`;
+
+export async function prefetchGlyphs(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const fonts = ['Open Sans Regular', 'Open Sans Bold', 'Open Sans Italic'];
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(GLYPHS_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(GLYPHS_DIR, { intermediates: true });
+    }
+
+    for (const font of fonts) {
+      // Store in both plain and URI-encoded folder names so MapLibre finds the PBF regardless of URL encoding
+      const plainDir = `${GLYPHS_DIR}${font}/`;
+      const encodedDir = `${GLYPHS_DIR}${encodeURIComponent(font)}/`;
+
+      for (const d of [plainDir, encodedDir]) {
+        const dInfo = await FileSystem.getInfoAsync(d);
+        if (!dInfo.exists) {
+          await FileSystem.makeDirectoryAsync(d, { intermediates: true });
+        }
+      }
+
+      const primaryFile = `${plainDir}0-255.pbf`;
+      const primaryInfo = await FileSystem.getInfoAsync(primaryFile);
+
+      if (!primaryInfo.exists || primaryInfo.size < 1000) {
+        const remoteUrl = `https://tiles.basemaps.cartocdn.com/fonts/${encodeURIComponent(font)}/0-255.pbf`;
+        const res = await FileSystem.downloadAsync(remoteUrl, primaryFile);
+        if (res.status !== 200) {
+          continue;
+        }
+      }
+
+      const mirrorFile = `${encodedDir}0-255.pbf`;
+      const mirrorInfo = await FileSystem.getInfoAsync(mirrorFile);
+      if (!mirrorInfo.exists && primaryFile !== mirrorFile) {
+        await FileSystem.copyAsync({ from: primaryFile, to: mirrorFile }).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.warn('[useOfflineMap] Failed to download glyphs:', e);
+  }
+}
+
 let dismissedSession = false;
 let isAnyDownloadActive = false;
 
@@ -513,6 +558,7 @@ export const useOfflineMap = () => {
         setHasMap(true);
         setDownloadProgress(1);
         setIsPaused(false);
+        prefetchGlyphs().catch(() => {});
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
@@ -645,6 +691,9 @@ export const useOfflineMap = () => {
       return;
     }
 
+    // Ensure glyphs exist if missing, skipping instantly if already present
+    prefetchGlyphs().catch(() => {});
+
     try {
       isAnyDownloadActive = true;
       const wpBase = BASE_URL.replace(/\/map-download\/?$/, '');
@@ -710,9 +759,15 @@ export const useOfflineMap = () => {
       if (updatesMade) {
         await AsyncStorage.setItem('@elk_downloaded_maps_meta', JSON.stringify(storedMeta));
         await checkMapStatus();
+        prefetchGlyphs().catch(() => {});
       }
-    } catch (e) {
-      console.log('[SilentSync] Error silently updating map files:', e);
+    } catch (e: any) {
+      if (
+        !e?.message?.includes('Network request failed') &&
+        !e?.message?.includes('offline')
+      ) {
+        console.log('[SilentSync] Error silently updating map files:', e);
+      }
     } finally {
       isAnyDownloadActive = false;
     }

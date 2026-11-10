@@ -30,9 +30,19 @@ import {
   AppState,
   AppStateStatus,
   BackHandler,
+  LogBox,
   Platform,
   View,
 } from "react-native";
+
+LogBox.ignoreLogs([
+  "MapLibre Native [ERROR]",
+  "Failed to load glyph range",
+  "A server with the specified hostname could not be found",
+  "The Internet connection appears to be offline",
+  "MLNNetworkConfiguration errorLog",
+  "Network request failed",
+]);
 
 import OfflinePopup from "@/src/components/OfflinePopup";
 

@@ -1,4 +1,4 @@
-import { useOfflineMap } from "../hooks/useOfflineMap";
+import { prefetchGlyphs, useOfflineMap } from "../hooks/useOfflineMap";
 import { appRepository } from "../repositories/AppRepository";
 import { SyncManager } from "../services/SyncManager";
 import { preloadManifestCache } from "../utils/imageCache";
@@ -273,6 +273,9 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             loadFromSQLite();
             setApiStatus('ready');
             setIsSyncing(false);
+            if (Platform.OS !== 'web') {
+                checkMapStatus().then(() => prefetchGlyphs()).catch(() => {});
+            }
             return true;
         } catch (err) {
             console.error("Initial sync error:", err);

@@ -49,8 +49,16 @@ export class ApiService {
         console.warn('ApiService received non-JSON response. Skipping.', text.slice(0, 200));
         throw new Error('Invalid JSON response from API');
       }
-    } catch (error) {
-      console.error('ApiService GET error:', error);
+    } catch (error: any) {
+      const isExpectedError =
+        error?.name === 'AbortError' ||
+        error?.message?.includes('Aborted') ||
+        error?.message?.includes('Network request failed') ||
+        error?.message?.includes('The Internet connection appears to be offline') ||
+        error?.name === 'TypeError';
+      if (!isExpectedError) {
+        console.error('ApiService GET error:', error);
+      }
       throw error;
     }
   }

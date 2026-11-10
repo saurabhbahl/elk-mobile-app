@@ -203,8 +203,18 @@ export class SyncManager {
   }
 
   static async triggerDeltaSync(): Promise<boolean> {
-    console.log("[SyncManager] Triggering background delta sync");
     try {
+      const isOnline =
+        Platform.OS === "web"
+          ? typeof navigator !== "undefined"
+            ? navigator.onLine
+            : true
+          : (await NetInfo.fetch()).isConnected;
+      if (!isOnline) {
+        return false;
+      }
+
+      console.log("[SyncManager] Triggering background delta sync");
       const lastSyncTime = appRepository.getMetadata("last_full_sync");
       const settingsMap = appRepository.getAllSettings();
 
@@ -308,34 +318,54 @@ export class SyncManager {
           "tips",
           "cameras",
           "settings",
+          "routes",
         ];
         const totalEndpoints = endpoints.length;
         let completedEndpoints = 0;
 
-        const fetchPromises = endpoints.map(async (endpoint) => {
-          try {
-            const res = await ApiService.fetchEndpointData<any>(
-              endpoint,
-              isDelta,
-              lastSyncTime,
-            );
-            completedEndpoints++;
-            const pct = 0.1 + (completedEndpoints / totalEndpoints) * 0.8;
-            SyncManager.notifyProgress(pct, "Getting things ready...");
-            return { endpoint, data: res };
-          } catch (err) {
-            console.error(
-              `[SyncManager] Error fetching split endpoint ${endpoint}:`,
-              err,
-            );
-            console.warn(
-              `[SyncManager] Fetch failed for ${endpoint}, continuing sync with cached/empty data...`,
-            );
-            return { endpoint, data: null };
-          }
-        });
+        const CONCURRENCY = 2;
+        let endpointIndex = 0;
+        const results: { endpoint: string; data: any }[] = [];
 
-        const results = await Promise.all(fetchPromises);
+        const worker = async () => {
+          while (endpointIndex < endpoints.length) {
+            const idx = endpointIndex++;
+            const endpoint = endpoints[idx];
+            try {
+              const res = await ApiService.fetchEndpointData<any>(
+                endpoint,
+                isDelta,
+                lastSyncTime,
+              );
+              completedEndpoints++;
+              const pct = 0.1 + (completedEndpoints / totalEndpoints) * 0.8;
+              SyncManager.notifyProgress(pct, "Getting things ready...");
+              results.push({ endpoint, data: res });
+            } catch (err: any) {
+              const isOffline =
+                err?.name === "AbortError" ||
+                err?.message?.includes("Aborted") ||
+                err?.message?.includes("Network request failed") ||
+                err?.message?.includes("offline") ||
+                err?.name === "TypeError";
+              if (!isOffline) {
+                console.error(
+                  `[SyncManager] Error fetching split endpoint ${endpoint}:`,
+                  err,
+                );
+                console.warn(
+                  `[SyncManager] Fetch failed for ${endpoint}, continuing sync with cached/empty data...`,
+                );
+              }
+              results.push({ endpoint, data: null });
+            }
+          }
+        };
+
+        const workers = Array(Math.min(CONCURRENCY, endpoints.length))
+          .fill(null)
+          .map(() => worker());
+        await Promise.all(workers);
 
         // Merge results into a unified structure for transaction parsing
         const mergedJson: Record<string, any> = { deleted: {} };
@@ -513,6 +543,37 @@ export class SyncManager {
           }
         }
 
+        // 2b. Write pre-calculated routes in a dedicated transaction block
+        if (
+          mergedJson.routes &&
+          Array.isArray(mergedJson.routes) &&
+          mergedJson.routes.length > 0
+        ) {
+          console.log(`[SyncManager] Saving ${mergedJson.routes.length} pre-calculated routes into SQLite...`);
+          db.withTransactionSync(() => {
+            if (!isDelta) {
+              db.runSync("DELETE FROM routes");
+            }
+            (mergedJson.routes as Record<string, unknown>[]).forEach((r) => {
+              const fromId = Number(r.from_id);
+              const toId = Number(r.to_id);
+              const polyline = String(r.encoded_polyline || "");
+              const duration = Number(r.duration || 0);
+              const distance = Number(r.distance || 0);
+              const fromCoord = String(r.from_coord || "");
+              const toCoord = String(r.to_coord || "");
+
+              if (fromId > 0 && toId > 0 && polyline) {
+                db.runSync(
+                  `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance, from_coord, to_coord) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  [fromId, toId, polyline, duration, distance, fromCoord, toCoord]
+                );
+              }
+            });
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+
         // 3. Deletions, cleanup, and metadata finalization block
         db.withTransactionSync(() => {
           if (
@@ -527,6 +588,18 @@ export class SyncManager {
                   appRepository.deleteRecord(String(idToDel), item.type);
                 });
               }
+            }
+
+            // Handle deleted route pairs
+            if (Array.isArray(deleted.routes)) {
+              (deleted.routes as any[]).forEach((delRoute) => {
+                if (delRoute && delRoute.from_id && delRoute.to_id) {
+                  db.runSync(
+                    `DELETE FROM routes WHERE from_id = ? AND to_id = ?`,
+                    [Number(delRoute.from_id), Number(delRoute.to_id)]
+                  );
+                }
+              });
             }
           }
 

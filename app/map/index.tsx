@@ -60,6 +60,7 @@ import { NavigationHeader } from "../../src/components/NavigationHeader";
 import { NavigationOverlay } from "../../src/components/NavigationOverlay";
 import QuickLinks from "../../src/components/QuickLinks";
 import { RoutePlanner } from "../../src/components/RoutePlanner";
+import SameLocationPopup from "../../src/components/SameLocationPopup";
 import SectionHeader from "../../src/components/SectionHeader";
 import WebMapView from "../../src/components/WebMapView";
 
@@ -172,6 +173,23 @@ function MapScreen() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const ML = require("@maplibre/maplibre-react-native");
+      const logMgr = ML.LogManager || ML.Logger;
+      if (logMgr && typeof logMgr.onLog === "function") {
+        logMgr.onLog((log: any) => {
+          const msg = `${log?.message || ""} ${log?.tag || ""}`;
+          if (
+            msg.includes("Internet connection appears to be offline") ||
+            msg.includes("Failed to load glyph") ||
+            msg.includes("hostname could not be found") ||
+            msg.includes("tiles.basemaps.cartocdn.com") ||
+            msg.includes("MLNNetworkConfiguration") ||
+            msg.includes("-1009")
+          ) {
+            return true; // suppress offline font/network warnings
+          }
+          return false;
+        });
+      }
       if (ML.Map && ML.Camera) {
         preloadRouteIndex();
         return {
@@ -305,6 +323,7 @@ function MapScreen() {
     },
   });
   const [showArrivalPopup, setShowArrivalPopup] = useState(false);
+  const [showSameLocationPopup, setShowSameLocationPopup] = useState(false);
   const hasArrivedRef = useRef(false);
 
   // ── Search state ────────────────────────────────────────────────────────────
@@ -833,11 +852,6 @@ function MapScreen() {
       if (isNavInFlightRef.current) return;
       isNavInFlightRef.current = true;
       try {
-        setIsCalculatingRoute(true);
-
-        // Build ordered list of waypoint IDs
-        const allIds = [from.id, ...stops.map((s) => s.id), to.id];
-
         if (!from?.coordinate || !to?.coordinate) {
           setTimeout(
             () =>
@@ -851,6 +865,43 @@ function MapScreen() {
           isNavInFlightRef.current = false;
           return;
         }
+
+        // Prevent calculating routes between the same locations
+        const allPoints = [from, ...stops, to];
+        let hasDuplicateLocation = false;
+
+        for (let i = 0; i < allPoints.length - 1; i++) {
+          for (let j = i + 1; j < allPoints.length; j++) {
+            const p1 = allPoints[i];
+            const p2 = allPoints[j];
+            const isSame =
+              (p1.id !== undefined && p2.id !== undefined && p1.id === p2.id) ||
+              (Boolean(p1.title) &&
+                Boolean(p2.title) &&
+                p1.title.trim().toLowerCase() === p2.title.trim().toLowerCase()) ||
+              (p1.coordinate &&
+                p2.coordinate &&
+                calcDistance(p1.coordinate, p2.coordinate) < 25);
+
+            if (isSame) {
+              hasDuplicateLocation = true;
+              break;
+            }
+          }
+          if (hasDuplicateLocation) break;
+        }
+
+        if (hasDuplicateLocation) {
+          setShowSameLocationPopup(true);
+          setIsCalculatingRoute(false);
+          isNavInFlightRef.current = false;
+          return;
+        }
+
+        setIsCalculatingRoute(true);
+
+        // Build ordered list of waypoint IDs
+        const allIds = [from.id, ...stops.map((s) => s.id), to.id];
 
         // Block routes that span unrealistic distances (e.g., across oceans)
         const straightLineDist = calcDistance(from.coordinate, to.coordinate);
@@ -1500,7 +1551,8 @@ function MapScreen() {
   }
 
   const showMapPlaceholder =
-    Platform.OS !== "web" && (!mapComponents || apiStatus !== "ready");
+    Platform.OS !== "web" &&
+    (!mapComponents || apiStatus !== "ready" || isInitializing);
   const { Map, Camera, GeoJSONSource, Layer, Marker, UserLocation } =
     (mapComponents || {}) as any;
   const showConsentOverlay =
@@ -1561,6 +1613,7 @@ function MapScreen() {
           </View>
         ) : (
           <Map
+            key={`map-${hasMap ? "offline" : "online"}-${mapTimestamp}`}
             ref={mapRef}
             style={styles.map}
             mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
@@ -2592,6 +2645,11 @@ function MapScreen() {
             </TouchableOpacity>
           </View>
         )}
+        {/* Duplicate / same location warning modal */}
+        <SameLocationPopup
+          visible={showSameLocationPopup}
+          onClose={() => setShowSameLocationPopup(false)}
+        />
       </View>
     </View>
   );
