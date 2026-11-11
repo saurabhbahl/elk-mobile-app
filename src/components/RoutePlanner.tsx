@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAppContent } from '../contexts/AppContentContext';
 import { Waypoint } from '../data/waypoints';
 import { normalizeHex } from '../utils/colorUtils';
+import { calcDistance } from '../utils/mapUtils';
 
 export interface RoutePlannerProps {
   isVisible: boolean;
@@ -170,6 +171,49 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
       opacity.value = withTiming(0, { duration: 300 });
     }
   }, [isVisible, translateY, opacity, windowHeight]);
+
+  // Auto-select nearest POI (or Current Location) if startPoint is not yet set
+  React.useEffect(() => {
+    if (isVisible && !startPoint && location && waypoints.length > 0) {
+      const loc = location as { latitude: number; longitude: number };
+      if (
+        typeof loc?.latitude === "number" &&
+        typeof loc?.longitude === "number"
+      ) {
+        let nearbyPoi: Waypoint | null = null;
+        let minDistance = Infinity;
+
+        for (const wp of waypoints) {
+          if (destinationPoint && wp.id === destinationPoint.id) continue;
+          if (
+            wp.coordinate &&
+            typeof wp.coordinate.latitude === "number" &&
+            typeof wp.coordinate.longitude === "number"
+          ) {
+            const dist = calcDistance(loc, wp.coordinate);
+            if (dist <= 100 && dist < minDistance) {
+              minDistance = dist;
+              nearbyPoi = wp;
+            }
+          }
+        }
+
+        if (nearbyPoi) {
+          onSetStartPoint(nearbyPoi);
+        } else {
+          onSetStartPoint({
+            id: 999,
+            title: "Current Location",
+            coordinate: {
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+            },
+            description: "Your current GPS position",
+          });
+        }
+      }
+    }
+  }, [isVisible, startPoint, location, waypoints, destinationPoint, onSetStartPoint]);
 
   const canStart = !!startPoint && !!destinationPoint && !isCalculatingRoute;
   const connectorHeight = 48 + stopPoints.length * 64;

@@ -51,11 +51,43 @@ function extractPreCacheUrls(
     }
   };
 
+  // Extract any image URLs embedded inside HTML / rich text editor strings
+  const extractUrlsFromHtml = (html: string) => {
+    if (typeof html !== "string" || !html.includes("<") || !html.includes("http")) return;
+
+    // Match src, data-src, and WordPress image attributes
+    const attrRegex =
+      /(?:src|data-src|data-lazy-src|data-orig-file|data-large-file)=["'](https?:\/\/[^"'\s>]+)["']/gi;
+    let match: RegExpExecArray | null;
+    while ((match = attrRegex.exec(html)) !== null) {
+      const url = match[1];
+      if (url && isImageUrl(url)) {
+        urlSet.add(url);
+      }
+    }
+
+    // Match responsive srcset URLs
+    const srcsetRegex = /srcset=["']([^"']+)["']/gi;
+    while ((match = srcsetRegex.exec(html)) !== null) {
+      const items = match[1].split(",");
+      for (const item of items) {
+        const candidate = item.trim().split(/\s+/)[0];
+        if (candidate && isImageUrl(candidate)) {
+          urlSet.add(candidate);
+        }
+      }
+    }
+  };
+
   // Recursively inspect any object or array to ensure no image is missed
   const traverse = (current: unknown, depth = 0) => {
     if (!current || depth > 8) return;
     if (typeof current === "string") {
-      if (isImageUrl(current)) urlSet.add(current);
+      if (isImageUrl(current)) {
+        urlSet.add(current);
+      } else if (current.includes("<") && current.includes("http")) {
+        extractUrlsFromHtml(current);
+      }
       return;
     }
     if (Array.isArray(current)) {

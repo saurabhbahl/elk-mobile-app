@@ -52,10 +52,10 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   onRecenter,
 }) => {
   const insets = useSafeAreaInsets();
-  const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
+  const safeBottom = Math.max(insets.bottom, 12);
   const { colors, fonts, isDark } = useTheme();
-  const expandedPanelHeight = (destinationTitle ? 236 : 192) + safeBottom + 20;
-  const collapsedPanelHeight = 104 + safeBottom + 20;
+  const expandedPanelHeight = (destinationTitle ? 180 : 144) + safeBottom;
+  const collapsedPanelHeight = 144 + safeBottom;
   const panelHeight = React.useRef(new Animated.Value(expandedPanelHeight)).current;
   const panelHeightRef = React.useRef(expandedPanelHeight);
   const [isPanelCollapsed, setIsPanelCollapsed] = React.useState(false);
@@ -171,7 +171,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
       <View
         style={[
           styles.floatingControls,
-          { bottom: safeBottom + (isPanelCollapsed ? 188 : 320) },
+          { bottom: (isPanelCollapsed ? collapsedPanelHeight : expandedPanelHeight) + 16 },
         ]}
         pointerEvents="box-none"
       >
@@ -189,7 +189,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         pointerEvents="box-none"
       >
         <Animated.View
-          style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom + 34 }]}
+          style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom }]}
           {...panelPanResponder.panHandlers}
         >
           <View style={styles.panelHandleHitArea}>

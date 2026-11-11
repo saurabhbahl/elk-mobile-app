@@ -884,30 +884,54 @@ function MapScreen() {
   const handleNavigate = useCallback(
     async (destination?: Waypoint) => {
       setStopPoints([]);
-      if (location) {
-        setStartPoint({
-          id: 999,
-          title: "Current Location",
-          coordinate: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-          },
-          description: "Your current GPS position",
-        });
-        setPickerType("end");
-      } else {
-        setStartPoint(null);
-        setPickerType("start");
-      }
       const targetDest = destination ?? selectedWaypoint;
       if (targetDest) {
         setDestinationPoint(targetDest);
       } else {
         setDestinationPoint(null);
       }
+
+      if (location) {
+        // Auto-select nearest POI if user is near one (within 100 meters)
+        let nearbyPoi: Waypoint | null = null;
+        let minDistance = Infinity;
+
+        for (const wp of waypoints) {
+          if (targetDest && wp.id === targetDest.id) continue;
+          if (
+            wp.coordinate &&
+            typeof wp.coordinate.latitude === "number" &&
+            typeof wp.coordinate.longitude === "number"
+          ) {
+            const dist = calcDistance(location, wp.coordinate);
+            if (dist <= 100 && dist < minDistance) {
+              minDistance = dist;
+              nearbyPoi = wp;
+            }
+          }
+        }
+
+        if (nearbyPoi) {
+          setStartPoint(nearbyPoi);
+        } else {
+          setStartPoint({
+            id: 999,
+            title: "Current Location",
+            coordinate: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+            },
+            description: "Your current GPS position",
+          });
+        }
+        setPickerType("end");
+      } else {
+        setStartPoint(null);
+        setPickerType("start");
+      }
       setShowPointPicker(true);
     },
-    [location, selectedWaypoint],
+    [location, selectedWaypoint, waypoints],
   );
 
   // ── Start navigation ────────────────────────────────────────────────────────
@@ -1307,7 +1331,7 @@ function MapScreen() {
           latitude: toWP.coordinate.latitude,
           longitude: toWP.coordinate.longitude,
         });
-        const ARRIVAL_THRESHOLD_METERS = 10; // ~164 feet
+        const ARRIVAL_THRESHOLD_METERS = 16;
         if (
           distToDestinationMeters < ARRIVAL_THRESHOLD_METERS &&
           !hasArrivedRef.current

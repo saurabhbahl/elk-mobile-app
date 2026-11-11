@@ -66,7 +66,7 @@ export async function prefetchGlyphs(): Promise<void> {
       const mirrorFile = `${encodedDir}0-255.pbf`;
       const mirrorInfo = await FileSystem.getInfoAsync(mirrorFile);
       if (!mirrorInfo.exists && primaryFile !== mirrorFile) {
-        await FileSystem.copyAsync({ from: primaryFile, to: mirrorFile }).catch(() => {});
+        await FileSystem.copyAsync({ from: primaryFile, to: mirrorFile }).catch(() => { });
       }
     }
   } catch (e) {
@@ -137,7 +137,7 @@ async function isValidMbtiles(uri: string): Promise<boolean> {
       if (tempDb) {
         try {
           tempDb.closeSync();
-        } catch {}
+        } catch { }
       }
     }
   } catch (e) {
@@ -579,7 +579,7 @@ export const useOfflineMap = () => {
         setHasMap(true);
         setDownloadProgress(1);
         setIsPaused(false);
-        prefetchGlyphs().catch(() => {});
+        prefetchGlyphs().catch(() => { });
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
@@ -713,7 +713,7 @@ export const useOfflineMap = () => {
     }
 
     // Ensure glyphs exist if missing, skipping instantly if already present
-    prefetchGlyphs().catch(() => {});
+    prefetchGlyphs().catch(() => { });
 
     try {
       isAnyDownloadActive = true;
@@ -780,7 +780,7 @@ export const useOfflineMap = () => {
       if (updatesMade) {
         await AsyncStorage.setItem('@elk_downloaded_maps_meta', JSON.stringify(storedMeta));
         await checkMapStatus();
-        prefetchGlyphs().catch(() => {});
+        prefetchGlyphs().catch(() => { });
       }
     } catch (e: any) {
       if (
