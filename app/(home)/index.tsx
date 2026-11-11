@@ -22,6 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Navbar from "@/src/components/Navbar";
 import QuickLinks from "@/src/components/QuickLinks";
+import HomeScreenSkeleton from "@/src/components/HomeScreenSkeleton";
 import WireframePlaceholder from "@/src/components/WireframePlaceholder";
 import { LIGHT_COLORS, LIGHT_FONTS, width } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -90,6 +91,16 @@ export default function HomeScreen() {
       setShowPopup(true);
     }
   }, [timerFinished, popupImageLoaded]);
+
+  if (!homeData) {
+    return (
+      <SafeAreaView style={styles.container} edges={["left", "right"]}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
+        <HomeScreenSkeleton />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
