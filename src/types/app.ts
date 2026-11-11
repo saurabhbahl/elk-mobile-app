@@ -302,7 +302,7 @@ export interface AppContentSyncContextType {
     syncStatusText: string;
     syncError: string | null;
     refreshData: () => Promise<boolean>;
-    performInitialSync: () => Promise<boolean>;
+    performInitialSync: (downloadImages?: boolean) => Promise<boolean>;
 }
 
 export interface AppContentContextType extends AppContentDataContextType, AppContentSyncContextType { }

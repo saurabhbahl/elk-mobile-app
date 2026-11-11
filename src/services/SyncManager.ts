@@ -94,12 +94,13 @@ export class SyncManager {
 
   static async triggerDeltaSync(): Promise<boolean> {
     try {
+      const netState = await NetInfo.fetch();
       const isOnline =
         Platform.OS === "web"
           ? typeof navigator !== "undefined"
             ? navigator.onLine
             : true
-          : (await NetInfo.fetch()).isConnected;
+          : Boolean(netState.isConnected && netState.isInternetReachable !== false);
       if (!isOnline) {
         return false;
       }
@@ -183,12 +184,13 @@ export class SyncManager {
     }
 
     const task = (async () => {
+      const netState = await NetInfo.fetch();
       const isOnline =
         Platform.OS === "web"
           ? typeof navigator !== "undefined"
             ? navigator.onLine
             : true
-          : (await NetInfo.fetch()).isConnected;
+          : Boolean(netState.isConnected && netState.isInternetReachable !== false);
       if (!isOnline) {
         throw new Error("No network connection available for initial sync");
       }

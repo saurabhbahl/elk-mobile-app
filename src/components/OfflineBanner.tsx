@@ -6,7 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function OfflineBanner() {
     const netInfo = useNetInfo();
-    const isOffline = Platform.OS === 'web' ? false : netInfo.isConnected === false;
+    const isOffline = Platform.OS === 'web' ? false : (netInfo.isConnected === false || netInfo.isInternetReachable === false);
 
     if (!isOffline) return null;
 
