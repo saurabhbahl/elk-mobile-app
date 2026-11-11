@@ -6,7 +6,6 @@ import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
-    Platform,
     StatusBar,
     StyleSheet,
     TouchableOpacity,
@@ -21,6 +20,10 @@ import { useAppContent } from "@/src/contexts/AppContentContext";
 import { getCachedImageLocalPath } from "@/src/utils/imageCache";
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+const DEFAULT_BG_IMAGE = require("@/assets/images/splash-background.jpg");
+const DEFAULT_LOGO_PRIMARY = require("@/assets/images/splash-logo-primary.png");
+const DEFAULT_LOGO_SECONDARY = require("@/assets/images/splash-logo-secondary.png");
 
 const CONTENT_CONSENT_KEY = "@elk_content_download_consent";
 let dismissedContentSession = false;
@@ -69,7 +72,7 @@ export default function LandingScreen() {
         };
     }, []);
 
-    const secColor = brandData?.brand_color_secondary || "#ea0b0b";
+    const secColor = brandData?.brand_color_secondary || "#dd3333";
 
     const logoDuration = 1000;
     const primaryDelay = 150;
@@ -130,36 +133,42 @@ export default function LandingScreen() {
         router.replace("/(home)" as any);
     };
 
-    // Show popup consent modal if user hasn't consented yet or if currently downloading
+    // Wait for initial consent check so we don't briefly flash the explore button before showing the prompt
     const shouldShowDownloadPrompt =
         (isConsentLoaded && consentStatus === null) || isContentDownloading;
+
+    const logo1Source = logo1Uri ? { uri: logo1Uri } : DEFAULT_LOGO_PRIMARY;
+    const logo2Source = logo2Uri ? { uri: logo2Uri } : DEFAULT_LOGO_SECONDARY;
+    const bgSource = bgImageUri ? { uri: bgImageUri } : DEFAULT_BG_IMAGE;
 
     const Inner = (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.content}>
                 {apiStatus !== 'fetching' && (
                     <>
-                        {logo1Uri ? (
-                            <AnimatedImage
-                                source={{ uri: logo1Uri }}
-                                style={styles.logo}
-                                contentFit="contain"
-                                entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
-                                transition={Platform.OS === 'ios' ? 400 : 0}
-                            />
-                        ) : null}
+                        <AnimatedImage
+                            source={logo1Source}
+                            placeholder={DEFAULT_LOGO_PRIMARY}
+                            placeholderContentFit="contain"
+                            style={styles.logo}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                            entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
+                            transition={0}
+                        />
 
-                        {logo2Uri ? (
-                            <AnimatedImage
-                                source={{ uri: logo2Uri }}
-                                style={styles.explorer}
-                                contentFit="contain"
-                                entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}
-                                transition={Platform.OS === 'ios' ? 400 : 0}
-                            />
-                        ) : null}
+                        <AnimatedImage
+                            source={logo2Source}
+                            placeholder={DEFAULT_LOGO_SECONDARY}
+                            placeholderContentFit="contain"
+                            style={styles.explorer}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                            entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}
+                            transition={0}
+                        />
 
-                        {shouldShowDownloadPrompt ? (
+                        {isConsentLoaded ? (shouldShowDownloadPrompt ? (
                             <Animated.View entering={FadeInUp.duration(logoDuration)} style={styles.promptContainer}>
                                 {isContentDownloading ? (
                                     <View style={styles.downloadingContainer}>
@@ -250,7 +259,7 @@ export default function LandingScreen() {
                                     </AppText>
                                 </TouchableOpacity>
                             </Animated.View>
-                        )}
+                        )) : null}
                     </>
                 )}
             </View>
@@ -260,15 +269,17 @@ export default function LandingScreen() {
     return (
         <View style={[styles.container, { backgroundColor: '#000' }]}>
             <StatusBar barStyle="light-content" />
-            {bgImageUri && (
-                <Animated.View entering={FadeIn.duration(bgDuration)} style={StyleSheet.absoluteFill}>
-                    <Image
-                        source={{ uri: bgImageUri }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                    />
-                </Animated.View>
-            )}
+            <Animated.View entering={FadeIn.duration(bgDuration)} style={StyleSheet.absoluteFill}>
+                <Image
+                    source={bgSource}
+                    placeholder={DEFAULT_BG_IMAGE}
+                    placeholderContentFit="cover"
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={0}
+                />
+            </Animated.View>
             <View style={[StyleSheet.absoluteFill, styles.darkOverlay]}>
                 {Inner}
             </View>

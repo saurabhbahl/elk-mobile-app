@@ -92,15 +92,60 @@ export class SyncManager {
     });
   }
 
+  private static async checkIsOnline(): Promise<boolean> {
+    if (Platform.OS === "web") {
+      return typeof navigator !== "undefined" ? navigator.onLine : true;
+    }
+    const netState = await NetInfo.fetch();
+    return Boolean(netState.isConnected && netState.isInternetReachable !== false);
+  }
+
+  /**
+   * Fetches only app_branding from the lightweight settings endpoint for initial launch UI.
+   */
+  static async fetchBrandingOnly(): Promise<Record<string, unknown> | null> {
+    if (SyncManager.activeSyncPromise) return null;
+
+    try {
+      const isOnline = await SyncManager.checkIsOnline();
+      if (!isOnline) return null;
+
+      const data = await ApiService.fetchEndpointData<any>("settings");
+      if (!data) return null;
+
+      const payload =
+        data && data.data && typeof data.data === "object" ? data.data : data;
+      const branding = payload?.app_branding;
+
+      if (
+        !branding ||
+        typeof branding !== "object" ||
+        Array.isArray(branding)
+      ) {
+        return null;
+      }
+
+      if (
+        Platform.OS !== "web" &&
+        !SyncManager.activeSyncPromise &&
+        !SyncManager.isSyncComplete()
+      ) {
+        try {
+          appRepository.upsertSetting("app_branding", JSON.stringify(branding));
+        } catch (err) {
+          console.warn("[SyncManager] Failed to save initial branding:", err);
+        }
+      }
+
+      return branding as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+
   static async triggerDeltaSync(): Promise<boolean> {
     try {
-      const netState = await NetInfo.fetch();
-      const isOnline =
-        Platform.OS === "web"
-          ? typeof navigator !== "undefined"
-            ? navigator.onLine
-            : true
-          : Boolean(netState.isConnected && netState.isInternetReachable !== false);
+      const isOnline = await SyncManager.checkIsOnline();
       if (!isOnline) {
         return false;
       }
@@ -184,13 +229,7 @@ export class SyncManager {
     }
 
     const task = (async () => {
-      const netState = await NetInfo.fetch();
-      const isOnline =
-        Platform.OS === "web"
-          ? typeof navigator !== "undefined"
-            ? navigator.onLine
-            : true
-          : Boolean(netState.isConnected && netState.isInternetReachable !== false);
+      const isOnline = await SyncManager.checkIsOnline();
       if (!isOnline) {
         throw new Error("No network connection available for initial sync");
       }

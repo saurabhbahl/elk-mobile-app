@@ -343,6 +343,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Boot Logic
     useEffect(() => {
+        let isMounted = true;
         preloadManifestCache().catch(e => console.warn('[AppContent] Failed to preload manifest:', e));
         if (Platform.OS === 'web') {
             loadFromWebStorage();
@@ -357,7 +358,28 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         } else {
             loadFromSQLite();
             setApiStatus('ready');
+
+            // Fetch lightweight app branding on first boot so colors/tagline/logos stay up to date without waiting for full sync
+            let hasBranding = false;
+            if (Platform.OS !== 'web') {
+                try {
+                    const existing = appRepository.getAllSettings().app_branding;
+                    hasBranding = Boolean(existing && !Array.isArray(existing));
+                } catch {}
+            }
+            if (!hasBranding) {
+                SyncManager.fetchBrandingOnly()
+                    .then((branding) => {
+                        if (branding && isMounted) {
+                            setBrandData((prev) => prev || (branding as AppBranding));
+                        }
+                    })
+                    .catch(() => {});
+            }
         }
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const dataContextValue = React.useMemo(() => ({
