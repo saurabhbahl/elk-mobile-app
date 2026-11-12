@@ -8,10 +8,9 @@ import { LIGHT_COLORS, LIGHT_FONTS } from '../../src/constants/theme';
 import { useTheme } from '../../src/context/ThemeContext';
 import { useAppContentData, useAppContentSync } from '../../src/contexts/AppContentContext';
 import { useOfflineMap } from '../../src/hooks/useOfflineMap';
-import { useRoutePreloader } from '../../src/hooks/useRoutePreloader';
 import { normalizeHex } from '../../src/utils/colorUtils';
 import { clearImageCache, getCacheSizeLabel } from '../../src/utils/imageCache';
-import { clearAllRoutes, getAllCachedRoutes } from '../../src/utils/routeDatabase';
+import { SyncManager } from '@/src/services/SyncManager';
 import { handleLinkPress } from '@/src/utils/linkUtils';
 import { safeStorage as AsyncStorage } from '@/src/utils/asyncStorage';
 import { appRepository } from '@/src/repositories/AppRepository';
@@ -21,9 +20,7 @@ export default function SettingsScreen() {
   const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 0);
   const { hasMap, isDownloading, isPaused, downloadProgress, downloadMap, pauseDownload, cancelDownload, deleteMap, isInitializing, mbtilesError, setMbtilesError } = useOfflineMap();
   const { theme, setTheme, colors, fonts, isDark } = useTheme();
-  const { preloadAll, progress, isPreloading, cancelPreload } = useRoutePreloader();
-  const [cachedCount, setCachedCount] = useState<number>(0);
-  const [isClearing, setIsClearing] = useState(false);
+  const [isSyncingRoads, setIsSyncingRoads] = useState(false);
   const [imageCacheSize, setImageCacheSize] = useState<string>('...');
   const [isClearingImages, setIsClearingImages] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -35,9 +32,8 @@ export default function SettingsScreen() {
   const brandSecondary = normalizeHex(brandData?.brand_color_secondary);
   const styles = useMemo(() => createStyles(colors, fonts, isDark, brandPrimary, brandSecondary), [colors, fonts, isDark, brandPrimary, brandSecondary]);
 
-  // Load cached route count and image cache size on mount
+  // Load image cache size on mount
   useEffect(() => {
-    loadCachedCount();
     loadImageCacheSize();
   }, []);
 
@@ -50,28 +46,15 @@ export default function SettingsScreen() {
     }
   };
 
-  const loadCachedCount = async () => {
+  const handleSyncRoads = async () => {
+    setIsSyncingRoads(true);
     try {
-      const routes = await getAllCachedRoutes();
-      setCachedCount(routes.length);
-    } catch (err) {
-      console.warn('[Settings] Failed to load cached routes:', err);
-    }
-  };
-
-  const handlePreloadAll = async () => {
-    const result = await preloadAll();
-    if (!result) return;
-    if (result.error) {
-      Alert.alert('No Internet', 'Please connect to the internet to download routes.');
-      return;
-    }
-    if (result.success) {
-      Alert.alert('Routes Downloaded', `${result.cached} routes saved for offline use.`);
-      await loadCachedCount();
-    } else {
-      Alert.alert('Download Cancelled', `${result.cached} routes were downloaded before cancellation.`);
-      await loadCachedCount();
+      await SyncManager.syncRoadsNetwork();
+      Alert.alert('Road Network Synced', 'The offline road network is up to date.');
+    } catch {
+      Alert.alert('Sync Failed', 'Could not sync road network. Please check your internet connection.');
+    } finally {
+      setIsSyncingRoads(false);
     }
   };
 
@@ -125,13 +108,11 @@ export default function SettingsScreen() {
             try {
               // 1. Delete offline map
               await deleteMap();
-              // 2. Clear routes
-              await clearAllRoutes();
-              // 3. Clear image cache
+              // 2. Clear image cache
               await clearImageCache();
-              // 4. Clear AsyncStorage
+              // 3. Clear AsyncStorage
               await AsyncStorage.clear();
-              // 5. Clear SQLite database records
+              // 4. Clear SQLite database records
               appRepository.clearAll();
 
               Alert.alert(
@@ -151,39 +132,6 @@ export default function SettingsScreen() {
               Alert.alert('Reset Failed', 'Failed to fully reset storage. Please try again.');
             } finally {
               setIsResetting(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleClearCache = async () => {
-    Alert.alert(
-      'Remove Downloaded Routes?',
-      `This will remove all ${cachedCount} downloaded routes from your device. They can be downloaded again whenever you need them.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            setIsClearing(true);
-            try {
-              await clearAllRoutes();
-              setCachedCount(0);
-              Alert.alert(
-                'Downloaded Routes Removed',
-                'Your downloaded routes have been removed from this device.'
-              );
-            } catch (err) {
-              Alert.alert(
-                'Something Went Wrong',
-                'We couldn’t remove the downloaded routes. Please try again.'
-              );
-              console.error('[Settings] Clear routes failed:', err);
-            } finally {
-              setIsClearing(false);
             }
           },
         },
@@ -341,65 +289,35 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* ── Offline Routes Section ─────────────────────────────────────────── */}
+        {/* ── Offline Road Navigation Section ─────────────────────────────────────────── */}
         <View style={[styles.section, { marginTop: 20 }]}>
-          <AppText style={styles.sectionTitle}>Offline Routes</AppText>
+          <AppText style={styles.sectionTitle}>Offline Road Navigation</AppText>
           <AppText style={styles.sectionDescription}>
-            Download routes so you can get directions even without an internet connection. You only need to download them once.
+            Turn-by-turn routing is powered on-device using the Elk Country road network. You can navigate offline anytime without needing internet.
           </AppText>
 
-          {isPreloading ? (
-            <View style={styles.progressContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <AppText style={styles.progressText}>
-                  Downloading routes... {progress.percentage}%
-                </AppText>
-                <AppText style={styles.progressSubtext}>
-                  {progress.current} / {progress.total} pairs
-                </AppText>
-              </View>
-              <TouchableOpacity style={styles.cancelButton} onPress={cancelPreload}>
-                <AppText style={styles.cancelButtonText}>Cancel</AppText>
-              </TouchableOpacity>
+          <View style={styles.statusContainer}>
+            <View style={styles.statusRow}>
+              <MaterialIcons name="navigation" size={20} color={colors.primary} />
+              <AppText style={styles.statusText}>
+                On-Device Offline Routing Active
+              </AppText>
             </View>
-          ) : (
-            <View style={styles.statusContainer}>
-              <View style={styles.statusRow}>
-                <MaterialIcons name="route" size={20} color={colors.primary} />
-                <AppText style={styles.statusText}>
-                  {cachedCount > 0
-                    ? `${cachedCount} routes cached`
-                    : 'No routes cached yet'}
-                </AppText>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity
-                  style={[styles.downloadButton, { flex: 1 }]}
-                  onPress={handlePreloadAll}
-                >
-                  <MaterialIcons name="download" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
-                  <AppText style={styles.downloadButtonText}>Download All</AppText>
-                </TouchableOpacity>
-                {cachedCount > 0 && (
-                  <TouchableOpacity
-                    style={[styles.clearButton, isClearing && styles.clearButtonDisabled]}
-                    onPress={handleClearCache}
-                    disabled={isClearing}
-                  >
-                    {isClearing ? (
-                      <ActivityIndicator size="small" color={colors.error} />
-                    ) : (
-                      <>
-                        <MaterialIcons name="delete-outline" size={18} color={colors.error} style={{ marginRight: 6 }} />
-                        <AppText style={styles.clearButtonText}>Clear</AppText>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={handleSyncRoads}
+              disabled={isSyncingRoads}
+            >
+              {isSyncingRoads ? (
+                <ActivityIndicator size="small" color={colors.onPrimary} />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="sync" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
+                  <AppText style={styles.downloadButtonText}>Sync Road Network</AppText>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Content Image Cache Section ────────────────────────────────── */}

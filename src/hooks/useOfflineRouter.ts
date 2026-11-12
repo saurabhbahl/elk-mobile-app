@@ -1,15 +1,16 @@
 /**
  * useOfflineRouter
  *
- * Retrieves cached routes from SQLite for offline navigation.
- * Falls back to OSRM fetch when online and route not cached.
- * Falls back to straight-line distance if OSRM fails.
+ * Provides on-device offline navigation using LocalGraphRouter (powered by the
+ * regional road network JSON dataset). When online and coordinates are outside
+ * the offline routes dataset, falls back to live online routing (OSRM) so real road
+ * curves are always displayed without showing straight lines.
  */
 import NetInfo from '@react-native-community/netinfo';
 import { useCallback, useState } from 'react';
 import { useAppContent } from '../contexts/AppContentContext';
+import { LocalGraphRouter } from '../services/LocalGraphRouter';
 import { calcDistance, decodePolyline } from '../utils/mapUtils';
-import { getRoute, saveRoute } from '../utils/routeDatabase';
 
 interface OfflineRouteResult {
   coordinates: [number, number][] | null;
@@ -33,6 +34,9 @@ export function useOfflineRouter() {
   ): Promise<OfflineRouteResult> => {
     setIsLoading(true);
     try {
+      // Ensure local road network graph is fully initialized from disk
+      await LocalGraphRouter.ensureInitialized();
+
       // Build ordered list of all points with resolved coordinates
       const allIds = [fromId, ...stopIds, toId];
       const allPoints: { id: number; coord: { latitude: number; longitude: number } }[] = [];
@@ -54,114 +58,118 @@ export function useOfflineRouter() {
         }
       }
 
+      // Check online connectivity
+      const netState = await NetInfo.fetch();
+      const isOnline = !!netState.isConnected;
+
+      // When offline, verify all selected points (Current Location, Dropped Pin, or Stops)
+      // are within the Elk Country road network coverage. If any point is outside,
+      // fail immediately with offline_outside_elk_country so an informative alert is displayed.
+      if (!isOnline) {
+        for (const pt of allPoints) {
+          if (pt.coord && !LocalGraphRouter.isWithinCoverage(pt.coord)) {
+            console.warn(
+              `[OfflineRouter] Offline and point ${pt.id} is outside Elk Country coverage.`
+            );
+            throw new Error('offline_outside_elk_country');
+          }
+        }
+      }
+
       const allCoords: [number, number][] = [];
       let totalDuration = 0;
       let totalDistance = 0;
-      let fromCache = true;
+      let isAllFromCache = true;
 
       for (let i = 0; i < allPoints.length - 1; i++) {
         const segmentFrom = allPoints[i];
         const segmentTo = allPoints[i + 1];
 
-        // Only try cache for known waypoint IDs (not 999 Current Location or 888 Dropped Pin)
-        const isKnownWaypoint = (id: number) => id !== 999 && id !== 888 && id > 0 && waypoints.some(w => w.id === id);
-        const cached = (isKnownWaypoint(segmentFrom.id) && isKnownWaypoint(segmentTo.id))
-          ? await getRoute(segmentFrom.id, segmentTo.id)
-          : null;
+        const isFromInCoverage = LocalGraphRouter.isWithinCoverage(segmentFrom.coord);
+        const isToInCoverage = LocalGraphRouter.isWithinCoverage(segmentTo.coord);
+        const isWithinLocalCoverage = isFromInCoverage && isToInCoverage;
 
-        let polyline: string | null = null;
+        let segmentCoords: [number, number][] | null = null;
         let segmentDuration = 0;
         let segmentDistance = 0;
 
-        if (cached) {
-          polyline = cached.polyline;
-          segmentDuration = cached.duration;
-          segmentDistance = cached.distance;
-          console.log(`[OfflineRouter] Using cached route ${segmentFrom.id}→${segmentTo.id} (${segmentDistance}m, ${segmentDuration}s)`);
-        } else {
-          fromCache = false;
-          const netState = await NetInfo.fetch();
-          if (!netState.isConnected) {
-            console.log(`[OfflineRouter] Route ${segmentFrom.id}→${segmentTo.id} not cached and user is offline.`);
-            throw new Error("offline_no_cache");
-          }
-          console.log(`[OfflineRouter] Route ${segmentFrom.id}→${segmentTo.id} not cached, fetching from OSRM`);
+        // Condition 1: When online and location is outside offline routes.json dataset,
+        // use online routing (OSRM) so it calculates real road routes and never shows a straight line
+        if (!isWithinLocalCoverage && isOnline) {
+          console.log(
+            `[OfflineRouter] Location outside routes.json coverage (fromCovered=${isFromInCoverage}, toCovered=${isToInCoverage}) and online. Fetching online OSRM route for ${segmentFrom.id}→${segmentTo.id}...`
+          );
           const osrmResult = await fetchFromOSRM(segmentFrom.coord, segmentTo.coord);
-
-          if (osrmResult && osrmResult.distance > 0) {
-            polyline = osrmResult.polyline;
-            segmentDuration = osrmResult.duration;
-            segmentDistance = osrmResult.distance;
-            // Only cache routes between known waypoints
-            if (isKnownWaypoint(segmentFrom.id) && isKnownWaypoint(segmentTo.id)) {
-              await saveRoute(segmentFrom.id, segmentTo.id, polyline, segmentDuration, segmentDistance);
-              console.log(`[OfflineRouter] Cached route ${segmentFrom.id}→${segmentTo.id} (${segmentDistance}m, ${segmentDuration}s)`);
+          if (osrmResult && osrmResult.polyline) {
+            const decoded = decodePolyline(osrmResult.polyline);
+            if (decoded && decoded.length >= 2) {
+              segmentCoords = decoded.map(c => [c.longitude, c.latitude]);
+              segmentDistance = osrmResult.distance;
+              segmentDuration = osrmResult.duration;
+              isAllFromCache = false;
+              console.log(
+                `[OfflineRouter] Online OSRM route for ${segmentFrom.id}→${segmentTo.id} (${segmentDistance}m, ${segmentDuration}s, ${segmentCoords.length} pts)`
+              );
             }
-          } else {
-            console.warn(`[OfflineRouter] OSRM failed for ${segmentFrom.id}→${segmentTo.id}, using straight-line fallback`);
-            // Straight-line distance fallback
-            segmentDistance = calcDistance(segmentFrom.coord, segmentTo.coord);
-            // Estimate duration: ~2.5 min per mile (24 mph avg)
-            segmentDuration = Math.round((segmentDistance / 1609.34) * 150);
-            // Create simple 2-point line for rendering.
-            const fallbackCoords: [number, number][] = [
-              [segmentFrom.coord.longitude, segmentFrom.coord.latitude],
-              [segmentTo.coord.longitude, segmentTo.coord.latitude],
-            ];
-            if (allCoords.length > 0) {
-              allCoords.push(...fallbackCoords.slice(1));
-            } else {
-              allCoords.push(...fallbackCoords);
-            }
-            totalDuration += segmentDuration;
-            totalDistance += segmentDistance;
-            continue;
           }
         }
 
-        if (polyline) {
-          const decoded = decodePolyline(polyline);
-          console.log(`[OfflineRouter] Decoded ${decoded.length} points for segment ${segmentFrom.id}→${segmentTo.id}`);
-          let segmentCoords: [number, number][] = decoded.map(c => [c.longitude, c.latitude]);
-          if (segmentCoords.length < 2) {
-            console.warn(`[OfflineRouter] Decoded route for ${segmentFrom.id}â†’${segmentTo.id} has ${segmentCoords.length} point(s), using direct segment fallback`);
-            segmentCoords = [
-              [segmentFrom.coord.longitude, segmentFrom.coord.latitude],
-              [segmentTo.coord.longitude, segmentTo.coord.latitude],
-            ];
-          }
-
-          // Calculate distance from coordinates if stored value is 0
-          let coordDistance = 0;
-          for (let j = 0; j < segmentCoords.length - 1; j++) {
-            coordDistance += calcDistance(
-              { latitude: segmentCoords[j][1], longitude: segmentCoords[j][0] },
-              { latitude: segmentCoords[j + 1][1], longitude: segmentCoords[j + 1][0] }
+        // Condition 2: If online fetch didn't run or wasn't used: calculate via on-device LocalGraphRouter!
+        if (!segmentCoords) {
+          const localResult = LocalGraphRouter.calculateRoute(segmentFrom.coord, segmentTo.coord);
+          if (localResult && localResult.coordinates.length >= 2) {
+            segmentCoords = localResult.coordinates;
+            segmentDistance = localResult.distance;
+            segmentDuration = localResult.duration;
+            console.log(
+              `[OfflineRouter] On-device road route for ${segmentFrom.id}→${segmentTo.id} (${localResult.distance}m, ${localResult.duration}s, ${localResult.coordinates.length} pts)`
             );
+          } else if (isOnline) {
+            // If local graph router had an unmapped gap but device is online, fallback to online OSRM
+            console.log(`[OfflineRouter] Local router gap for ${segmentFrom.id}→${segmentTo.id}, falling back to online OSRM...`);
+            const osrmResult = await fetchFromOSRM(segmentFrom.coord, segmentTo.coord);
+            if (osrmResult && osrmResult.polyline) {
+              const decoded = decodePolyline(osrmResult.polyline);
+              if (decoded && decoded.length >= 2) {
+                segmentCoords = decoded.map(c => [c.longitude, c.latitude]);
+                segmentDistance = osrmResult.distance;
+                segmentDuration = osrmResult.duration;
+                isAllFromCache = false;
+              }
+            }
           }
-
-          if (segmentDistance === 0 && coordDistance > 0) {
-            segmentDistance = coordDistance;
-            segmentDuration = Math.round((coordDistance / 1609.34) * 150);
-          }
-
-          if (allCoords.length > 0 && segmentCoords.length > 0) {
-            allCoords.push(...segmentCoords.slice(1));
-          } else {
-            allCoords.push(...segmentCoords);
-          }
-
-          totalDuration += segmentDuration;
-          totalDistance += segmentDistance;
         }
+
+        // Condition 3: Last resort fallback
+        if (!segmentCoords || segmentCoords.length < 2) {
+          if (!isOnline && !isWithinLocalCoverage) {
+            console.warn(`[OfflineRouter] Point outside Elk Country coverage while offline for ${segmentFrom.id}→${segmentTo.id}`);
+            throw new Error('offline_outside_elk_country');
+          }
+          console.warn(`[OfflineRouter] No road route found for ${segmentFrom.id}→${segmentTo.id}, using direct line fallback`);
+          segmentDistance = calcDistance(segmentFrom.coord, segmentTo.coord);
+          segmentDuration = Math.round((segmentDistance / 1609.34) * 150);
+          segmentCoords = [
+            [segmentFrom.coord.longitude, segmentFrom.coord.latitude],
+            [segmentTo.coord.longitude, segmentTo.coord.latitude],
+          ];
+        }
+
+        if (allCoords.length > 0) {
+          allCoords.push(...segmentCoords.slice(1));
+        } else {
+          allCoords.push(...segmentCoords);
+        }
+        totalDuration += segmentDuration;
+        totalDistance += segmentDistance;
       }
 
-      console.log(`[OfflineRouter] Total route: ${allCoords.length} points, ${totalDistance}m, ${totalDuration}s, fromCache=${fromCache}`);
+      console.log(`[OfflineRouter] Total route: ${allCoords.length} points, ${totalDistance}m, ${totalDuration}s`);
       return {
         coordinates: allCoords.length > 0 ? allCoords : null,
         duration: totalDuration,
         distance: totalDistance,
-        fromCache,
+        fromCache: isAllFromCache,
       };
     } finally {
       setIsLoading(false);
@@ -171,51 +179,57 @@ export function useOfflineRouter() {
   return { getRouteBetween, isLoading };
 }
 
+/**
+ * Fetches driving route from OSRM proxy endpoint with fallback to direct public OSRM.
+ */
 async function fetchFromOSRM(
   from: { latitude: number; longitude: number },
   to: { latitude: number; longitude: number }
 ): Promise<{ polyline: string; duration: number; distance: number } | null> {
   const fromCoord = `${from.longitude},${from.latitude}`;
   const toCoord = `${to.longitude},${to.latitude}`;
+
+  const urls: string[] = [];
   const osrmBase = (process.env.EXPO_PUBLIC_OSRM_URL || '').replace(/\/$/, '');
-  const url = `${osrmBase}/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`;
+  if (osrmBase) {
+    urls.push(`${osrmBase}/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`);
+  }
+  urls.push(`https://router.project-osrm.org/route/v1/driving/${fromCoord};${toCoord}?geometries=polyline6&overview=full`);
 
-  console.log(`[OSRM] Fetching: ${url}`);
-  try {
-    const res = await fetch(url);
-    if (res.status === 429) {
-      console.warn('[OfflineRouter] OSRM Rate limit hit (429). Throttling...');
-      await new Promise(r => setTimeout(r, 2000));
-      return null;
-    }
-    if (!res.ok) {
-      console.warn(`[OSRM] HTTP error: ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const data = await res.json();
-    console.log(`[OSRM] Response: code=${data.code}, routes=${data.routes?.length}`);
+  for (const url of urls) {
+    try {
+      console.log(`[OSRM] Fetching: ${url}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
 
-    if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
-      const route = data.routes[0];
-      const distance = route.distance || 0;
-      const duration = route.duration || 0;
-
-      if (distance === 0) {
-        console.warn('[OSRM] Route returned 0 distance');
-        return null;
+      if (res.status === 429) {
+        console.warn('[OfflineRouter] OSRM Rate limit hit (429). Trying fallback...');
+        continue;
       }
+      if (!res.ok) {
+        console.warn(`[OSRM] HTTP error: ${res.status} ${res.statusText}`);
+        continue;
+      }
+      const data = await res.json();
+      if (data.code === 'Ok' && data.routes?.[0]?.geometry) {
+        const route = data.routes[0];
+        const distance = route.distance || 0;
+        const duration = route.duration || 0;
 
-      console.log(`[OSRM] Route: ${distance}m, ${duration}s`);
-      return {
-        polyline: route.geometry,
-        duration,
-        distance,
-      };
-    } else {
-      console.warn(`[OSRM] No route found: code=${data.code}, message=${data.message || 'none'}`);
+        if (distance > 0) {
+          console.log(`[OSRM] Route found: ${distance}m, ${duration}s`);
+          return {
+            polyline: route.geometry,
+            duration,
+            distance,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn(`[OSRM] Fetch failed for ${url}:`, err);
     }
-  } catch (err) {
-    console.warn('[OfflineRouter] OSRM fetch failed:', err);
   }
   return null;
 }

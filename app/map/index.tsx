@@ -82,7 +82,6 @@ import { useAppContent } from "../../src/contexts/AppContentContext";
 import { useOfflineMap } from "../../src/hooks/useOfflineMap";
 import { useOfflineRouter } from "../../src/hooks/useOfflineRouter";
 import { useRouteLoader } from "../../src/hooks/useRouteLoader";
-import { preloadRouteIndex } from "../../src/utils/routeLookup";
 import { isValidData } from "../../src/utils/validation";
 import { useMapReset, useNavigationMode } from "../_layout";
 
@@ -213,7 +212,6 @@ function MapScreen() {
         });
       }
       if (ML.Map && ML.Camera) {
-        preloadRouteIndex();
         return {
           Map: ML.Map,
           Camera: ML.Camera,
@@ -291,6 +289,10 @@ function MapScreen() {
   >(null);
   const [location, setLocation] = useState<any>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const isNavigatingRef = useRef(false);
+  useEffect(() => {
+    isNavigatingRef.current = isNavigating;
+  }, [isNavigating]);
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
@@ -329,8 +331,14 @@ function MapScreen() {
 
   // User heading — Animated.Value so rotation updates without re-renders
   const headingAnim = useRef(new Animated.Value(0)).current;
+  const isFirstHeadingRef = useRef(true);
   // Keep a plain ref for cardinal label (only needs to update occasionally)
   const headingRef = useRef(0);
+  const mapBearingAnim = useRef(new Animated.Value(0)).current;
+  const mapBearingRef = useRef(0);
+  const arrowRotation = useMemo(() => {
+    return Animated.subtract(headingAnim, mapBearingAnim);
+  }, [headingAnim, mapBearingAnim]);
   const [headingCardinal, setHeadingCardinal] = useState("N");
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
@@ -480,15 +488,45 @@ function MapScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (!isMounted || status !== "granted") return;
 
-      // Position — throttled (30m / 10s) to avoid re-render storms
+      // 1. Immediately get initial location fix (instant lock on load)
+      try {
+        const lastLoc = await Location.getLastKnownPositionAsync();
+        if (isMounted && lastLoc) {
+          setLocation(lastLoc.coords);
+        }
+      } catch {
+        // Ignore fallback
+      }
+
+      try {
+        const currentLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+        });
+        if (isMounted && currentLoc) {
+          setLocation(currentLoc.coords);
+        }
+      } catch {
+        // Ignore fallback
+      }
+
+      // 2. High-Accuracy Hardware Satellite GPS (works fully offline with 0 internet/Wi-Fi)
       const pos = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Balanced,
-          distanceInterval: 30,
-          timeInterval: 10000,
+          accuracy: Location.Accuracy.BestForNavigation,
+          distanceInterval: 0, // 0 = unthrottled, updates on any movement (kCLDistanceFilterNone on iOS)
+          timeInterval: 500,   // 500ms fast-polling interval on Android
         },
         (loc) => {
-          if (isMounted) setLocation(loc.coords);
+          if (!isMounted) return;
+          setLocation(loc.coords);
+          // If compass sensor is unavailable or stationary, fallback to GPS motion heading
+          if (typeof loc.coords.heading === "number" && loc.coords.heading >= 0) {
+            if (headingRef.current === 0) {
+              headingRef.current = loc.coords.heading;
+              headingAnim.setValue(loc.coords.heading);
+              setHeadingCardinal(headingToCardinal(loc.coords.heading));
+            }
+          }
         },
       );
       if (!isMounted) {
@@ -498,39 +536,53 @@ function MapScreen() {
       posSubscription = pos;
 
       // Heading — fires on every compass change, animates smoothly via Animated.Value
-      const heading = await Location.watchHeadingAsync((headingData) => {
-        if (!isMounted) return;
-        const deg =
-          headingData.trueHeading >= 0
-            ? headingData.trueHeading
-            : headingData.magHeading;
-        if (deg < 0) return;
+      try {
+        const heading = await Location.watchHeadingAsync((headingData) => {
+          if (!isMounted) return;
 
-        // Shortest-path rotation to avoid spinning the long way around
-        const prev = headingRef.current;
-        let delta = deg - prev;
-        if (delta > 180) delta -= 360;
-        if (delta < -180) delta += 360;
-        const next = prev + delta;
-        headingRef.current = next;
+          const deg =
+            headingData.trueHeading >= 0
+              ? headingData.trueHeading
+              : headingData.magHeading;
+          if (deg < 0) return;
 
-        Animated.timing(headingAnim, {
-          toValue: next,
-          useNativeDriver: true,
-          duration: 350,
-          easing: Easing.out(Easing.quad),
-        }).start();
+          // On first heading load, immediately set value without spinning animation
+          if (isFirstHeadingRef.current) {
+            isFirstHeadingRef.current = false;
+            headingRef.current = deg;
+            headingAnim.setValue(deg);
+            setHeadingCardinal(headingToCardinal(deg));
+            return;
+          }
 
-        // Update cardinal label at most every ~5 degrees to avoid text flicker
-        if (Math.abs(delta) > 5) {
-          setHeadingCardinal(headingToCardinal(deg));
+          // Shortest-path rotation to avoid spinning the long way around
+          const prev = headingRef.current;
+          let delta = deg - prev;
+          if (delta > 180) delta -= 360;
+          if (delta < -180) delta += 360;
+          const next = prev + delta;
+          headingRef.current = next;
+
+          Animated.timing(headingAnim, {
+            toValue: next,
+            useNativeDriver: true,
+            duration: 150,
+            easing: Easing.out(Easing.quad),
+          }).start();
+
+          // Update cardinal label
+          if (Math.abs(delta) > 2) {
+            setHeadingCardinal(headingToCardinal(deg));
+          }
+        });
+        if (!isMounted) {
+          heading.remove();
+          return;
         }
-      });
-      if (!isMounted) {
-        heading.remove();
-        return;
+        headingSubscription = heading;
+      } catch (headingErr) {
+        console.warn("[Location] Compass heading not available on this device:", headingErr);
       }
-      headingSubscription = heading;
     })();
 
     return () => {
@@ -959,14 +1011,26 @@ function MapScreen() {
           return;
         }
 
-        // Prevent calculating routes between the same locations
+        // Prevent calculating routes between the same locations (exclude drop locations / pins)
         const allPoints = [from, ...stops, to];
         let hasDuplicateLocation = false;
+
+        const isDropLocation = (p: Waypoint) =>
+          p.id === 888 ||
+          (typeof p.id === "number" && p.id < 0) ||
+          p.title?.trim().toLowerCase() === "dropped pin" ||
+          p.description === "Custom point selected on map";
 
         for (let i = 0; i < allPoints.length - 1; i++) {
           for (let j = i + 1; j < allPoints.length; j++) {
             const p1 = allPoints[i];
             const p2 = allPoints[j];
+
+            // Exclude drop locations from same location check
+            if (isDropLocation(p1) || isDropLocation(p2)) {
+              continue;
+            }
+
             const isSame =
               (p1.id !== undefined && p2.id !== undefined && p1.id === p2.id) ||
               (Boolean(p1.title) &&
@@ -1095,7 +1159,14 @@ function MapScreen() {
           });
         }
       } catch (error: any) {
-        if (error?.message === "offline_no_cache") {
+        if (error?.message === "offline_outside_elk_country") {
+          setTimeout(() => {
+            Alert.alert(
+              "Internet Connection Required",
+              "You have selected a location outside the Elk Country region. An internet connection is required to calculate driving directions outside this area.",
+            );
+          }, 300);
+        } else if (error?.message === "offline_no_cache") {
           setTimeout(() => {
             Alert.alert(
               "Internet Required",
@@ -1222,7 +1293,8 @@ function MapScreen() {
           feature.properties?.startWaypoint?.id === -1;
 
         if (distanceToPath > OFF_PATH_THRESHOLD) {
-          if (isCurrentLocationStart && cooldownElapsed) {
+          // Trigger off-path recalculation if starting from Current Location OR within 5km of the route (e.g. taking a detour/alternate road)
+          if ((isCurrentLocationStart || distanceToPath < 5000) && cooldownElapsed) {
             lastRecalculateTime.current = now;
             startActualNavigation(
               {
@@ -1239,8 +1311,8 @@ function MapScreen() {
               true, // isRecalculating
             );
             return;
-          } else if (!isCurrentLocationStart && distanceToPath > 500) {
-            // User is previewing a route and their GPS is very far away.
+          } else if (!isCurrentLocationStart && distanceToPath >= 5000) {
+            // User is previewing a route from far away.
             // Do NOT snap progress to the end of the route (which would show 0.0 mi).
             return;
           }
@@ -1274,6 +1346,7 @@ function MapScreen() {
             { latitude: remaining[0][1], longitude: remaining[0][0] },
             { latitude: remaining[1][1], longitude: remaining[1][0] },
           );
+
           let distAcc = 0;
           for (let i = 1; i < Math.min(remaining.length - 1, 80); i++) {
             const segDist = calcDistance(
@@ -1383,6 +1456,7 @@ function MapScreen() {
     hasArrivedRef.current = false;
     isNavInFlightRef.current = false;
     setShowArrivalPopup(false);
+    isNavigatingRef.current = false;
     unstable_batchedUpdates(() => {
       setIsNavigating(false);
       setStartPoint(null);
@@ -1667,6 +1741,10 @@ function MapScreen() {
             style={styles.map}
             mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
             compass={false}
+            touchRotate={true}
+            touchPitch={true}
+            rotateEnabled={true}
+            pitchEnabled={true}
             onLayout={(e: import("react-native").LayoutChangeEvent) => {
               mapViewSizeRef.current = {
                 width: e.nativeEvent.layout.width,
@@ -1689,6 +1767,15 @@ function MapScreen() {
               if (isNavigating) return;
             }}
             onRegionIsChanging={(feature: any) => {
+              const bearing =
+                feature?.properties?.bearing ??
+                feature?.properties?.heading ??
+                feature?.nativeEvent?.bearing ??
+                feature?.bearing;
+              if (typeof bearing === "number" && !isNaN(bearing)) {
+                mapBearingRef.current = bearing;
+                mapBearingAnim.setValue(bearing);
+              }
               // Fires continuously during drag — update the pin marker in real-time
               // so it tracks the map center as the user pans.
               if (!isSelectingPinRef.current) return;
@@ -1711,6 +1798,15 @@ function MapScreen() {
               }
             }}
             onRegionDidChange={(feature: any) => {
+              const bearing =
+                feature?.properties?.bearing ??
+                feature?.properties?.heading ??
+                feature?.nativeEvent?.bearing ??
+                feature?.bearing;
+              if (typeof bearing === "number" && !isNaN(bearing)) {
+                mapBearingRef.current = bearing;
+                mapBearingAnim.setValue(bearing);
+              }
               // MapLibre passes a GeoJSON Feature: center is geometry.coordinates = [lng, lat]
               const center =
                 feature?.geometry?.coordinates ??
@@ -1769,6 +1865,8 @@ function MapScreen() {
                   zoom: mapSettingsData?.default_zoom_level
                     ? parseFloat(mapSettingsData.default_zoom_level)
                     : 9,
+                  bearing: 0,
+                  pitch: 0,
                 }}
                 minZoom={3.5}
               />
@@ -1777,8 +1875,8 @@ function MapScreen() {
             {!isNavigating && (
               <UserLocation
                 animated
-                androidRenderMode="normal"
-                showsUserHeadingIndicator
+                heading={false}
+                minDisplacement={0}
               />
             )}
 
@@ -1798,7 +1896,7 @@ function MapScreen() {
                       {
                         transform: [
                           {
-                            rotate: headingAnim.interpolate({
+                            rotate: arrowRotation.interpolate({
                               inputRange: [-720, 720],
                               outputRange: ["-720deg", "720deg"],
                             }),

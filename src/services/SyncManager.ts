@@ -1,8 +1,11 @@
 import NetInfo from "@react-native-community/netinfo";
+import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
 import { ApiService } from "../api/ApiService";
 import { db } from "../database/index";
 import { appRepository } from "../repositories/AppRepository";
+import { LocalGraphRouter } from "./LocalGraphRouter";
+import { safeStorage as AsyncStorage } from "../utils/asyncStorage";
 import { isDateExpired } from "../utils/dateUtils";
 import { cacheImageIfNeeded, clearImageCache } from "../utils/imageCache";
 
@@ -240,7 +243,6 @@ export class SyncManager {
           "tips",
           "cameras",
           "settings",
-          "routes",
         ];
         const totalEndpoints = endpoints.length;
         let completedEndpoints = 0;
@@ -474,37 +476,6 @@ export class SyncManager {
           }
         }
 
-        // 2b. Write pre-calculated routes in a dedicated transaction block
-        if (
-          mergedJson.routes &&
-          Array.isArray(mergedJson.routes) &&
-          mergedJson.routes.length > 0
-        ) {
-          console.log(`[SyncManager] Saving ${mergedJson.routes.length} pre-calculated routes into SQLite...`);
-          db.withTransactionSync(() => {
-            if (!isDelta) {
-              db.runSync("DELETE FROM routes");
-            }
-            (mergedJson.routes as Record<string, unknown>[]).forEach((r) => {
-              const fromId = Number(r.from_id);
-              const toId = Number(r.to_id);
-              const polyline = String(r.encoded_polyline || "");
-              const duration = Number(r.duration || 0);
-              const distance = Number(r.distance || 0);
-              const fromCoord = String(r.from_coord || "");
-              const toCoord = String(r.to_coord || "");
-
-              if (fromId > 0 && toId > 0 && polyline) {
-                db.runSync(
-                  `INSERT OR REPLACE INTO routes (from_id, to_id, encoded_polyline, duration, distance, from_coord, to_coord) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                  [fromId, toId, polyline, duration, distance, fromCoord, toCoord]
-                );
-              }
-            });
-          });
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-
         // 3. Deletions, cleanup, and metadata finalization block
         db.withTransactionSync(() => {
           if (
@@ -520,18 +491,6 @@ export class SyncManager {
                 });
               }
             }
-
-            // Handle deleted route pairs
-            if (Array.isArray(deleted.routes)) {
-              (deleted.routes as any[]).forEach((delRoute) => {
-                if (delRoute && delRoute.from_id && delRoute.to_id) {
-                  db.runSync(
-                    `DELETE FROM routes WHERE from_id = ? AND to_id = ?`,
-                    [Number(delRoute.from_id), Number(delRoute.to_id)]
-                  );
-                }
-              });
-            }
           }
 
           // Cleanup expired events dynamically from database to keep SQLite clean
@@ -540,6 +499,11 @@ export class SyncManager {
           appRepository.upsertMetadata("is_sync_complete", "true");
           appRepository.upsertMetadata("last_full_sync", syncTime);
         });
+
+        // Sync complete offline road network JSON file (runs during initial sync & delta sync)
+        SyncManager.syncRoadsNetwork().catch((e) =>
+          console.warn("[SyncManager] Background roads sync failed:", e)
+        );
 
         SyncManager.notifyProgress(1.0, "Ready!");
         return true;
@@ -592,5 +556,86 @@ export class SyncManager {
     if (!dateStr || typeof dateStr !== "string") return false;
 
     return isDateExpired(dateStr);
+  }
+
+  /**
+   * Syncs the offline road network JSON file from WordPress ACF options.
+   * Runs during both initial sync and delta sync.
+   */
+  static async syncRoadsNetwork(): Promise<void> {
+    if (Platform.OS === "web") return;
+    try {
+      const isOnline = (await NetInfo.fetch()).isConnected;
+      if (!isOnline) return;
+
+      const baseMapUrl = process.env.EXPO_PUBLIC_MBTILES_URL || "";
+      const wpBase = baseMapUrl.replace(/\/map-download\/?.*$/, "");
+      if (!wpBase) return;
+
+      // 1. Fetch roads file info from /roads-file
+      const infoRes = await fetch(`${wpBase}/roads-file?t=${Date.now()}`);
+      if (!infoRes.ok) {
+        return;
+      }
+
+      const remoteMeta = await infoRes.json();
+      if (!remoteMeta || !remoteMeta.url) return;
+
+      // 2. Check local stored meta
+      const storedMetaStr = await AsyncStorage.getItem("@elk_roads_file_meta");
+      let storedMeta: { modified_at?: string; filename?: string; size?: number } = {};
+      if (storedMetaStr) {
+        try {
+          storedMeta = JSON.parse(storedMetaStr);
+        } catch {}
+      }
+
+      const docDir = FileSystem.documentDirectory || "";
+      const targetPath = `${docDir}elk-roads.json`;
+      const targetInfo = await FileSystem.getInfoAsync(targetPath);
+
+      const needsDownload =
+        !targetInfo.exists ||
+        targetInfo.size < 1000 ||
+        storedMeta.modified_at !== remoteMeta.modified_at;
+
+      if (!needsDownload) {
+        console.log("[SyncManager] Roads network file is up to date:", storedMeta.filename || "elk-roads.json");
+        return;
+      }
+
+      console.log(
+        `[SyncManager] Downloading roads file (${remoteMeta.filename}, ${(Number(remoteMeta.size || 0) / (1024 * 1024)).toFixed(1)} MB)...`
+      );
+      const tmpPath = `${docDir}elk-roads.tmp`;
+      const tmpInfo = await FileSystem.getInfoAsync(tmpPath);
+      if (tmpInfo.exists) {
+        await FileSystem.deleteAsync(tmpPath, { idempotent: true });
+      }
+
+      const downloadResumable = FileSystem.createDownloadResumable(remoteMeta.url, tmpPath);
+      const downloadResult = await downloadResumable.downloadAsync();
+
+      if (downloadResult && (downloadResult.status === 200 || downloadResult.status === 206)) {
+        const finalInfo = await FileSystem.getInfoAsync(tmpPath);
+        if (finalInfo.exists && finalInfo.size > 1000) {
+          await FileSystem.moveAsync({ from: tmpPath, to: targetPath });
+          await AsyncStorage.setItem(
+            "@elk_roads_file_meta",
+            JSON.stringify({
+              filename: remoteMeta.filename,
+              modified_at: remoteMeta.modified_at,
+              size: remoteMeta.size,
+            })
+          );
+          console.log("[SyncManager] Successfully downloaded and updated roads network file!");
+          LocalGraphRouter.loadFullRoadNetworkIfAvailable().catch(() => {});
+        } else {
+          await FileSystem.deleteAsync(tmpPath, { idempotent: true });
+        }
+      }
+    } catch (err) {
+      console.warn("[SyncManager] Error syncing roads network:", err);
+    }
   }
 }

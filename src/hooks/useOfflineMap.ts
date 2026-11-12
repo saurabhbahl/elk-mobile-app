@@ -74,6 +74,24 @@ export async function prefetchGlyphs(): Promise<void> {
   }
 }
 
+export async function downloadRoadNetwork(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    const roadsFile = `${docDir}elk-roads.json`;
+    const info = await FileSystem.getInfoAsync(roadsFile);
+    if (!info.exists || info.size < 1000) {
+      const roadsUrl = BASE_URL.replace(/\/map-download.*$/, '/roads-download');
+      console.log('[useOfflineMap] Downloading complete road network from:', roadsUrl);
+      const res = await FileSystem.downloadAsync(roadsUrl, roadsFile);
+      if (res && res.status === 200) {
+        console.log('[useOfflineMap] Successfully downloaded elk-roads.json');
+      }
+    }
+  } catch (err) {
+    console.warn('[useOfflineMap] Could not download elk-roads.json:', err);
+  }
+}
+
 let dismissedSession = false;
 let isAnyDownloadActive = false;
 
@@ -580,6 +598,7 @@ export const useOfflineMap = () => {
         setDownloadProgress(1);
         setIsPaused(false);
         prefetchGlyphs().catch(() => { });
+        downloadRoadNetwork().catch(() => { });
       } else {
         throw new Error('Downloads finished but some files are still missing');
       }
@@ -714,6 +733,7 @@ export const useOfflineMap = () => {
 
     // Ensure glyphs exist if missing, skipping instantly if already present
     prefetchGlyphs().catch(() => { });
+    downloadRoadNetwork().catch(() => { });
 
     try {
       isAnyDownloadActive = true;
@@ -781,6 +801,7 @@ export const useOfflineMap = () => {
         await AsyncStorage.setItem('@elk_downloaded_maps_meta', JSON.stringify(storedMeta));
         await checkMapStatus();
         prefetchGlyphs().catch(() => { });
+        downloadRoadNetwork().catch(() => { });
       }
     } catch (e: any) {
       if (
