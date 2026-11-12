@@ -151,3 +151,61 @@ export function navigateToPoi(router: any, poiId: number) {
       params: { routeToWaypointId: poiId, navRequestId: Date.now().toString() }
   });
 }
+
+/**
+ * Projects a GPS point onto the nearest line segment of a route polyline.
+ * If the distance to the road is within maxSnapMeters, returns the snapped point and road bearing.
+ * Otherwise returns null (indicating user is off-route or in a parking lot/gas station).
+ */
+export function snapToRoute(
+  point: Coordinate,
+  routeCoordinates: [number, number][],
+  maxSnapMeters: number = 35
+): { coordinate: Coordinate; bearing: number; segmentIndex: number } | null {
+  if (!point || !routeCoordinates || routeCoordinates.length < 2) return null;
+
+  const latRad = (point.latitude * Math.PI) / 180;
+  const cosLat = Math.cos(latRad);
+
+  let bestDist = Infinity;
+  let snappedCoord = point;
+  let roadBearing = 0;
+  let bestSegIdx = 0;
+
+  for (let i = 0; i < routeCoordinates.length - 1; i++) {
+    const a = { longitude: routeCoordinates[i][0], latitude: routeCoordinates[i][1] };
+    const b = { longitude: routeCoordinates[i + 1][0], latitude: routeCoordinates[i + 1][1] };
+
+    // Equirectangular projection vectors
+    const dx = (b.longitude - a.longitude) * cosLat;
+    const dy = b.latitude - a.latitude;
+    const lenSq = dx * dx + dy * dy;
+
+    let t =
+      lenSq === 0
+        ? 0
+        : ((point.longitude - a.longitude) * cosLat * dx + (point.latitude - a.latitude) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+
+    const proj = {
+      longitude: a.longitude + t * (b.longitude - a.longitude),
+      latitude: a.latitude + t * (b.latitude - a.latitude),
+    };
+
+    const dist = calcDistance(point, proj);
+
+    if (dist < bestDist) {
+      bestDist = dist;
+      snappedCoord = proj;
+      roadBearing = calculateBearing(a, b);
+      bestSegIdx = i;
+    }
+  }
+
+  if (bestDist <= maxSnapMeters) {
+    return { coordinate: snappedCoord, bearing: roadBearing, segmentIndex: bestSegIdx };
+  }
+
+  return null;
+}
+

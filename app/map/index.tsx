@@ -74,6 +74,7 @@ import {
   decodePolyline,
   findNearestPointIndex,
   getTurnInstruction,
+  snapToRoute,
   toLngLat,
 } from "../../src/utils/mapUtils";
 
@@ -344,6 +345,48 @@ function MapScreen() {
   const [headingCardinal, setHeadingCardinal] = useState("N");
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
+  // ── Snap-to-Road (Map Matching) for Navigation ──────────────────────────────
+  const activeRouteCoords = activeRouteRef.current?.features?.[0]?.geometry
+    ?.coordinates as [number, number][] | undefined;
+
+  const snapResult = useMemo(() => {
+    if (
+      !isNavigating ||
+      !location ||
+      !activeRouteCoords ||
+      activeRouteCoords.length < 2
+    ) {
+      return null;
+    }
+    return snapToRoute(location, activeRouteCoords, 35);
+  }, [isNavigating, location, activeRouteCoords, routeVersion]);
+
+  const displayLocation = snapResult ? snapResult.coordinate : location;
+
+  // Align navigation arrow to road direction (Google Maps style)
+  useEffect(() => {
+    if (isNavigating && snapResult) {
+      const roadBearing = snapResult.bearing;
+      const prev = headingRef.current;
+      let delta = roadBearing - prev;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      const next = prev + delta;
+      headingRef.current = next;
+
+      Animated.timing(headingAnim, {
+        toValue: next,
+        useNativeDriver: true,
+        duration: 350,
+        easing: Easing.out(Easing.quad),
+      }).start();
+
+      if (Math.abs(delta) > 5) {
+        setHeadingCardinal(headingToCardinal(roadBearing));
+      }
+    }
+  }, [isNavigating, snapResult]);
+
   const [navigationData, setNavigationData] = useState({
     distanceRemaining: "0.0 mi",
     timeRemaining: "0 min",
@@ -570,6 +613,8 @@ function MapScreen() {
       try {
         const heading = await Location.watchHeadingAsync((headingData) => {
           if (!isMounted) return;
+          // In active navigation mode, arrow is locked to road direction (Google Maps style)
+          if (isNavigatingRef.current) return;
 
           const deg =
             headingData.trueHeading >= 0
@@ -597,12 +642,12 @@ function MapScreen() {
           Animated.timing(headingAnim, {
             toValue: next,
             useNativeDriver: true,
-            duration: 150,
+            duration: 350,
             easing: Easing.out(Easing.quad),
           }).start();
 
-          // Update cardinal label
-          if (Math.abs(delta) > 2) {
+          // Update cardinal label at most every ~5 degrees to avoid text flicker
+          if (Math.abs(delta) > 5) {
             setHeadingCardinal(headingToCardinal(deg));
           }
         });
@@ -1919,10 +1964,10 @@ function MapScreen() {
             )}
 
             {/* Custom heading arrow shown during navigation */}
-            {isNavigating && location && (
+            {isNavigating && displayLocation && (
               <Marker
                 id="user-heading-arrow"
-                lngLat={[location.longitude, location.latitude]}
+                lngLat={[displayLocation.longitude, displayLocation.latitude]}
                 anchor="center"
               >
                 {/* Pulse ring behind the arrow */}
