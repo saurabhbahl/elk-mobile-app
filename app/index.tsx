@@ -1,36 +1,78 @@
 import AppText from "@/src/components/AppText";
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Platform, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+    ActivityIndicator,
+    StatusBar,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LIGHT_COLORS, LIGHT_FONTS } from "@/src/constants/theme";
 import { useTheme } from "@/src/context/ThemeContext";
 import { useAppContent } from "@/src/contexts/AppContentContext";
-import { useOfflineMap } from "@/src/hooks/useOfflineMap";
 import { getCachedImageLocalPath } from "@/src/utils/imageCache";
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
+const DEFAULT_BG_IMAGE = require("@/assets/images/splash-background.jpg");
+const DEFAULT_LOGO_PRIMARY = require("@/assets/images/splash-logo-primary.png");
+const DEFAULT_LOGO_SECONDARY = require("@/assets/images/splash-logo-secondary.png");
+
+const CONTENT_CONSENT_KEY = "@elk_content_download_consent";
+let dismissedContentSession = false;
+
 export default function LandingScreen() {
     const { colors, fonts, isDark } = useTheme();
-    const { brandData, apiStatus, syncStatusText, syncProgress, syncError, performInitialSync } = useAppContent();
-    const {
-        hasMap,
-        consentStatus,
-        saveConsent,
-        downloadMap,
-        cancelDownload,
-        isDownloading,
-        downloadProgress,
-        mbtilesError,
-        isInitializing: isMapInitializing,
-    } = useOfflineMap();
+    const { brandData, apiStatus, syncProgress, syncError, performInitialSync } = useAppContent();
 
-    const secColor = brandData?.brand_color_secondary || "#ea0b0b";
+    const [consentStatus, setConsentStatus] = useState<string | null>(() => {
+        if (dismissedContentSession) return 'dismissed';
+        return null;
+    });
+    const [isConsentLoaded, setIsConsentLoaded] = useState(false);
+    const [isContentDownloading, setIsContentDownloading] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+        (async () => {
+            try {
+                if (dismissedContentSession) {
+                    if (isMounted) {
+                        setConsentStatus('dismissed');
+                        setIsConsentLoaded(true);
+                    }
+                    return;
+                }
+                const stored = await AsyncStorage.getItem(CONTENT_CONSENT_KEY);
+                if (isMounted) {
+                    if (stored === 'dismissed' || stored === 'no') {
+                        // Reset on cold app restart so user gets prompted unless they clicked Continue
+                        await AsyncStorage.removeItem(CONTENT_CONSENT_KEY);
+                        setConsentStatus(null);
+                    } else {
+                        setConsentStatus(stored);
+                    }
+                    setIsConsentLoaded(true);
+                }
+            } catch {
+                if (isMounted) {
+                    setIsConsentLoaded(true);
+                }
+            }
+        })();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const secColor = brandData?.brand_color_secondary || "#dd3333";
 
     const logoDuration = 1000;
     const primaryDelay = 150;
@@ -53,122 +95,94 @@ export default function LandingScreen() {
 
     const styles = useMemo(() => createStyles(colors, fonts, isDark), [colors, fonts, isDark]);
 
-    const [isStartingDownload, setIsStartingDownload] = useState(false);
-
-    // When download finishes successfully, automatically proceed to home
-    useEffect(() => {
-        if (!isDownloading && hasMap && consentStatus === 'yes') {
-            setIsStartingDownload(false);
-            router.replace("/(home)" as any);
-        }
-    }, [isDownloading, hasMap, consentStatus]);
-
     const handleContinueDownload = async () => {
-        setIsStartingDownload(true);
+        setIsContentDownloading(true);
         try {
-            await saveConsent('yes');
-            await downloadMap();
+            const success = await performInitialSync(true);
+            if (success) {
+                try {
+                    await AsyncStorage.setItem(CONTENT_CONSENT_KEY, 'yes');
+                } catch {}
+                setConsentStatus('yes');
+                router.replace("/(home)" as any);
+            }
         } finally {
-            setIsStartingDownload(false);
+            setIsContentDownloading(false);
         }
     };
 
-    const handleDecline = () => {
+    const handleDecline = async () => {
+        dismissedContentSession = true;
+        setConsentStatus('dismissed');
+        setIsContentDownloading(false);
+        try {
+            await AsyncStorage.setItem(CONTENT_CONSENT_KEY, 'dismissed');
+        } catch {}
+        performInitialSync(false).catch(() => {});
         router.replace("/(home)" as any);
     };
 
-    const handleCancel = async () => {
-        setIsStartingDownload(false);
-        await cancelDownload();
+    const handleCancel = () => {
+        setIsContentDownloading(false);
+        dismissedContentSession = true;
+        setConsentStatus('dismissed');
+        router.replace("/(home)" as any);
     };
 
     const handlePressExplore = () => {
         router.replace("/(home)" as any);
     };
 
-    const isDownloadActive = isDownloading || isStartingDownload;
-
-    // Determine if we need to show the inline download prompt or progress on this screen
+    // Wait for initial consent check so we don't briefly flash the explore button before showing the prompt
     const shouldShowDownloadPrompt =
-        Platform.OS !== 'web' &&
-        !hasMap &&
-        !isMapInitializing &&
-        (consentStatus === null || isDownloadActive);
+        (isConsentLoaded && consentStatus === null) || isContentDownloading;
+
+    const logo1Source = logo1Uri ? { uri: logo1Uri } : DEFAULT_LOGO_PRIMARY;
+    const logo2Source = logo2Uri ? { uri: logo2Uri } : DEFAULT_LOGO_SECONDARY;
+    const bgSource = bgImageUri ? { uri: bgImageUri } : DEFAULT_BG_IMAGE;
 
     const Inner = (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.content}>
                 {apiStatus !== 'fetching' && (
                     <>
-                        {logo1Uri ? (
-                            <AnimatedImage
-                                source={{ uri: logo1Uri }}
-                                style={styles.logo}
-                                contentFit="contain"
-                                entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
-                                transition={Platform.OS === 'ios' ? 400 : 0}
-                            />
-                        ) : null}
+                        <AnimatedImage
+                            source={logo1Source}
+                            placeholder={DEFAULT_LOGO_PRIMARY}
+                            placeholderContentFit="contain"
+                            style={styles.logo}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                            entering={FadeInDown.duration(logoDuration).delay(primaryDelay)}
+                            transition={0}
+                        />
 
-                        {logo2Uri ? (
-                            <AnimatedImage
-                                source={{ uri: logo2Uri }}
-                                style={styles.explorer}
-                                contentFit="contain"
-                                entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}
-                                transition={Platform.OS === 'ios' ? 400 : 0}
-                            />
-                        ) : null}
+                        <AnimatedImage
+                            source={logo2Source}
+                            placeholder={DEFAULT_LOGO_SECONDARY}
+                            placeholderContentFit="contain"
+                            style={styles.explorer}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                            entering={FadeInDown.duration(logoDuration).delay(secondaryDelay)}
+                            transition={0}
+                        />
 
-                        {apiStatus === 'loading' ? (
-                            <Animated.View entering={FadeInUp.duration(logoDuration)} style={{ alignItems: 'center' }}>
-                                {syncError ? (
-                                    <>
-                                        <AppText style={{ fontSize: 12, color: '#FF5252', textAlign: 'center', marginBottom: 16 }}>{syncError}</AppText>
-                                        <TouchableOpacity
-                                            style={[styles.button, secColor ? { backgroundColor: secColor } : {}]}
-                                            onPress={performInitialSync}
-                                        >
-                                            <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>Retry Setup</AppText>
-                                        </TouchableOpacity>
-                                        {Platform.OS === 'web' && (
-                                            <TouchableOpacity
-                                                style={[styles.button, { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.2)' }]}
-                                                onPress={() => router.replace("/(home)" as any)}
-                                            >
-                                                <AppText style={[styles.buttonText, { color: '#FFFFFF' }]}>Preview Web Layout</AppText>
-                                            </TouchableOpacity>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', height: 52 }}>
-                                            <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                                            <AppText style={{ fontSize: 14, fontWeight: 'bold', color: '#FFFFFF' }}>
-                                                {syncStatusText || 'Loading...'}
-                                            </AppText>
-                                        </View>
-                                        <AppText style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.7)', marginTop: 4 }}>
-                                            {Math.round(syncProgress * 100)}%
-                                        </AppText>
-                                    </>
-                                )}
-                            </Animated.View>
-                        ) : shouldShowDownloadPrompt ? (
+                        {isConsentLoaded ? (shouldShowDownloadPrompt ? (
                             <Animated.View entering={FadeInUp.duration(logoDuration)} style={styles.promptContainer}>
-                                {isDownloadActive ? (
+                                {isContentDownloading ? (
                                     <View style={styles.downloadingContainer}>
                                         <View style={styles.progressRow}>
                                             <ActivityIndicator size="small" color={secColor || "#ea0b0b"} style={{ marginRight: 10 }} />
                                             <AppText style={styles.downloadingText}>
-                                                Downloading offline map... {Math.round(downloadProgress * 100)}%
+                                                Downloading offline content... {Math.round(syncProgress * 100)}%
                                             </AppText>
                                         </View>
                                         <View style={styles.progressBarTrack}>
                                             <View
                                                 style={[
                                                     styles.progressBarFill,
-                                                    { width: `${Math.round(downloadProgress * 100)}%`, backgroundColor: secColor || '#ea0b0b' }
+                                                    { width: `${Math.round(syncProgress * 100)}%`, backgroundColor: secColor || '#ea0b0b' }
                                                 ]}
                                             />
                                         </View>
@@ -180,10 +194,10 @@ export default function LandingScreen() {
                                             <AppText style={styles.cancelButtonText}>Cancel</AppText>
                                         </TouchableOpacity>
                                     </View>
-                                ) : mbtilesError ? (
+                                ) : syncError ? (
                                     <View style={styles.errorContainer}>
                                         <AppText style={styles.errorText}>
-                                            Unable to download map data. Check connection and try again, or continue online.
+                                            {syncError || "Unable to download content. Check connection and try again, or continue online."}
                                         </AppText>
                                         <View style={styles.buttonRow}>
                                             <TouchableOpacity
@@ -205,12 +219,12 @@ export default function LandingScreen() {
                                 ) : (
                                     <View style={styles.promptContent}>
                                         <AppText style={styles.promptDescription}>
-                                            Cellular signal is limited in Elk Country. Download the offline regional map to navigate trails and points of interest without an internet connection.
+                                            Cellular signal is limited in Elk Country. Download app images and content now to ensure guides, events, amenities, and photos work offline.
                                         </AppText>
 
                                         <View style={styles.sizeBadge}>
                                             <MaterialIcons name="cloud-download" size={15} color="#FFFFFF" style={{ marginRight: 6 }} />
-                                            <AppText style={styles.sizeBadgeText}>Download Size: ~307 MB</AppText>
+                                            <AppText style={styles.sizeBadgeText}>Download Size: ~25 MB</AppText>
                                         </View>
 
                                         <View style={styles.buttonRow}>
@@ -245,7 +259,7 @@ export default function LandingScreen() {
                                     </AppText>
                                 </TouchableOpacity>
                             </Animated.View>
-                        )}
+                        )) : null}
                     </>
                 )}
             </View>
@@ -255,15 +269,17 @@ export default function LandingScreen() {
     return (
         <View style={[styles.container, { backgroundColor: '#000' }]}>
             <StatusBar barStyle="light-content" />
-            {bgImageUri && (
-                <Animated.View entering={FadeIn.duration(bgDuration)} style={StyleSheet.absoluteFill}>
-                    <Image
-                        source={{ uri: bgImageUri }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                    />
-                </Animated.View>
-            )}
+            <Animated.View entering={FadeIn.duration(bgDuration)} style={StyleSheet.absoluteFill}>
+                <Image
+                    source={bgSource}
+                    placeholder={DEFAULT_BG_IMAGE}
+                    placeholderContentFit="cover"
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={0}
+                />
+            </Animated.View>
             <View style={[StyleSheet.absoluteFill, styles.darkOverlay]}>
                 {Inner}
             </View>
@@ -328,6 +344,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     promptDescription: {
         fontSize: 14,
+        fontFamily: fonts.body,
         lineHeight: 20,
         color: '#FFFFFF',
         textAlign: 'center',
@@ -344,6 +361,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     sizeBadgeText: {
         fontSize: 13,
+        fontFamily: fonts.bodyBold,
         fontWeight: '700',
         color: '#FFFFFF',
         textShadowColor: 'rgba(0, 0, 0, 0.85)',
@@ -373,6 +391,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     declineButtonText: {
         color: '#111111',
         fontSize: 15,
+        fontFamily: fonts.bodyBold,
         fontWeight: '700',
     },
     continueButton: {
@@ -381,6 +400,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     continueButtonText: {
         color: '#FFFFFF',
         fontSize: 15,
+        fontFamily: fonts.bodyBold,
         fontWeight: '700',
     },
     downloadingContainer: {
@@ -395,6 +415,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     downloadingText: {
         fontSize: 14,
+        fontFamily: fonts.bodyBold,
         fontWeight: '600',
         color: '#FFFFFF',
     },
@@ -420,6 +441,7 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     },
     cancelButtonText: {
         fontSize: 13,
+        fontFamily: fonts.bodyBold,
         fontWeight: '600',
         color: '#FFFFFF',
     },

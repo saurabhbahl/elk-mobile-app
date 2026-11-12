@@ -1,11 +1,12 @@
 import { width } from '@/src/constants/theme';
 import { useTheme } from '@/src/context/ThemeContext';
 import { useAppContent } from '@/src/contexts/AppContentContext';
+import { checkActualInternetConnectivity } from '@/src/utils/network';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { BlurView } from 'expo-blur';
-import { useEffect, useState } from 'react';
-import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, AppStateStatus, Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import AppText from './AppText';
 
 const getValidColor = (color: string | undefined) => {
@@ -19,14 +20,79 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
     const { brandData } = useAppContent();
 
     const primaryColor = getValidColor(brandData?.brand_color_primary) || "#8B1E1E";
-    const secondaryColor = getValidColor(brandData?.brand_color_secondary) || "#FFFFFF";
 
-    // Only show offline when explicitly disconnected (isConnected === false).
-    // isInternetReachable is unreliable on Android release builds (often null) so we
-    // do NOT use it to trigger offline mode — avoids false "offline" on strong WiFi.
-    const isOffline = forceShowForTesting || (Platform.OS === 'web' ? false : netInfo.isConnected === false);
+    const [isOffline, setIsOffline] = useState(false);
     const [visible, setVisible] = useState(false);
     const [hasDismissed, setHasDismissed] = useState(false);
+    const isCheckingRef = useRef(false);
+
+    const verifyConnectivity = useCallback(async () => {
+        if (forceShowForTesting) {
+            setIsOffline(true);
+            return;
+        }
+
+        if (Platform.OS === 'web') {
+            const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+            setIsOffline(!online);
+            return;
+        }
+
+        // Fast check: If Wi-Fi and mobile data are completely off, immediately offline
+        if (netInfo.isConnected === false) {
+            setIsOffline(true);
+            return;
+        }
+
+        // Fast check: If NetInfo confirmed internet is not reachable, immediately offline
+        if (netInfo.isInternetReachable === false) {
+            setIsOffline(true);
+            return;
+        }
+
+        // Avoid overlapping concurrent probes
+        if (isCheckingRef.current) return;
+        isCheckingRef.current = true;
+
+        try {
+            const hasInternet = await checkActualInternetConnectivity();
+            setIsOffline(!hasInternet);
+        } catch {
+            setIsOffline(true);
+        } finally {
+            isCheckingRef.current = false;
+        }
+    }, [forceShowForTesting, netInfo.isConnected, netInfo.isInternetReachable]);
+
+    // Check connectivity whenever NetInfo state changes
+    useEffect(() => {
+        verifyConnectivity();
+    }, [verifyConnectivity]);
+
+    // Check connectivity when app returns to foreground
+    useEffect(() => {
+        const handleAppStateChange = (state: AppStateStatus) => {
+            if (state === 'active') {
+                verifyConnectivity();
+            }
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+        return () => {
+            subscription.remove();
+        };
+    }, [verifyConnectivity]);
+
+    // Periodic check every 10 seconds while app is active in foreground
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (AppState.currentState === 'active') {
+                verifyConnectivity();
+            }
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [verifyConnectivity]);
 
     useEffect(() => {
         if (isOffline && !hasDismissed) {
@@ -72,15 +138,18 @@ export default function OfflinePopup({ forceShowForTesting = false }: { forceSho
                         // Optimistically hide the popup
                         setVisible(false);
 
-                        // Fetch the latest fresh state directly
-                        const state = await NetInfo.fetch();
-                        const currentlyOffline = forceShowForTesting || state.isConnected === false;
+                        // Actively check internet connectivity
+                        const online = await checkActualInternetConnectivity();
 
                         // If still offline, show it again after a brief moment
-                        if (currentlyOffline) {
+                        if (!online) {
+                            setIsOffline(true);
                             setTimeout(() => {
                                 setVisible(true);
                             }, 300);
+                        } else {
+                            setIsOffline(false);
+                            setHasDismissed(false);
                         }
                     }}
                 >

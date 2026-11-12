@@ -3,9 +3,9 @@ import { appRepository } from "../repositories/AppRepository";
 import { SyncManager } from "../services/SyncManager";
 import { preloadManifestCache } from "../utils/imageCache";
 
-import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 import {
     AppBranding,
@@ -238,7 +238,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const performInitialSync = async (): Promise<boolean> => {
+    const performInitialSync = async (downloadImages: boolean = true): Promise<boolean> => {
         setIsSyncing(true);
         setSyncError(null);
         setSyncProgress(0);
@@ -256,7 +256,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                         setBrandData(settingsMap.app_branding as AppBranding);
                     }
                 } catch (_) { }
-            }, false, undefined, true);
+            }, false, undefined, downloadImages);
 
             if (!success) {
                 setSyncError("Please check your internet connection.");
@@ -274,7 +274,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             setApiStatus('ready');
             setIsSyncing(false);
             if (Platform.OS !== 'web') {
-                checkMapStatus().then(() => prefetchGlyphs()).catch(() => {});
+                checkMapStatus().then(() => prefetchGlyphs()).catch(() => { });
             }
             return true;
         } catch (err) {
@@ -288,9 +288,10 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Performs silent background delta sync
     const refreshData = async (): Promise<boolean> => {
+        const netState = await NetInfo.fetch();
         const isOnline = Platform.OS === 'web'
             ? (typeof navigator !== 'undefined' ? navigator.onLine : true)
-            : (await NetInfo.fetch()).isConnected;
+            : !!(netState.isConnected && netState.isInternetReachable !== false);
         if (!isOnline) return false;
 
         // Removed last_full_sync override so the app performs delta checks on boot rather than full syncs, preventing SQLite write lockups and CPU spikes.
@@ -330,8 +331,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
                 console.log("[Sync] Network reconnected after being offline!");
                 wasOfflineRef.current = false;
                 if (!SyncManager.isSyncComplete()) {
-                    console.log("[Sync] Initial sync incomplete, triggering performInitialSync on reconnection.");
-                    performInitialSync();
+                    console.log("[Sync] Initial sync incomplete, waiting for user consent.");
                 } else {
                     console.log("[Sync] Initial sync complete, triggering background delta check.");
                     refreshData();
@@ -343,6 +343,7 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
 
     // Boot Logic
     useEffect(() => {
+        let isMounted = true;
         preloadManifestCache().catch(e => console.warn('[AppContent] Failed to preload manifest:', e));
         if (Platform.OS === 'web') {
             loadFromWebStorage();
@@ -355,9 +356,30 @@ export const AppContentProvider = ({ children }: { children: ReactNode }) => {
             // Trigger background delta checks on boot
             refreshData();
         } else {
-            setApiStatus('loading');
-            performInitialSync();
+            loadFromSQLite();
+            setApiStatus('ready');
+
+            // Fetch lightweight app branding on first boot so colors/tagline/logos stay up to date without waiting for full sync
+            let hasBranding = false;
+            if (Platform.OS !== 'web') {
+                try {
+                    const existing = appRepository.getAllSettings().app_branding;
+                    hasBranding = Boolean(existing && !Array.isArray(existing));
+                } catch {}
+            }
+            if (!hasBranding) {
+                SyncManager.fetchBrandingOnly()
+                    .then((branding) => {
+                        if (branding && isMounted) {
+                            setBrandData((prev) => prev || (branding as AppBranding));
+                        }
+                    })
+                    .catch(() => {});
+            }
         }
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const dataContextValue = React.useMemo(() => ({

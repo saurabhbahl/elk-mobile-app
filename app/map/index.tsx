@@ -189,6 +189,7 @@ function MapScreen() {
     Layer: any;
     Marker: any;
     UserLocation: any;
+    LocationManager?: any;
   } | null>(() => {
     if (isExpoGo || Platform.OS === "web") return null;
     try {
@@ -219,6 +220,7 @@ function MapScreen() {
           Layer: ML.Layer,
           Marker: ML.Marker,
           UserLocation: ML.UserLocation,
+          LocationManager: ML.LocationManager,
         };
       }
     } catch {
@@ -483,11 +485,11 @@ function MapScreen() {
     let isMounted = true;
     let posSubscription: Location.LocationSubscription | null = null;
     let headingSubscription: Location.LocationSubscription | null = null;
+    let nativeLocationCallback: ((pos: any) => void) | null = null;
 
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (!isMounted || status !== "granted") return;
-
       // 1. Immediately get initial location fix (instant lock on load)
       try {
         const lastLoc = await Location.getLastKnownPositionAsync();
@@ -509,12 +511,13 @@ function MapScreen() {
         // Ignore fallback
       }
 
-      // 2. High-Accuracy Hardware Satellite GPS (works fully offline with 0 internet/Wi-Fi)
       const pos = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.BestForNavigation,
-          distanceInterval: 0, // 0 = unthrottled, updates on any movement (kCLDistanceFilterNone on iOS)
-          timeInterval: 500,   // 500ms fast-polling interval on Android
+          accuracy: isNavigating
+            ? Location.Accuracy.BestForNavigation
+            : Location.Accuracy.Balanced,
+          distanceInterval: isNavigating ? 1 : 30,
+          timeInterval: isNavigating ? 1000 : 10000,
         },
         (loc) => {
           if (!isMounted) return;
@@ -534,6 +537,34 @@ function MapScreen() {
         return;
       }
       posSubscription = pos;
+
+      // Connect native MapLibre location engine directly during navigation for high-performance zero-lag updates
+      const locationManager = mapComponents?.LocationManager;
+      if (
+        isNavigating &&
+        locationManager &&
+        typeof locationManager.addListener === "function"
+      ) {
+        try {
+          locationManager.setMinDisplacement(0);
+          nativeLocationCallback = (locEvent: any) => {
+            if (!isMounted || !locEvent?.coords) return;
+            setLocation((prev: any) => {
+              if (
+                !prev ||
+                prev.latitude !== locEvent.coords.latitude ||
+                prev.longitude !== locEvent.coords.longitude
+              ) {
+                return locEvent.coords;
+              }
+              return prev;
+            });
+          };
+          locationManager.addListener(nativeLocationCallback);
+        } catch {
+          // Fallback to Expo location watcher
+        }
+      }
 
       // Heading — fires on every compass change, animates smoothly via Animated.Value
       try {
@@ -589,8 +620,15 @@ function MapScreen() {
       isMounted = false;
       posSubscription?.remove();
       headingSubscription?.remove();
+      if (nativeLocationCallback && mapComponents?.LocationManager) {
+        try {
+          mapComponents.LocationManager.removeListener(nativeLocationCallback);
+        } catch {
+          // ignore
+        }
+      }
     };
-  }, []);
+  }, [isNavigating, mapComponents]);
 
   const handleRecenter = useCallback(() => {
     const cam = cameraRef.current;
@@ -2686,11 +2724,8 @@ function MapScreen() {
               style={[
                 styles.modalCard,
                 {
-                  width: windowWidth * 0.95,
-                  height: windowWidth * 0.82,
+                  width: Math.min(windowWidth * 0.92, 380),
                   padding: 24,
-                  justifyContent: "center",
-                  maxWidth: "100%",
                 },
               ]}
             >
@@ -2709,9 +2744,6 @@ function MapScreen() {
                 <MaterialIcons name="close" size={18} color="#FFFFFF" />
               </TouchableOpacity>
 
-              {/* <View style={[styles.modalIconContainer, { marginBottom: 16, marginTop: 0 }]}>
-                <MaterialIcons name="download-for-offline" size={32} color={colors.inversePrimary} />
-              </View> */}
               <AppText
                 style={[
                   styles.modalTitle,
@@ -2727,22 +2759,35 @@ function MapScreen() {
               <AppText
                 style={[
                   styles.modalDescription,
-                  { fontSize: 14, fontFamily: fonts.body, marginBottom: 20 },
+                  { fontSize: 14, fontFamily: fonts.body, marginBottom: 14 },
                 ]}
               >
-                Cellular signal is weak in Elk Country. Download this region now (~307 MB)
-                to ensure navigation and safety features work offline.
+                Cellular signal is limited in Elk Country. Download the offline regional map now to navigate trails and points of interest without an internet connection.
               </AppText>
+
+              <View style={styles.sizeBadge}>
+                <MaterialIcons
+                  name="cloud-download"
+                  size={16}
+                  color={brandSecondary || "#ea0b0b"}
+                  style={{ marginRight: 6 }}
+                />
+                <AppText style={styles.sizeBadgeText}>
+                  Download Size: ~307 MB
+                </AppText>
+              </View>
+
               <View style={[styles.modalActions, { flexDirection: "column", gap: 10, width: "100%" }]}>
                 <TouchableOpacity
                   style={[
                     styles.modalButtonPrimary,
-                    { height: 46, width: "100%", alignSelf: "center", backgroundColor: "#ea0b0b", borderRadius: 23 },
+                    { height: 46, width: "100%", alignSelf: "center", backgroundColor: brandSecondary || "#ea0b0b", borderRadius: 23 },
                   ]}
                   onPress={() => {
                     saveConsent("yes");
                     downloadMap();
                   }}
+                  activeOpacity={0.8}
                 >
                   <AppText
                     style={[
@@ -2773,6 +2818,7 @@ function MapScreen() {
                       fitRouteToCamera(validCoords, 500);
                     }
                   }}
+                  activeOpacity={0.8}
                 >
                   <AppText
                     style={{
@@ -3463,19 +3509,17 @@ const createStyles = (
       zIndex: 100,
     },
     modalCard: {
-      width: "95%",
-      maxWidth: 400,
-      backgroundColor: colors.surface + "f2",
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: "#CCCCCC",
+      borderColor: isDark ? "rgba(255,255,255,0.15)" : "#CCCCCC",
       overflow: "hidden",
-      padding: 32,
       alignItems: "center",
+      justifyContent: "center",
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.2,
-      shadowRadius: 32,
+      shadowOpacity: 0.25,
+      shadowRadius: 24,
       elevation: 12,
     },
     closeButton: {
@@ -3489,6 +3533,22 @@ const createStyles = (
       justifyContent: "center",
       alignItems: "center",
       zIndex: 10,
+    },
+    sizeBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6",
+    },
+    sizeBadgeText: {
+      fontSize: 13,
+      fontFamily: fonts.bodyBold,
+      fontWeight: "600",
+      color: isDark ? "#FFFFFF" : "#374151",
     },
     modalIconContainer: {
       width: 64,

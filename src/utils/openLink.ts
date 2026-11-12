@@ -22,7 +22,7 @@ export async function openExternalLink(url: string, router?: any, title?: string
   // Check internet connection for external links
   if (isExternalUrl(trimmed)) {
     const netInfo = await NetInfo.fetch();
-    if (netInfo.isConnected === false) {
+    if (netInfo.isConnected === false || netInfo.isInternetReachable === false) {
       Alert.alert(
         "Offline",
         offlineMessage || "An active internet connection is required to view this content."
