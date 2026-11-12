@@ -160,7 +160,7 @@ export function navigateToPoi(router: any, poiId: number) {
 export function snapToRoute(
   point: Coordinate,
   routeCoordinates: [number, number][],
-  maxSnapMeters: number = 35
+  maxSnapMeters: number = 10
 ): { coordinate: Coordinate; bearing: number; segmentIndex: number } | null {
   if (!point || !routeCoordinates || routeCoordinates.length < 2) return null;
 

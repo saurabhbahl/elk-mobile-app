@@ -8,6 +8,7 @@ import AppText from "@/src/components/AppText";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNetInfo } from "@react-native-community/netinfo";
 import Constants from "expo-constants";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { activateKeepAwakeAsync, isAvailableAsync } from "expo-keep-awake";
 import * as Location from "expo-location";
@@ -54,6 +55,7 @@ import { LIGHT_COLORS, LIGHT_FONTS } from "../../src/constants/theme";
 import { useTheme } from "../../src/context/ThemeContext";
 
 // Components
+import CompassNeedle from "../../src/components/CompassNeedle";
 import { MapRouteLayers } from "../../src/components/MapRouteLayers";
 import Navbar from "../../src/components/Navbar";
 import { NavigationHeader } from "../../src/components/NavigationHeader";
@@ -358,7 +360,7 @@ function MapScreen() {
     ) {
       return null;
     }
-    return snapToRoute(location, activeRouteCoords, 35);
+    return snapToRoute(location, activeRouteCoords, 10);
   }, [isNavigating, location, activeRouteCoords, routeVersion]);
 
   const displayLocation = snapResult ? snapResult.coordinate : location;
@@ -367,22 +369,25 @@ function MapScreen() {
   useEffect(() => {
     if (isNavigating && snapResult) {
       const roadBearing = snapResult.bearing;
-      const prev = headingRef.current;
-      let delta = roadBearing - prev;
-      if (delta > 180) delta -= 360;
-      if (delta < -180) delta += 360;
-      const next = prev + delta;
-      headingRef.current = next;
+      if (typeof roadBearing === "number" && !isNaN(roadBearing)) {
+        const prev = headingRef.current;
+        let delta = roadBearing - prev;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        const next = prev + delta;
+        headingRef.current = next;
 
-      Animated.timing(headingAnim, {
-        toValue: next,
-        useNativeDriver: true,
-        duration: 350,
-        easing: Easing.out(Easing.quad),
-      }).start();
+        Animated.timing(headingAnim, {
+          toValue: next,
+          useNativeDriver: true,
+          duration: 350,
+          easing: Easing.out(Easing.quad),
+        }).start();
 
-      if (Math.abs(delta) > 5) {
-        setHeadingCardinal(headingToCardinal(roadBearing));
+        const newCardinal = headingToCardinal(roadBearing);
+        setHeadingCardinal((prevCardinal) =>
+          prevCardinal !== newCardinal ? newCardinal : prevCardinal,
+        );
       }
     }
   }, [isNavigating, snapResult]);
@@ -565,13 +570,22 @@ function MapScreen() {
         (loc) => {
           if (!isMounted) return;
           setLocation(loc.coords);
-          // If compass sensor is unavailable or stationary, fallback to GPS motion heading
+          // If compass sensor is unavailable or stationary, fallback to GPS motion heading (reliable on Android)
           if (typeof loc.coords.heading === "number" && loc.coords.heading >= 0) {
-            if (headingRef.current === 0) {
-              headingRef.current = loc.coords.heading;
-              headingAnim.setValue(loc.coords.heading);
-              setHeadingCardinal(headingToCardinal(loc.coords.heading));
+            const gpsHeading = loc.coords.heading;
+            if (!isNavigatingRef.current) {
+              const prev = headingRef.current;
+              let delta = gpsHeading - prev;
+              if (delta > 180) delta -= 360;
+              if (delta < -180) delta += 360;
+              const next = prev + delta;
+              headingRef.current = next;
+              headingAnim.setValue(next);
             }
+            const newCardinal = headingToCardinal(gpsHeading);
+            setHeadingCardinal((prevCardinal) =>
+              prevCardinal !== newCardinal ? newCardinal : prevCardinal,
+            );
           }
         },
       );
@@ -602,6 +616,14 @@ function MapScreen() {
               }
               return prev;
             });
+            const eventHeading =
+              locEvent.coords.bearing ?? locEvent.coords.heading;
+            if (typeof eventHeading === "number" && eventHeading >= 0) {
+              const newCardinal = headingToCardinal(eventHeading);
+              setHeadingCardinal((prevCardinal) =>
+                prevCardinal !== newCardinal ? newCardinal : prevCardinal,
+              );
+            }
           };
           locationManager.addListener(nativeLocationCallback);
         } catch {
@@ -646,10 +668,11 @@ function MapScreen() {
             easing: Easing.out(Easing.quad),
           }).start();
 
-          // Update cardinal label at most every ~5 degrees to avoid text flicker
-          if (Math.abs(delta) > 5) {
-            setHeadingCardinal(headingToCardinal(deg));
-          }
+          // Update cardinal label whenever cardinal direction transitions
+          const newCardinal = headingToCardinal(deg);
+          setHeadingCardinal((prevCardinal) =>
+            prevCardinal !== newCardinal ? newCardinal : prevCardinal,
+          );
         });
         if (!isMounted) {
           heading.remove();
@@ -685,6 +708,18 @@ function MapScreen() {
       duration: 1000,
     });
   }, [location]);
+
+  const handleResetNorth = useCallback(() => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Ignore haptic failure
+    }
+    cameraRef.current?.easeTo({
+      bearing: 0,
+      duration: 500,
+    });
+  }, []);
 
   const fitRouteToCamera = useCallback(
     (coords: [number, number][], duration = 1000) => {
@@ -2334,9 +2369,37 @@ function MapScreen() {
                 },
               ]}
             >
+              {/* 1. Compass direction button */}
+              <TouchableOpacity
+                style={styles.sideButton}
+                onPress={handleResetNorth}
+                activeOpacity={0.8}
+                accessibilityLabel="Reset map to North"
+                accessibilityRole="button"
+              >
+                <Animated.View
+                  style={{
+                    transform: [
+                      {
+                        rotate: mapBearingAnim.interpolate({
+                          inputRange: [-360, 360],
+                          outputRange: ["360deg", "-360deg"],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <CompassNeedle size={26} />
+                </Animated.View>
+              </TouchableOpacity>
+
+              {/* 2. Route Planner / Navigation button */}
               <TouchableOpacity
                 style={styles.sideButton}
                 onPress={() => handleNavigate(selectedWaypoint || undefined)}
+                activeOpacity={0.8}
+                accessibilityLabel="Route planner"
+                accessibilityRole="button"
               >
                 <MaterialIcons
                   name="navigation"
@@ -2345,9 +2408,14 @@ function MapScreen() {
                   style={{ transform: [{ rotate: "45deg" }] }}
                 />
               </TouchableOpacity>
+
+              {/* 3. Location recenter button */}
               <TouchableOpacity
                 style={styles.sideButton}
                 onPress={handleRecenter}
+                activeOpacity={0.8}
+                accessibilityLabel="My location"
+                accessibilityRole="button"
               >
                 <MaterialIcons
                   name="my-location"
@@ -2582,33 +2650,9 @@ function MapScreen() {
               nextInstruction={navigationData.nextInstruction}
               onExit={handleExitNavigation}
               onRecenter={handleRecenter}
+              onResetNorth={handleResetNorth}
+              mapBearingAnim={mapBearingAnim}
             />
-            {/* Compass direction badge */}
-            <View
-              style={[styles.navCompassBadge, { top: insets.top + 90 }]}
-              pointerEvents="none"
-            >
-              <Animated.View
-                style={[
-                  styles.navCompassArrow,
-                  {
-                    transform: [
-                      {
-                        rotate: headingAnim.interpolate({
-                          inputRange: [-360, 360],
-                          outputRange: ["-360deg", "360deg"],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <MaterialIcons name="navigation" size={20} color="white" />
-              </Animated.View>
-              <AppText style={styles.navCompassLabel}>
-                {headingCardinal}
-              </AppText>
-            </View>
           </>
         )}
 
@@ -2671,30 +2715,31 @@ function MapScreen() {
             </View>
             {/* Compass direction indicator */}
             {location && (
-              <View style={[styles.compassContainer, { top: insets.top + 60 }]}>
+              <TouchableOpacity
+                style={[styles.compassContainer, { top: insets.top + 60 }]}
+                onPress={handleResetNorth}
+                activeOpacity={0.8}
+                accessibilityLabel="Reset map to North"
+                accessibilityRole="button"
+              >
                 <Animated.View
                   style={[
                     styles.compassArrow,
                     {
                       transform: [
                         {
-                          rotate: headingAnim.interpolate({
+                          rotate: mapBearingAnim.interpolate({
                             inputRange: [-360, 360],
-                            outputRange: ["-360deg", "360deg"],
+                            outputRange: ["360deg", "-360deg"],
                           }),
                         },
                       ],
                     },
                   ]}
                 >
-                  <MaterialIcons
-                    name="navigation"
-                    size={22}
-                    color={colors.primary}
-                  />
+                  <CompassNeedle size={26} />
                 </Animated.View>
-                <AppText style={styles.compassLabel}>{headingCardinal}</AppText>
-              </View>
+              </TouchableOpacity>
             )}
 
             {/* Bottom confirm / cancel */}
@@ -3359,24 +3404,22 @@ const createStyles = (
       right: 16,
       zIndex: 600,
       alignItems: "center",
-      backgroundColor: colors.surface + "f2",
-      width: 56,
-      height: 56,
-      borderRadius: 28,
+      backgroundColor: colors.surface + "f7",
+      width: 54,
+      height: 54,
+      borderRadius: 27,
       justifyContent: "center",
       shadowColor: "#000",
-      shadowOpacity: isDark ? 0.25 : 0.12,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.35 : 0.15,
       shadowRadius: 8,
-      elevation: 4,
+      elevation: 6,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0,0,0,0.08)",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0,0,0,0.08)",
     },
-    compassArrow: { marginBottom: 1 },
-    compassLabel: {
-      fontFamily: fonts.caption,
-      fontSize: 10,
-      color: brandPrimary,
-      letterSpacing: 0.5,
+    compassArrow: {
+      alignItems: "center",
+      justifyContent: "center",
     },
     pinActionBar: {
       position: "absolute",
@@ -3458,30 +3501,6 @@ const createStyles = (
       borderLeftColor: "transparent",
       borderRightColor: "transparent",
       marginTop: -1,
-    },
-
-    // Navigation compass badge
-    navCompassBadge: {
-      position: "absolute",
-      right: 16,
-      zIndex: 95,
-      alignItems: "center",
-      backgroundColor: brandPrimary,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      justifyContent: "center",
-      shadowColor: "#000",
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    navCompassArrow: { marginBottom: 1 },
-    navCompassLabel: {
-      fontFamily: fonts.caption,
-      fontSize: 10,
-      color: colors.onPrimary + "cc",
-      letterSpacing: 0.5,
     },
 
     // User heading arrow (navigation mode)

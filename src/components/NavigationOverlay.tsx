@@ -10,6 +10,7 @@ import {
   View
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CompassNeedle } from './CompassNeedle';
 import { LIGHT_COLORS, LIGHT_FONTS } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -27,6 +28,8 @@ interface NavigationOverlayProps {
   nextInstruction?: TurnInstruction;
   onExit: () => void;
   onRecenter: () => void;
+  onResetNorth?: () => void;
+  mapBearingAnim?: Animated.Value;
 }
 
 /** Maps instruction text to a MaterialIcons name */
@@ -50,6 +53,8 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   nextInstruction = { text: 'Continue Straight', distance: '0 FT', icon: 'straight' },
   onExit,
   onRecenter,
+  onResetNorth,
+  mapBearingAnim,
 }) => {
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, 12);
@@ -167,7 +172,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         </View>
       </View>
 
-      {/* ── Floating action buttons ───────────────────────────────────── */}
+      {/* ── Floating action buttons (Direction compass + Recenter) ───── */}
       <View
         style={[
           styles.floatingControls,
@@ -175,6 +180,30 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         ]}
         pointerEvents="box-none"
       >
+        {onResetNorth && mapBearingAnim && (
+          <TouchableOpacity
+            onPress={onResetNorth}
+            style={styles.fabSecondary}
+            activeOpacity={0.8}
+            accessibilityLabel="Reset map to North"
+            accessibilityRole="button"
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: mapBearingAnim.interpolate({
+                      inputRange: [-360, 360],
+                      outputRange: ['360deg', '-360deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <CompassNeedle size={26} />
+            </Animated.View>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={onRecenter} style={styles.fabPrimary}>
           <MaterialIcons name="navigation" size={22} color={colors.onPrimary} />
         </TouchableOpacity>
@@ -245,8 +274,8 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
     // ── Instruction card ──────────────────────────────────────────────────────
     instructionContainer: {
       position: 'absolute',
-      left: 0,
-      right: 0,
+      left: 16,
+      right: 16,
       zIndex: 90,
     },
     instructionCard: {
@@ -307,6 +336,21 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       shadowOpacity: isDark ? 0.35 : 0.2,
       shadowRadius: 8,
       elevation: 6,
+    },
+    fabSecondary: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.surface + 'f7',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.35 : 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
     },
 
     // ── Stats panel ───────────────────────────────────────────────────────────
