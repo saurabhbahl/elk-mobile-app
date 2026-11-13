@@ -304,22 +304,6 @@ export const RoutePlanner: React.FC<RoutePlannerProps> = ({
                 </View>
               ))}
 
-              {/* Add stop button */}
-              <TouchableOpacity
-                style={plannerStyles.addStopButton}
-                onPress={() => {
-                  onAddStop({
-                    id: -Date.now(),
-                    title: '',
-                    coordinate: { latitude: 0, longitude: 0 },
-                    description: '',
-                  });
-                }}
-              >
-                <MaterialIcons name="add-circle-outline" size={16} color={textColor} />
-                <AppText style={[plannerStyles.addStopText, { fontFamily: fonts.bodyMedium, fontSize: 14, color: textColor }]}>Add Stop</AppText>
-              </TouchableOpacity>
-
               {/* Destination */}
               <View style={{ gap: 8 }}>
                 <AppText style={[plannerStyles.inputLabel, { fontFamily: fonts.caption, color: colors.onSurfaceVariant }]}>Destination</AppText>

@@ -3,7 +3,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
   Animated,
-  PanResponder,
   Platform,
   StyleSheet,
   TouchableOpacity,
@@ -59,11 +58,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
   const insets = useSafeAreaInsets();
   const safeBottom = Math.max(insets.bottom, 12);
   const { colors, fonts, isDark } = useTheme();
-  const expandedPanelHeight = (destinationTitle ? 180 : 144) + safeBottom;
-  const collapsedPanelHeight = 144 + safeBottom;
-  const panelHeight = React.useRef(new Animated.Value(expandedPanelHeight)).current;
-  const panelHeightRef = React.useRef(expandedPanelHeight);
-  const [isPanelCollapsed, setIsPanelCollapsed] = React.useState(false);
+  const panelHeight = 112 + safeBottom;
 
   const styles = createStyles(colors, fonts, isDark);
 
@@ -112,43 +107,6 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
 
   const iconName = getTurnIcon(nextInstruction.text) as never;
 
-  React.useEffect(() => {
-    if (!isPanelCollapsed) {
-      panelHeightRef.current = expandedPanelHeight;
-      panelHeight.setValue(expandedPanelHeight);
-    }
-  }, [destinationTitle, expandedPanelHeight, isPanelCollapsed, panelHeight]);
-
-  const animatePanel = React.useCallback((toValue: number, collapsed: boolean) => {
-    setIsPanelCollapsed(collapsed);
-    panelHeightRef.current = toValue;
-    Animated.timing(panelHeight, {
-      toValue,
-      duration: 240,
-      useNativeDriver: false,
-    }).start();
-  }, [panelHeight]);
-
-  const panelPanResponder = React.useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 8,
-    onPanResponderMove: (_, gestureState) => {
-      const nextHeight = Math.max(
-        collapsedPanelHeight,
-        Math.min(expandedPanelHeight, panelHeightRef.current - gestureState.dy)
-      );
-      panelHeight.setValue(nextHeight);
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      if (gestureState.dy > 28 || gestureState.vy > 0.45) {
-        animatePanel(collapsedPanelHeight, true);
-      } else if (gestureState.dy < -28 || gestureState.vy < -0.45) {
-        animatePanel(expandedPanelHeight, false);
-      } else {
-        animatePanel(isPanelCollapsed ? collapsedPanelHeight : expandedPanelHeight, isPanelCollapsed);
-      }
-    },
-  }), [animatePanel, collapsedPanelHeight, expandedPanelHeight, isPanelCollapsed, panelHeight]);
-
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
 
@@ -176,7 +134,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
       <View
         style={[
           styles.floatingControls,
-          { bottom: (isPanelCollapsed ? collapsedPanelHeight : expandedPanelHeight) + 16 },
+          { bottom: panelHeight + 16 },
         ]}
         pointerEvents="box-none"
       >
@@ -217,28 +175,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
         ]}
         pointerEvents="box-none"
       >
-        <Animated.View
-          style={[styles.statsPanel, { height: panelHeight, paddingBottom: safeBottom }]}
-          {...panelPanResponder.panHandlers}
-        >
-          <View style={styles.panelHandleHitArea}>
-            <View style={styles.panelHandle} />
-          </View>
-
-          {/* Destination label */}
-          {destinationTitle && !isPanelCollapsed ? (
-            <View style={styles.destinationRow}>
-              <MaterialIcons
-                name="place"
-                size={16}
-                color={colors.onSurfaceVariant}
-              />
-              <AppText style={styles.destinationText} numberOfLines={1}>
-                {destinationTitle}
-              </AppText>
-            </View>
-          ) : null}
-
+        <View style={[styles.statsPanel, { paddingBottom: safeBottom }]}>
           {/* Stats row */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -263,7 +200,7 @@ export const NavigationOverlay: React.FC<NavigationOverlayProps> = ({
             <MaterialIcons name="close" size={18} color={colors.onError} />
             <AppText style={styles.exitButtonText}>End Navigation</AppText>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       </View>
     </View>
   );
@@ -367,41 +304,12 @@ const createStyles = (colors: typeof LIGHT_COLORS, fonts: typeof LIGHT_FONTS, is
       borderBottomLeftRadius: 0,
       borderBottomRightRadius: 0,
       paddingHorizontal: 20,
-      paddingTop: 8,
-      paddingBottom: 14,
+      paddingTop: 16,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: -6 },
       shadowOpacity: isDark ? 0.35 : 0.15,
       shadowRadius: 20,
       elevation: 10,
-      overflow: 'hidden',
-    },
-    panelHandleHitArea: {
-      height: 24,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    panelHandle: {
-      width: 44,
-      height: 5,
-      borderRadius: 3,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
-    },
-    destinationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      marginBottom: 10,
-      paddingBottom: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0,0,0,0.06)',
-    },
-    destinationText: {
-      fontFamily: fonts.bodyMedium,
-      fontSize: 14,
-      color: colors.onSurfaceVariant,
-      flex: 1,
     },
     statsRow: {
       flexDirection: 'row',

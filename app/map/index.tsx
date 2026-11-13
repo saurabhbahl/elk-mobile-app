@@ -85,8 +85,16 @@ import { useAppContent } from "../../src/contexts/AppContentContext";
 import { useOfflineMap } from "../../src/hooks/useOfflineMap";
 import { useOfflineRouter } from "../../src/hooks/useOfflineRouter";
 import { useRouteLoader } from "../../src/hooks/useRouteLoader";
+import { LocalGraphRouter } from "../../src/services/LocalGraphRouter";
 import { isValidData } from "../../src/utils/validation";
 import { useMapReset, useNavigationMode } from "../_layout";
+
+// ── Configurable arrival detection thresholds (in meters) ────────────────────
+// Both conditions must be satisfied before marking destination as reached:
+// 1. Straight-line distance from raw GPS location to destination pin <= DESTINATION_PROXIMITY_THRESHOLD_METERS
+// 2. Remaining driving route path distance from current route progress to end <= REMAINING_ROUTE_THRESHOLD_METERS
+export const DESTINATION_PROXIMITY_THRESHOLD_METERS = 20;
+export const REMAINING_ROUTE_THRESHOLD_METERS = 20;
 
 const isExpoGo = Constants.appOwnership === "expo";
 
@@ -284,6 +292,7 @@ function MapScreen() {
   const activeRouteRef = useRef<any>(null);
   const fullRouteRef = useRef<any>(null);
   const [routeVersion, setRouteVersion] = useState(0);
+  const [activeNavRouteData, setActiveNavRouteData] = useState<any>(null);
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(
@@ -301,6 +310,8 @@ function MapScreen() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [startPoint, setStartPoint] = useState<Waypoint | null>(null);
+  const startPointRef = useRef(startPoint);
+  startPointRef.current = startPoint;
   const [destinationPoint, setDestinationPoint] = useState<Waypoint | null>(
     null,
   );
@@ -347,23 +358,85 @@ function MapScreen() {
   const [headingCardinal, setHeadingCardinal] = useState("N");
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
+  // Navigation map orientation mode: "north-up" (standard) or "heading-up" (follows vehicle arrow pointer)
+  const [navOrientationMode, setNavOrientationMode] = useState<"north-up" | "heading-up">("north-up");
+  const navOrientationModeRef = useRef<"north-up" | "heading-up">("north-up");
+  navOrientationModeRef.current = navOrientationMode;
+
   // ── Snap-to-Road (Map Matching) for Navigation ──────────────────────────────
-  const activeRouteCoords = activeRouteRef.current?.features?.[0]?.geometry
-    ?.coordinates as [number, number][] | undefined;
+  const activeRouteCoords = (
+    isNavigating && activeNavRouteData
+      ? activeNavRouteData?.features?.[0]?.geometry?.coordinates
+      : activeRouteRef.current?.features?.[0]?.geometry?.coordinates
+  ) as [number, number][] | undefined;
+  const lastSnappedEdgeKey = useRef<string | undefined>(undefined);
 
   const snapResult = useMemo(() => {
+    if (!location) return null;
+
+    // Tier 1: When navigating, prioritize snapping directly to active route polyline within 15 meters
     if (
-      !isNavigating ||
-      !location ||
-      !activeRouteCoords ||
-      activeRouteCoords.length < 2
+      isNavigating &&
+      activeRouteCoords &&
+      activeRouteCoords.length >= 2
     ) {
-      return null;
+      const routeSnap = snapToRoute(location, activeRouteCoords, 15);
+      if (routeSnap) {
+        lastSnappedEdgeKey.current = undefined;
+        return routeSnap;
+      }
     }
-    return snapToRoute(location, activeRouteCoords, 10);
+
+    // Tier 2: Snap to nearest road edge in the offline road graph within 25 meters (handles wrong-side walking, parallel carriageways, off-route)
+    const roadSnap = LocalGraphRouter.snapToNearestRoad(
+      location,
+      headingRef.current,
+      25,
+      lastSnappedEdgeKey.current
+    );
+    if (roadSnap) {
+      lastSnappedEdgeKey.current = roadSnap.edgeKey;
+      return {
+        coordinate: roadSnap.coordinate,
+        bearing: roadSnap.bearing,
+        distance: roadSnap.distance,
+      };
+    }
+
+    lastSnappedEdgeKey.current = undefined;
+    return null;
   }, [isNavigating, location, activeRouteCoords, routeVersion]);
 
+  const snapResultRef = useRef(snapResult);
+  snapResultRef.current = snapResult;
+
+  // True if user is navigating starting from their actual current GPS location
+  const isFromCurrentLocation = useMemo(() => {
+    if (!startPoint) return true;
+    if (startPoint.title === "Current Location" || startPoint.id === 999) return true;
+    if (location && startPoint.coordinate) {
+      const dist = calcDistance(startPoint.coordinate, location);
+      if (dist <= 30) return true;
+    }
+    return false;
+  }, [startPoint, location]);
+
   const displayLocation = snapResult ? snapResult.coordinate : location;
+
+  // When navigation starts, initialize bearing to first road segment
+  useEffect(() => {
+    if (isNavigating && !snapResult && activeRouteCoords && activeRouteCoords.length >= 2) {
+      const initialBearing = calculateBearing(
+        { latitude: activeRouteCoords[0][1], longitude: activeRouteCoords[0][0] },
+        { latitude: activeRouteCoords[1][1], longitude: activeRouteCoords[1][0] }
+      );
+      if (typeof initialBearing === "number" && !isNaN(initialBearing)) {
+        headingRef.current = initialBearing;
+        headingAnim.setValue(initialBearing);
+        setHeadingCardinal(headingToCardinal(initialBearing));
+      }
+    }
+  }, [isNavigating, snapResult, activeRouteCoords]);
 
   // Align navigation arrow to road direction (Google Maps style)
   useEffect(() => {
@@ -388,9 +461,19 @@ function MapScreen() {
         setHeadingCardinal((prevCardinal) =>
           prevCardinal !== newCardinal ? newCardinal : prevCardinal,
         );
+
+        // When in heading-up mode, rotate the map camera to the arrow pointer direction!
+        if (navOrientationMode === "heading-up") {
+          const loc = snapResult.coordinate || location;
+          cameraRef.current?.easeTo({
+            bearing: roadBearing,
+            ...(loc ? { center: [loc.longitude, loc.latitude] } : {}),
+            duration: 350,
+          });
+        }
       }
     }
-  }, [isNavigating, snapResult]);
+  }, [isNavigating, snapResult, navOrientationMode, location]);
 
   const [navigationData, setNavigationData] = useState({
     distanceRemaining: "0.0 mi",
@@ -475,7 +558,10 @@ function MapScreen() {
   const hasCenteredOnce = useRef(false);
   const isNavInFlightRef = useRef(false);
   const lastSliceIdx = useRef(-1);
+  const currentRouteIndexRef = useRef(0);
+  const consecutiveArrivalCount = useRef(0);
   const lastRecalculateTime = useRef(Date.now());
+  const lastRecalculatePos = useRef<{ latitude: number; longitude: number } | null>(null);
 
   // ── Detail sheet animation ──────────────────────────────────────────────────
   const detailSheetTranslateY = useSharedValue(windowHeight);
@@ -586,6 +672,18 @@ function MapScreen() {
             setHeadingCardinal((prevCardinal) =>
               prevCardinal !== newCardinal ? newCardinal : prevCardinal,
             );
+            if (
+              isNavigatingRef.current &&
+              navOrientationModeRef.current === "heading-up" &&
+              !snapResultRef.current &&
+              !startPointRef.current
+            ) {
+              cameraRef.current?.easeTo({
+                bearing: gpsHeading,
+                center: [loc.coords.longitude, loc.coords.latitude],
+                duration: 350,
+              });
+            }
           }
         },
       );
@@ -623,6 +721,18 @@ function MapScreen() {
               setHeadingCardinal((prevCardinal) =>
                 prevCardinal !== newCardinal ? newCardinal : prevCardinal,
               );
+              if (
+                isNavigatingRef.current &&
+                navOrientationModeRef.current === "heading-up" &&
+                !snapResultRef.current &&
+                !startPointRef.current
+              ) {
+                cameraRef.current?.easeTo({
+                  bearing: eventHeading,
+                  center: [locEvent.coords.longitude, locEvent.coords.latitude],
+                  duration: 350,
+                });
+              }
             }
           };
           locationManager.addListener(nativeLocationCallback);
@@ -700,14 +810,23 @@ function MapScreen() {
 
   const handleRecenter = useCallback(() => {
     const cam = cameraRef.current;
-    const loc = location;
+    const loc =
+      (isNavigating && !isFromCurrentLocation && startPoint?.coordinate)
+        ? startPoint.coordinate
+        : (displayLocation || location);
     if (!cam || !loc) return;
+    const targetBearing =
+      isNavigating && navOrientationModeRef.current === "heading-up"
+        ? headingRef.current || 0
+        : 0;
+
     cam.easeTo({
       center: [loc.longitude, loc.latitude],
-      zoom: 13,
-      duration: 1000,
+      zoom: isNavigating ? 15 : 13,
+      bearing: targetBearing,
+      duration: 800,
     });
-  }, [location]);
+  }, [displayLocation, location, startPoint, isNavigating, isFromCurrentLocation]);
 
   const handleResetNorth = useCallback(() => {
     try {
@@ -715,11 +834,50 @@ function MapScreen() {
     } catch {
       // Ignore haptic failure
     }
-    cameraRef.current?.easeTo({
-      bearing: 0,
-      duration: 500,
-    });
-  }, []);
+
+    // Determine the relevant anchor point (starting point, route start, or active location)
+    let targetCenter: [number, number] | undefined = undefined;
+
+    if (isNavigating) {
+      if (!isFromCurrentLocation && startPoint?.coordinate) {
+        targetCenter = [startPoint.coordinate.longitude, startPoint.coordinate.latitude];
+      } else if (displayLocation) {
+        targetCenter = [displayLocation.longitude, displayLocation.latitude];
+      }
+    } else if (startPoint?.coordinate) {
+      targetCenter = [startPoint.coordinate.longitude, startPoint.coordinate.latitude];
+    } else if (selectedWaypoint?.coordinate) {
+      targetCenter = [selectedWaypoint.coordinate.longitude, selectedWaypoint.coordinate.latitude];
+    }
+
+    if (isNavigating) {
+      if (navOrientationModeRef.current === "north-up") {
+        // Toggle to Heading-Up: map rotates to match the arrow pointer direction (Google Maps style)
+        setNavOrientationMode("heading-up");
+        const targetBearing = headingRef.current || 0;
+        cameraRef.current?.easeTo({
+          bearing: targetBearing,
+          ...(targetCenter ? { center: targetCenter } : {}),
+          duration: 500,
+        });
+      } else {
+        // Toggle back to North-Up: operates normally like current mode
+        setNavOrientationMode("north-up");
+        cameraRef.current?.easeTo({
+          bearing: 0,
+          ...(targetCenter ? { center: targetCenter } : {}),
+          duration: 500,
+        });
+      }
+    } else {
+      // Outside navigation, clicking compass always resets to True North, anchored to the starting point if selected
+      cameraRef.current?.easeTo({
+        bearing: 0,
+        ...(targetCenter ? { center: targetCenter } : {}),
+        duration: 500,
+      });
+    }
+  }, [isNavigating, displayLocation, startPoint, selectedWaypoint, isFromCurrentLocation]);
 
   const fitRouteToCamera = useCallback(
     (coords: [number, number][], duration = 1000) => {
@@ -908,6 +1066,7 @@ function MapScreen() {
           lastRecalculateTime.current = Date.now();
           fullRouteRef.current = routeFeature;
           activeRouteRef.current = routeFeature;
+          setActiveNavRouteData(routeFeature);
 
           // Calculate total distance from route coordinates
           let totalRouteDistance = 0;
@@ -1173,7 +1332,10 @@ function MapScreen() {
           return;
         }
 
-        setIsCalculatingRoute(true);
+        if (!isRecalculating) {
+          setIsCalculatingRoute(true);
+          lastRecalculatePos.current = null;
+        }
 
         // Build ordered list of waypoint IDs
         const allIds = [from.id, ...stops.map((s) => s.id), to.id];
@@ -1201,6 +1363,7 @@ function MapScreen() {
           from.coordinate,
           to.coordinate,
           stops.map((s) => s.coordinate),
+          headingRef.current || undefined,
         );
 
         if (!result.coordinates || result.coordinates.length < 2) {
@@ -1236,9 +1399,12 @@ function MapScreen() {
         };
 
         lastSliceIdx.current = -1;
+        currentRouteIndexRef.current = 0;
+        consecutiveArrivalCount.current = 0;
         lastRecalculateTime.current = Date.now();
         fullRouteRef.current = routeData;
         activeRouteRef.current = routeData;
+        setActiveNavRouteData(routeData);
 
         // Initialize stats from route result
         const totalDistMi = result.distance / 1609.34;
@@ -1394,14 +1560,40 @@ function MapScreen() {
       if (!toWP) return;
 
       const now = Date.now();
-      const nearestIdx = findNearestPointIndex(location, coords);
+      const curIdx = currentRouteIndexRef.current;
+      // Dynamic bounded forward window:
+      // Allows slight backward GPS jitter (-2 points) and forward search up to 25 points (~250-300m)
+      // Prevents progress from leaping across U-turns, roundabouts, or to future sections of the route
+      const minSearchIdx = Math.max(0, curIdx - 2);
+      const maxSearchIdx = Math.min(coords.length - 1, curIdx + 25);
 
-      if (nearestIdx >= 0 && coords[nearestIdx]) {
+      let nearestIdx = curIdx;
+      let minDistance = Infinity;
+
+      for (let i = minSearchIdx; i <= maxSearchIdx; i++) {
+        const pt = coords[i];
+        const d = calcDistance(location, { latitude: pt[1], longitude: pt[0] });
+        if (d < minDistance) {
+          minDistance = d;
+          nearestIdx = i;
+        }
+      }
+
+      // Only advance progress forward when locked onto the path within 45 meters
+      if (minDistance <= 45) {
+        currentRouteIndexRef.current = Math.max(curIdx, nearestIdx);
+      }
+      const effectiveIdx = currentRouteIndexRef.current;
+
+      if (effectiveIdx >= 0 && coords[effectiveIdx]) {
         const nearestCoord = {
-          longitude: coords[nearestIdx][0],
-          latitude: coords[nearestIdx][1],
+          longitude: coords[effectiveIdx][0],
+          latitude: coords[effectiveIdx][1],
         };
-        const distanceToPath = calcDistance(location, nearestCoord);
+        const distanceToPath =
+          minDistance !== Infinity
+            ? minDistance
+            : calcDistance(location, nearestCoord);
 
         // Recalculate route if off-path (both offline router and online OSRM will handle it)
         const OFF_PATH_THRESHOLD = 50; // meters
@@ -1411,9 +1603,18 @@ function MapScreen() {
           feature.properties?.startWaypoint?.id === -1;
 
         if (distanceToPath > OFF_PATH_THRESHOLD) {
+          const hasMovedSignificantly =
+            !lastRecalculatePos.current ||
+            calcDistance(location, lastRecalculatePos.current) > 30;
+
           // Trigger off-path recalculation if starting from Current Location OR within 5km of the route (e.g. taking a detour/alternate road)
-          if ((isCurrentLocationStart || distanceToPath < 5000) && cooldownElapsed) {
+          if (
+            (isCurrentLocationStart || distanceToPath < 5000) &&
+            cooldownElapsed &&
+            hasMovedSignificantly
+          ) {
             lastRecalculateTime.current = now;
+            lastRecalculatePos.current = location;
             startActualNavigation(
               {
                 id: 999,
@@ -1436,8 +1637,8 @@ function MapScreen() {
           }
         }
 
-        // Remaining distance — sum from nearest point to end
-        const remaining = coords.slice(nearestIdx);
+        // Remaining distance — sum from verified progress index to end
+        const remaining = coords.slice(effectiveIdx);
         let totalDist = 0;
         for (let i = 0; i < remaining.length - 1; i++) {
           totalDist += calcDistance(
@@ -1495,15 +1696,15 @@ function MapScreen() {
         }
 
         let didSlice = false;
-        if (nearestIdx !== lastSliceIdx.current) {
-          lastSliceIdx.current = nearestIdx;
+        if (effectiveIdx !== lastSliceIdx.current) {
+          lastSliceIdx.current = effectiveIdx;
           didSlice = true;
           const routeSliceStart = Math.min(
-            nearestIdx,
+            effectiveIdx,
             Math.max(0, coords.length - 2),
           );
           const activeCoords = coords.slice(routeSliceStart);
-          activeRouteRef.current = {
+          const slicedFeatureCollection = {
             ...fullRouteRef.current,
             features: [
               {
@@ -1515,20 +1716,39 @@ function MapScreen() {
               },
             ],
           };
+          activeRouteRef.current = slicedFeatureCollection;
+          setActiveNavRouteData(slicedFeatureCollection);
         }
 
         // ── Destination arrival detection ──────────────────────────────
+        // Requires ALL conditions:
+        // 1. Straight-line physical GPS proximity to destination pin <= 20m
+        // 2. Remaining driving route distance along geometry <= 20m
+        // 3. Monotonic progress has traversed near the final segment of the route (preventing false arrival on loops)
+        // 4. Confirmed over at least 2 consecutive updates to prevent single GPS glitch triggers
         const distToDestinationMeters = calcDistance(location, {
           latitude: toWP.coordinate.latitude,
           longitude: toWP.coordinate.longitude,
         });
-        const ARRIVAL_THRESHOLD_METERS = 16;
+        const isProximityReached =
+          distToDestinationMeters <= DESTINATION_PROXIMITY_THRESHOLD_METERS;
+        const isRouteCompleted =
+          totalDist <= REMAINING_ROUTE_THRESHOLD_METERS;
+        const isNearFinalSegment =
+          effectiveIdx >= Math.max(0, coords.length - 4);
+
         if (
-          distToDestinationMeters < ARRIVAL_THRESHOLD_METERS &&
-          !hasArrivedRef.current
+          isProximityReached &&
+          isRouteCompleted &&
+          isNearFinalSegment
         ) {
-          hasArrivedRef.current = true;
-          setShowArrivalPopup(true);
+          consecutiveArrivalCount.current += 1;
+          if (consecutiveArrivalCount.current >= 2 && !hasArrivedRef.current) {
+            hasArrivedRef.current = true;
+            setShowArrivalPopup(true);
+          }
+        } else {
+          consecutiveArrivalCount.current = 0;
         }
 
         setNavigationData((prev) => {
@@ -1561,8 +1781,11 @@ function MapScreen() {
       hasHandledNavParam.current !== false && router.canGoBack();
 
     activeRouteRef.current = null;
+    setActiveNavRouteData(null);
     fullRouteRef.current = null;
     lastSliceIdx.current = -1;
+    currentRouteIndexRef.current = 0;
+    consecutiveArrivalCount.current = 0;
 
     router.setParams({
       routeToWaypointId: undefined,
@@ -1573,8 +1796,14 @@ function MapScreen() {
     hasHandledNavParam.current = false;
     hasArrivedRef.current = false;
     isNavInFlightRef.current = false;
+    lastRecalculatePos.current = null;
     setShowArrivalPopup(false);
     isNavigatingRef.current = false;
+    setNavOrientationMode("north-up");
+    cameraRef.current?.easeTo({
+      bearing: 0,
+      duration: 500,
+    });
     unstable_batchedUpdates(() => {
       setIsNavigating(false);
       setStartPoint(null);
@@ -1829,7 +2058,9 @@ function MapScreen() {
             mainRouteCoordinates={mainRouteCoordinates as any}
             orangeRouteCoordinates={orangeRouteCoordinates as any}
             activeRouteCoordinates={
-              activeRouteRef.current?.features?.[0]?.geometry
+              (isNavigating && activeNavRouteData
+                ? activeNavRouteData
+                : activeRouteRef.current)?.features?.[0]?.geometry
                 ?.coordinates as any
             }
             stopPoints={stopPoints}
@@ -1989,8 +2220,8 @@ function MapScreen() {
                 minZoom={3.5}
               />
             )}
-            {/* Built-in dot — hidden during navigation so our custom arrow takes over */}
-            {!isNavigating && (
+            {/* Built-in blue dot GPS — shown when not navigating, OR when navigating from a selected Elk Waypoint */}
+            {(!isNavigating || !isFromCurrentLocation) && (
               <UserLocation
                 animated
                 heading={false}
@@ -1998,8 +2229,8 @@ function MapScreen() {
               />
             )}
 
-            {/* Custom heading arrow shown during navigation */}
-            {isNavigating && displayLocation && (
+            {/* Custom heading arrow shown ONLY when navigating from current location */}
+            {isNavigating && isFromCurrentLocation && displayLocation && (
               <Marker
                 id="user-heading-arrow"
                 lngLat={[displayLocation.longitude, displayLocation.latitude]}
@@ -2035,7 +2266,7 @@ function MapScreen() {
               Layer={Layer}
               mainRouteFeature={mainRouteFeature as any}
               orangeRouteFeature={orangeRouteFeature as any}
-              activeRouteData={activeRouteRef.current}
+              activeRouteData={isNavigating ? activeNavRouteData : activeRouteRef.current}
               routeVersion={routeVersion}
               isNavigating={isNavigating}
               highlightedRoute={highlightedRoute}

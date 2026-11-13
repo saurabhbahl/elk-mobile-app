@@ -7,7 +7,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { calcDistance, decodePolyline } from '../utils/mapUtils';
+import { calcDistance, calculateBearing, decodePolyline } from '../utils/mapUtils';
 
 export interface RouteCoord {
   latitude: number;
@@ -32,6 +32,8 @@ interface GraphEdge {
   weight: number;    // travel cost for A* pathfinding (dist * roadTypeFactor)
   speedMps: number;  // estimated speed in meters per second
   coords: [number, number][];
+  isOneway?: boolean;
+  roadType?: string;
 }
 
 interface SpeedProfile {
@@ -132,7 +134,8 @@ class LocalGraphRouterClass {
   private nodes: Map<number, GraphNode> = new Map();
   private adjacency: Map<number, GraphEdge[]> = new Map();
   private grid: Map<string, number[]> = new Map();
-  private cellToNodeId = new Map<string, number>();
+  private osmNodeToGraphId = new Map<string, number>();
+  private coordToGraphId = new Map<string, number>();
   private nextNodeId = 1;
   private isInitialized = false;
   private hasLoadedFullRoads = false;
@@ -147,37 +150,46 @@ class LocalGraphRouterClass {
 
   public bboxes: Array<{ minLat: number; maxLat: number; minLng: number; maxLng: number }> = [];
 
-  // Junction snapping tolerance: 0.0001 deg (~10m).
-  // Snaps road junctions cleanly without destroying fine road curves.
-  private readonly CELL_SIZE = 0.0001;
-
-  private getGridKey(lng: number, lat: number): string {
-    const gx = Math.round(lng / this.CELL_SIZE);
-    const gy = Math.round(lat / this.CELL_SIZE);
-    return `${gx}_${gy}`;
-  }
-
-  private getOrCreateNode(lng: number, lat: number): number {
-    const key = this.getGridKey(lng, lat);
-    const existingId = this.cellToNodeId.get(key);
-    if (existingId !== undefined) {
-      return existingId;
-    }
-    const id = this.nextNodeId++;
-    this.cellToNodeId.set(key, id);
-    const node: GraphNode = { id, lng, lat };
-    this.nodes.set(id, node);
-
+  private updateNodeSpatialIndex(id: number, lng: number, lat: number) {
     if (lat < this.bounds.minLat) this.bounds.minLat = lat;
     if (lat > this.bounds.maxLat) this.bounds.maxLat = lat;
     if (lng < this.bounds.minLng) this.bounds.minLng = lng;
     if (lng > this.bounds.maxLng) this.bounds.maxLng = lng;
 
-    // Populate spatial index (approx 2x2km grid)
     const gKey = `${Math.floor(lng / 0.02)}_${Math.floor(lat / 0.02)}`;
     if (!this.grid.has(gKey)) this.grid.set(gKey, []);
     this.grid.get(gKey)!.push(id);
+  }
 
+  private getOrCreateNode(lng: number, lat: number, osmId?: number | string): number {
+    // 1. Authentic OSM Node ID match: guarantees 100% topological correctness
+    if (osmId !== undefined && osmId !== null) {
+      const key = String(osmId);
+      const existingId = this.osmNodeToGraphId.get(key);
+      if (existingId !== undefined) {
+        return existingId;
+      }
+      const id = this.nextNodeId++;
+      this.osmNodeToGraphId.set(key, id);
+      this.coordToGraphId.set(`${lng.toFixed(6)}_${lat.toFixed(6)}`, id);
+      const node: GraphNode = { id, lng, lat };
+      this.nodes.set(id, node);
+      this.updateNodeSpatialIndex(id, lng, lat);
+      return id;
+    }
+
+    // 2. Exact 6-decimal coordinate matching (~0.1m precision) for legacy JSON without node IDs
+    // Ensures genuine OSM shared intersections connect while physically separate carriageways (4-15m apart) remain completely isolated
+    const coordKey = `${lng.toFixed(6)}_${lat.toFixed(6)}`;
+    const existingId = this.coordToGraphId.get(coordKey);
+    if (existingId !== undefined) {
+      return existingId;
+    }
+    const id = this.nextNodeId++;
+    this.coordToGraphId.set(coordKey, id);
+    const node: GraphNode = { id, lng, lat };
+    this.nodes.set(id, node);
+    this.updateNodeSpatialIndex(id, lng, lat);
     return id;
   }
 
@@ -187,27 +199,39 @@ class LocalGraphRouterClass {
     dist: number,
     weight: number,
     speedMps: number,
-    coords: [number, number][]
+    coords: [number, number][],
+    isOneway: boolean = false,
+    roadType: string = ''
   ) {
     if (u === v) return;
     if (!this.adjacency.has(u)) this.adjacency.set(u, []);
-    this.adjacency.get(u)!.push({ to: v, dist, weight, speedMps, coords });
+    this.adjacency.get(u)!.push({
+      to: v,
+      dist,
+      weight,
+      speedMps,
+      coords,
+      isOneway,
+      roadType,
+    });
   }
 
   public indexPolyline(
     coords: [number, number][],
     isOneway: boolean = false,
     isReverse: boolean = false,
-    roadType: string = ''
+    roadType: string = '',
+    nodeIds?: (number | string)[]
   ) {
     if (!coords || !Array.isArray(coords) || coords.length < 2) return;
     const profile = ROAD_PROFILES[roadType.toLowerCase()] || DEFAULT_ROAD_PROFILE;
+    const hasNodeIds = Array.isArray(nodeIds) && nodeIds.length === coords.length;
 
     for (let i = 0; i < coords.length - 1; i++) {
       const c1 = coords[i];
       const c2 = coords[i + 1];
-      const u = this.getOrCreateNode(c1[0], c1[1]);
-      const v = this.getOrCreateNode(c2[0], c2[1]);
+      const u = this.getOrCreateNode(c1[0], c1[1], hasNodeIds ? nodeIds[i] : undefined);
+      const v = this.getOrCreateNode(c2[0], c2[1], hasNodeIds ? nodeIds[i + 1] : undefined);
       if (u !== v) {
         const d = calcDistance(
           { latitude: c1[1], longitude: c1[0] },
@@ -219,15 +243,15 @@ class LocalGraphRouterClass {
         if (isOneway) {
           if (isReverse) {
             // Reverse oneway (e.g. oneway="-1"): edge goes v -> u
-            this.addEdge(v, u, d, weight, speedMps, [c2, c1]);
+            this.addEdge(v, u, d, weight, speedMps, [c2, c1], true, roadType);
           } else {
             // Standard forward oneway (e.g. oneway="yes", roundabouts): edge goes u -> v
-            this.addEdge(u, v, d, weight, speedMps, [c1, c2]);
+            this.addEdge(u, v, d, weight, speedMps, [c1, c2], true, roadType);
           }
         } else {
           // Standard two-way road: both directions are legal
-          this.addEdge(u, v, d, weight, speedMps, [c1, c2]);
-          this.addEdge(v, u, d, weight, speedMps, [c2, c1]);
+          this.addEdge(u, v, d, weight, speedMps, [c1, c2], false, roadType);
+          this.addEdge(v, u, d, weight, speedMps, [c2, c1], false, roadType);
         }
       }
     }
@@ -271,7 +295,8 @@ class LocalGraphRouterClass {
           this.nodes.clear();
           this.adjacency.clear();
           this.grid.clear();
-          this.cellToNodeId.clear();
+          this.osmNodeToGraphId.clear();
+          this.coordToGraphId.clear();
           this.nextNodeId = 1;
           this.bounds = {
             minLat: Infinity,
@@ -336,7 +361,12 @@ class LocalGraphRouterClass {
 
               const isOneway = isForwardOneway || isReverse;
               const roadType = (r.type || r.highway || props.type || props.highway || '').toLowerCase();
-              this.indexPolyline(r.coords, isOneway, isReverse, roadType);
+              const nodeIds = Array.isArray(r.node_ids)
+                ? r.node_ids
+                : Array.isArray(r.nodes)
+                ? r.nodes
+                : undefined;
+              this.indexPolyline(r.coords, isOneway, isReverse, roadType, nodeIds);
             }
           }
           this.hasLoadedFullRoads = true;
@@ -413,12 +443,26 @@ class LocalGraphRouterClass {
   /**
    * Finds nearest road line segments to a coordinate (Edge Projection).
    * Projects the coordinate perpendicularly onto candidate road vectors,
-   * ensuring off-road pins on divided roads bind to the correct directional lane.
+   * ensuring pins bind to the correct directional carriageway matching heading.
    */
-  private findNearestEdgeCandidates(
+  public findNearestEdgeCandidates(
     coord: RouteCoord,
-    maxCandidates: number = 4
-  ): { u: number; v: number; dist: number; projCoord: [number, number] }[] {
+    maxCandidates: number = 4,
+    heading?: number
+  ): {
+    u: number;
+    v: number;
+    dist: number;
+    score: number;
+    projCoord: [number, number];
+    tParam: number;
+    bearing: number;
+    edgeKey: string;
+    edgeCoords: [number, number][];
+    isOneway: boolean;
+    roadType: string;
+    speedMps: number;
+  }[] {
     if (this.nodes.size === 0) return [];
 
     const latRad = (coord.latitude * Math.PI) / 180;
@@ -438,7 +482,23 @@ class LocalGraphRouterClass {
 
     const searchPool = candidates.length > 0 ? candidates : Array.from(this.nodes.keys());
     const seenEdges = new Set<string>();
-    const results: { u: number; v: number; dist: number; projCoord: [number, number] }[] = [];
+    const results: {
+      u: number;
+      v: number;
+      dist: number;
+      score: number;
+      projCoord: [number, number];
+      tParam: number;
+      bearing: number;
+      edgeKey: string;
+      edgeCoords: [number, number][];
+      isOneway: boolean;
+      roadType: string;
+      speedMps: number;
+    }[] = [];
+
+    const hasHeading = heading !== undefined && heading !== null && !isNaN(heading);
+    const normHeading = hasHeading ? ((heading! % 360) + 360) % 360 : 0;
 
     for (const u of searchPool) {
       const edges = this.adjacency.get(u);
@@ -481,30 +541,211 @@ class LocalGraphRouterClass {
           const projY = a[1] + t * (b[1] - a[1]);
           const dist = calcDistance(coord, { latitude: projY, longitude: projX });
 
+          const segBearing = calculateBearing(
+            { latitude: a[1], longitude: a[0] },
+            { latitude: b[1], longitude: b[0] }
+          );
+
+          let score = dist;
+          if (hasHeading) {
+            const angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
+            if (edge.isOneway) {
+              if (angleDiff > 90) {
+                // Opposing direction on a one-way carriageway (e.g. wrong side of a divided highway)
+                score += 50.0;
+              } else if (angleDiff < 45) {
+                score -= 3.0;
+              }
+            } else {
+              // Two-way road
+              if (angleDiff < 45) {
+                score -= 2.0;
+              } else if (angleDiff > 135) {
+                score += 5.0;
+              }
+            }
+          }
+
           results.push({
             u,
             v: edge.to,
             dist,
+            score,
             projCoord: [projX, projY],
+            tParam: t,
+            bearing: segBearing,
+            edgeKey,
+            edgeCoords: segs,
+            isOneway: !!edge.isOneway,
+            roadType: edge.roadType || '',
+            speedMps: edge.speedMps || 15.0,
           });
         }
       }
     }
 
-    results.sort((a, b) => a.dist - b.dist);
+    results.sort((a, b) => a.score - b.score);
 
     // Keep unique entry node IDs to give diverse routing options
-    const uniqueByU: { u: number; v: number; dist: number; projCoord: [number, number] }[] = [];
+    const uniqueCandidates: typeof results = [];
     const seenU = new Set<number>();
     for (const cand of results) {
       if (!seenU.has(cand.u)) {
         seenU.add(cand.u);
-        uniqueByU.push(cand);
-        if (uniqueByU.length >= maxCandidates) break;
+        uniqueCandidates.push(cand);
+        if (uniqueCandidates.length >= maxCandidates) break;
       }
     }
 
-    return uniqueByU;
+    return uniqueCandidates;
+  }
+
+  /**
+   * Snaps a GPS coordinate to the nearest road edge in the road network graph.
+   * Considers heading to distinguish parallel carriageways and includes hysteresis
+   * to prevent marker fluttering when moving slowly or stopped.
+   */
+  public snapToNearestRoad(
+    coord: RouteCoord,
+    heading?: number,
+    maxDistanceMeters: number = 25,
+    preferredEdgeKey?: string
+  ): { coordinate: RouteCoord; bearing: number; distance: number; edgeKey: string } | null {
+    if (this.nodes.size === 0) return null;
+    if (!Number.isFinite(coord?.latitude) || !Number.isFinite(coord?.longitude)) return null;
+
+    const latRad = (coord.latitude * Math.PI) / 180;
+    const cosLat = Math.cos(latRad);
+
+    const cx = Math.floor(coord.longitude / 0.02);
+    const cy = Math.floor(coord.latitude / 0.02);
+
+    let candidates: number[] = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${cx + dx}_${cy + dy}`;
+        const ids = this.grid.get(key);
+        if (ids) candidates = candidates.concat(ids);
+      }
+    }
+
+    const searchPool = candidates.length > 0 ? candidates : Array.from(this.nodes.keys());
+    const seenEdges = new Set<string>();
+
+    let bestCandidate: {
+      projX: number;
+      projY: number;
+      dist: number;
+      score: number;
+      bearing: number;
+      edgeKey: string;
+    } | null = null;
+
+    const hasHeading = heading !== undefined && heading !== null && !isNaN(heading);
+    const normHeading = hasHeading ? ((heading! % 360) + 360) % 360 : 0;
+
+    for (const u of searchPool) {
+      const edges = this.adjacency.get(u);
+      if (!edges) continue;
+
+      const nodeU = this.nodes.get(u);
+      if (!nodeU) continue;
+
+      for (const edge of edges) {
+        const edgeKey = `${u}_${edge.to}`;
+        if (seenEdges.has(edgeKey)) continue;
+        seenEdges.add(edgeKey);
+
+        const nodeV = this.nodes.get(edge.to);
+        if (!nodeV) continue;
+
+        const segs: [number, number][] =
+          edge.coords && edge.coords.length >= 2
+            ? edge.coords
+            : [
+                [nodeU.lng, nodeU.lat],
+                [nodeV.lng, nodeV.lat],
+              ];
+
+        for (let i = 0; i < segs.length - 1; i++) {
+          const a = segs[i];
+          const b = segs[i + 1];
+
+          const dx = (b[0] - a[0]) * cosLat;
+          const dy = b[1] - a[1];
+          const lenSq = dx * dx + dy * dy;
+
+          let t =
+            lenSq === 0
+              ? 0
+              : ((coord.longitude - a[0]) * cosLat * dx + (coord.latitude - a[1]) * dy) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+
+          const projX = a[0] + t * (b[0] - a[0]);
+          const projY = a[1] + t * (b[1] - a[1]);
+          const dist = calcDistance(coord, { latitude: projY, longitude: projX });
+
+          if (dist > maxDistanceMeters) continue;
+
+          const segBearing = calculateBearing(
+            { latitude: a[1], longitude: a[0] },
+            { latitude: b[1], longitude: b[0] }
+          );
+
+          let score = dist;
+
+          // Hysteresis: give slight preference to the currently snapped road edge
+          if (preferredEdgeKey && edgeKey === preferredEdgeKey) {
+            score -= 4.0;
+          }
+
+          // Heading & directionality: prevent snapping to opposite carriageway on divided roads
+          if (hasHeading) {
+            const angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
+            if (edge.isOneway) {
+              if (angleDiff > 90) {
+                // Opposite direction on one-way road (e.g. wrong carriageway)
+                score += 40.0;
+              } else if (angleDiff < 45) {
+                score -= 3.0;
+              }
+            } else {
+              // Two-way road: align with user's forward movement
+              if (angleDiff < 45) {
+                score -= 2.0;
+              } else if (angleDiff > 135) {
+                score += 5.0;
+              }
+            }
+          }
+
+          if (!bestCandidate || score < bestCandidate.score) {
+            bestCandidate = {
+              projX,
+              projY,
+              dist,
+              score,
+              bearing: segBearing,
+              edgeKey,
+            };
+          }
+        }
+      }
+    }
+
+    if (bestCandidate && bestCandidate.dist <= maxDistanceMeters) {
+      return {
+        coordinate: {
+          latitude: bestCandidate.projY,
+          longitude: bestCandidate.projX,
+        },
+        bearing: bestCandidate.bearing,
+        distance: bestCandidate.dist,
+        edgeKey: bestCandidate.edgeKey,
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -541,21 +782,83 @@ class LocalGraphRouterClass {
 
   public calculateRoute(
     fromCoord: RouteCoord,
-    toCoord: RouteCoord
+    toCoord: RouteCoord,
+    fromHeading?: number
   ): LocalRouteResult | null {
-    const startNode =
-      this.findNearestNode(fromCoord, true) || this.findNearestNode(fromCoord, false);
-    if (!startNode) return null;
+    if (this.nodes.size === 0) return null;
 
-    // Reject if start point is too far (>10km) from the offline road network
-    const startDist = calcDistance(fromCoord, { latitude: startNode.lat, longitude: startNode.lng });
-    if (startDist > 10000) {
-      console.warn(`[LocalGraphRouter] Start point too far from road network (${Math.round(startDist)}m)`);
-      return null;
+    // 1. Edge Projection for Start Point: find nearest road segments matching heading
+    const startCandidates = this.findNearestEdgeCandidates(fromCoord, 4, fromHeading);
+
+    // 2. Edge Projection for Destination Point
+    const endCandidates = this.findNearestEdgeCandidates(toCoord, 4);
+
+    // Check Case 1: Same Directed Road Edge
+    // If start and destination bind to the exact same directed road segment:
+    for (const sCand of startCandidates) {
+      for (const tCand of endCandidates) {
+        if (sCand.u === tCand.u && sCand.v === tCand.v) {
+          // If destination is ahead of start along the edge direction:
+          if (tCand.tParam >= sCand.tParam) {
+            const segDist = calcDistance(
+              { latitude: sCand.projCoord[1], longitude: sCand.projCoord[0] },
+              { latitude: tCand.projCoord[1], longitude: tCand.projCoord[0] }
+            );
+            return {
+              coordinates: [
+                [fromCoord.longitude, fromCoord.latitude],
+                sCand.projCoord,
+                tCand.projCoord,
+              ],
+              distance: sCand.dist + segDist + tCand.dist,
+              duration: Math.max(
+                10,
+                Math.round((sCand.dist + segDist + tCand.dist) / (sCand.speedMps || 15.0))
+              ),
+            };
+          }
+        }
+      }
     }
 
-    // 1. Edge Projection: find nearest road segments to destination pin
-    const endCandidates = this.findNearestEdgeCandidates(toCoord, 4);
+    interface StartCandidate {
+      startId: number;
+      curbCoord: [number, number];
+      distToPin: number;
+      speedMps: number;
+    }
+
+    const starts: StartCandidate[] = [];
+    for (const cand of startCandidates) {
+      if (cand.dist <= 150) {
+        // Forward entry into the graph at edge end node v
+        starts.push({
+          startId: cand.v,
+          curbCoord: cand.projCoord,
+          distToPin: cand.dist,
+          speedMps: cand.speedMps || 15.0,
+        });
+      }
+    }
+
+    // Fallback start node if no edge candidates matched or if too far
+    if (starts.length === 0) {
+      const fallbackStart =
+        this.findNearestNode(fromCoord, true) || this.findNearestNode(fromCoord, false);
+      if (fallbackStart) {
+        starts.push({
+          startId: fallbackStart.id,
+          curbCoord: [fallbackStart.lng, fallbackStart.lat],
+          distToPin: calcDistance(fromCoord, { latitude: fallbackStart.lat, longitude: fallbackStart.lng }),
+          speedMps: 15.0,
+        });
+      }
+    }
+
+    if (starts.length === 0 || starts[0].distToPin > 10000) {
+      console.warn(`[LocalGraphRouter] Start point too far from road network`);
+      return null;
+    }
 
     interface TargetCandidate {
       targetId: number;
@@ -582,134 +885,176 @@ class LocalGraphRouterClass {
       });
     }
 
-    if (targets.length === 0) return null;
-    if (targets[0].distToPin > 10000) {
-      console.warn(`[LocalGraphRouter] Destination too far from road network (${Math.round(targets[0].distToPin)}m)`);
+    if (targets.length === 0 || targets[0].distToPin > 10000) {
+      console.warn(`[LocalGraphRouter] Destination too far from road network`);
       return null;
     }
 
-    // 2. Try candidates in order (closest road first)
-    for (const target of targets) {
-      // Direct connection if starting at the exact same node
-      if (startNode.id === target.targetId) {
-        const directDist = calcDistance(fromCoord, {
-          latitude: target.curbCoord[1],
-          longitude: target.curbCoord[0],
-        });
-        return {
-          coordinates: [
+    // 3. Try start candidates and destination targets
+    for (const start of starts) {
+      const startNode = this.nodes.get(start.startId);
+      if (!startNode) continue;
+
+      for (const target of targets) {
+        // Direct connection if start node and target node match
+        if (start.startId === target.targetId) {
+          const directDist = calcDistance(
+            { latitude: start.curbCoord[1], longitude: start.curbCoord[0] },
+            { latitude: target.curbCoord[1], longitude: target.curbCoord[0] }
+          );
+          const coords: [number, number][] = [
             [fromCoord.longitude, fromCoord.latitude],
-            target.curbCoord,
-          ],
-          distance: directDist,
-          duration: Math.max(10, Math.round(directDist / 12.0)),
-        };
-      }
+          ];
+          if (
+            Math.abs(start.curbCoord[0] - fromCoord.longitude) > 0.000001 ||
+            Math.abs(start.curbCoord[1] - fromCoord.latitude) > 0.000001
+          ) {
+            coords.push(start.curbCoord);
+          }
+          if (
+            Math.abs(target.curbCoord[0] - start.curbCoord[0]) > 0.000001 ||
+            Math.abs(target.curbCoord[1] - start.curbCoord[1]) > 0.000001
+          ) {
+            coords.push(target.curbCoord);
+          }
+          return {
+            coordinates: coords,
+            distance: directDist + start.distToPin + target.distToPin,
+            duration: Math.max(10, Math.round((directDist + start.distToPin + target.distToPin) / 12.0)),
+          };
+        }
 
-      // A* Pathfinding from startNode.id to target.targetId
-      const targetNode = this.nodes.get(target.targetId);
-      if (!targetNode) continue;
+        // A* Pathfinding from start.startId to target.targetId
+        const targetNode = this.nodes.get(target.targetId);
+        if (!targetNode) continue;
 
-      const dists = new Map<number, number>();
-      const prev = new Map<
-        number,
-        { from: number; coords: [number, number][]; dist: number; speedMps: number }
-      >();
-      const heap = new MinHeap();
+        const dists = new Map<number, number>();
+        const prev = new Map<
+          number,
+          { from: number; coords: [number, number][]; dist: number; speedMps: number }
+        >();
+        const heap = new MinHeap();
 
-      dists.set(startNode.id, 0);
-      heap.push({ id: startNode.id, dist: 0, priority: 0 });
+        dists.set(start.startId, 0);
+        heap.push({ id: start.startId, dist: 0, priority: 0 });
 
-      const endTarget = { latitude: targetNode.lat, longitude: targetNode.lng };
+        const endTarget = { latitude: targetNode.lat, longitude: targetNode.lng };
 
-      while (!heap.isEmpty()) {
-        const curr = heap.pop()!;
-        if (curr.id === target.targetId) break;
-        if (curr.dist > (dists.get(curr.id) ?? Infinity)) continue;
+        while (!heap.isEmpty()) {
+          const curr = heap.pop()!;
+          if (curr.id === target.targetId) break;
+          if (curr.dist > (dists.get(curr.id) ?? Infinity)) continue;
 
-        const neighbors = this.adjacency.get(curr.id);
-        if (!neighbors) continue;
+          const neighbors = this.adjacency.get(curr.id);
+          if (!neighbors) continue;
 
-        for (const edge of neighbors) {
-          // Weighted cost: prioritizes paved highways and heavily penalizes forestry dirt tracks!
-          const alt = curr.dist + edge.weight;
-          if (alt < (dists.get(edge.to) ?? Infinity)) {
-            dists.set(edge.to, alt);
-            prev.set(edge.to, {
-              from: curr.id,
-              coords: edge.coords,
-              dist: edge.dist,
-              speedMps: edge.speedMps,
-            });
-            const toNode = this.nodes.get(edge.to);
-            const h = toNode
-              ? calcDistance({ latitude: toNode.lat, longitude: toNode.lng }, endTarget) * 1.0
-              : 0;
-            heap.push({ id: edge.to, dist: alt, priority: alt + h });
+          for (const edge of neighbors) {
+            // Weighted cost: prioritizes paved highways and heavily penalizes forestry dirt tracks!
+            const alt = curr.dist + edge.weight;
+            if (alt < (dists.get(edge.to) ?? Infinity)) {
+              dists.set(edge.to, alt);
+              prev.set(edge.to, {
+                from: curr.id,
+                coords: edge.coords,
+                dist: edge.dist,
+                speedMps: edge.speedMps,
+              });
+              const toNode = this.nodes.get(edge.to);
+              const h = toNode
+                ? calcDistance({ latitude: toNode.lat, longitude: toNode.lng }, endTarget) * 1.0
+                : 0;
+              heap.push({ id: edge.to, dist: alt, priority: alt + h });
+            }
           }
         }
-      }
 
-      const finalWeight = dists.get(target.targetId);
-      if (finalWeight === undefined) {
-        // Path to this candidate is unreachable (e.g. opposite side of divided road with no U-turn); try next candidate!
-        continue;
-      }
+        const finalWeight = dists.get(target.targetId);
+        if (finalWeight === undefined) {
+          // Path to this candidate is unreachable (e.g. opposite side of divided road with no U-turn); try next candidate!
+          continue;
+        }
 
-      // Reconstruct polyline path with all authentic road curves
-      let curr = target.targetId;
-      const pathSegments: [number, number][][] = [];
-      let totalRoadDist = 0;
-      let totalRoadTimeSec = 0;
+        // Reconstruct polyline path with all authentic road curves
+        let curr = target.targetId;
+        const pathSegments: [number, number][][] = [];
+        let totalRoadDist = 0;
+        let totalRoadTimeSec = 0;
 
-      while (curr && prev.has(curr)) {
-        const p = prev.get(curr)!;
-        pathSegments.unshift(p.coords);
-        totalRoadDist += p.dist;
-        totalRoadTimeSec += p.dist / (p.speedMps || 15.0);
-        curr = p.from;
-      }
+        while (curr && prev.has(curr)) {
+          const p = prev.get(curr)!;
+          pathSegments.unshift(p.coords);
+          totalRoadDist += p.dist;
+          totalRoadTimeSec += p.dist / (p.speedMps || 15.0);
+          curr = p.from;
+        }
 
-      const fullCoords: [number, number][] = [
-        [fromCoord.longitude, fromCoord.latitude],
-      ];
+        const fullCoords: [number, number][] = [
+          [fromCoord.longitude, fromCoord.latitude],
+        ];
 
-      if (pathSegments.length > 0) {
-        const firstPt = pathSegments[0][0];
+        // Append start curb projection point
         if (
-          Math.abs(firstPt[0] - fromCoord.longitude) > 0.00001 ||
-          Math.abs(firstPt[1] - fromCoord.latitude) > 0.00001
+          Math.abs(start.curbCoord[0] - fromCoord.longitude) > 0.000001 ||
+          Math.abs(start.curbCoord[1] - fromCoord.latitude) > 0.000001
         ) {
-          fullCoords.push(firstPt);
+          fullCoords.push(start.curbCoord);
         }
-        for (const seg of pathSegments) {
-          fullCoords.push(...seg.slice(1));
+
+        // Append forward edge segment to start node if distinct
+        if (
+          Math.abs(startNode.lng - start.curbCoord[0]) > 0.000001 ||
+          Math.abs(startNode.lat - start.curbCoord[1]) > 0.000001
+        ) {
+          fullCoords.push([startNode.lng, startNode.lat]);
         }
+
+        if (pathSegments.length > 0) {
+          for (const seg of pathSegments) {
+            for (const pt of seg) {
+              const last = fullCoords[fullCoords.length - 1];
+              if (
+                !last ||
+                Math.abs(last[0] - pt[0]) > 0.000001 ||
+                Math.abs(last[1] - pt[1]) > 0.000001
+              ) {
+                fullCoords.push(pt);
+              }
+            }
+          }
+        }
+
+        // 3. Curb-Stop: append projected curb drop-off point on the road
+        const lastPt = fullCoords[fullCoords.length - 1];
+        if (
+          Math.abs(lastPt[0] - target.curbCoord[0]) > 0.000001 ||
+          Math.abs(lastPt[1] - target.curbCoord[1]) > 0.00001
+        ) {
+          fullCoords.push(target.curbCoord);
+        }
+
+        const leadInDist =
+          start.distToPin +
+          calcDistance(
+            { latitude: start.curbCoord[1], longitude: start.curbCoord[0] },
+            { latitude: startNode.lat, longitude: startNode.lng }
+          );
+        const curbDist =
+          calcDistance(
+            { latitude: targetNode.lat, longitude: targetNode.lng },
+            { latitude: target.curbCoord[1], longitude: target.curbCoord[0] }
+          ) + target.distToPin;
+        const totalDist = leadInDist + totalRoadDist + curbDist;
+        const durationSec = Math.max(
+          10,
+          Math.round(leadInDist / start.speedMps + totalRoadTimeSec + curbDist / 8.0)
+        );
+
+        return {
+          coordinates: fullCoords,
+          distance: totalDist,
+          duration: durationSec,
+        };
       }
-
-      // 3. Curb-Stop: append projected curb drop-off point on the road
-      const lastPt = fullCoords[fullCoords.length - 1];
-      if (
-        Math.abs(lastPt[0] - target.curbCoord[0]) > 0.00001 ||
-        Math.abs(lastPt[1] - target.curbCoord[1]) > 0.00001
-      ) {
-        fullCoords.push(target.curbCoord);
-      }
-      // Note: We deliberately do NOT push [toCoord.longitude, toCoord.latitude]
-      // into the building or across median barriers. The driving route ends cleanly on the road curb!
-
-      const curbDist = calcDistance(
-        { latitude: targetNode.lat, longitude: targetNode.lng },
-        { latitude: target.curbCoord[1], longitude: target.curbCoord[0] }
-      );
-      const totalDist = totalRoadDist + curbDist;
-      const durationSec = Math.max(10, Math.round(totalRoadTimeSec + curbDist / 8.0));
-
-      return {
-        coordinates: fullCoords,
-        distance: totalDist,
-        duration: durationSec,
-      };
     }
 
     console.warn(`[LocalGraphRouter] No path found between points`);

@@ -30,7 +30,8 @@ export function useOfflineRouter() {
     stopIds: number[] = [],
     fromCoord?: { latitude: number; longitude: number },
     toCoord?: { latitude: number; longitude: number },
-    stopCoords?: { latitude: number; longitude: number }[]
+    stopCoords?: { latitude: number; longitude: number }[],
+    fromHeading?: number
   ): Promise<OfflineRouteResult> => {
     setIsLoading(true);
     try {
@@ -116,7 +117,11 @@ export function useOfflineRouter() {
 
         // Condition 2: If online fetch didn't run or wasn't used: calculate via on-device LocalGraphRouter!
         if (!segmentCoords) {
-          const localResult = LocalGraphRouter.calculateRoute(segmentFrom.coord, segmentTo.coord);
+          const localResult = LocalGraphRouter.calculateRoute(
+            segmentFrom.coord,
+            segmentTo.coord,
+            i === 0 ? fromHeading : undefined
+          );
           if (localResult && localResult.coordinates.length >= 2) {
             segmentCoords = localResult.coordinates;
             segmentDistance = localResult.distance;
