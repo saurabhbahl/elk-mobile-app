@@ -12,11 +12,12 @@ import { useAppContent } from '../contexts/AppContentContext';
 import { LocalGraphRouter } from '../services/LocalGraphRouter';
 import { calcDistance, decodePolyline } from '../utils/mapUtils';
 
-interface OfflineRouteResult {
+export interface OfflineRouteResult {
   coordinates: [number, number][] | null;
   duration: number;
   distance: number;
   fromCache: boolean;
+  roundabouts?: any[];
 }
 
 export function useOfflineRouter() {
@@ -170,11 +171,13 @@ export function useOfflineRouter() {
       }
 
       console.log(`[OfflineRouter] Total route: ${allCoords.length} points, ${totalDistance}m, ${totalDuration}s`);
+      const allRoundabouts = LocalGraphRouter.detectRoundaboutsInPolyline(allCoords);
       return {
         coordinates: allCoords.length > 0 ? allCoords : null,
         duration: totalDuration,
         distance: totalDistance,
         fromCache: isAllFromCache,
+        roundabouts: allRoundabouts,
       };
     } finally {
       setIsLoading(false);

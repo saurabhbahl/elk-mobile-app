@@ -14,10 +14,19 @@ export interface RouteCoord {
   longitude: number;
 }
 
+export interface RoundaboutManeuver {
+  entryIndex: number;
+  exitIndex: number;
+  exitNumber: number;
+  name?: string;
+  roundaboutId?: number;
+}
+
 export interface LocalRouteResult {
   coordinates: [number, number][];
   distance: number;  // meters
   duration: number;  // seconds
+  roundabouts?: RoundaboutManeuver[];
 }
 
 interface GraphNode {
@@ -34,6 +43,8 @@ interface GraphEdge {
   coords: [number, number][];
   isOneway?: boolean;
   roadType?: string;
+  isRoundabout?: boolean;
+  roundaboutId?: number;
 }
 
 interface SpeedProfile {
@@ -130,6 +141,15 @@ class MinHeap {
   }
 }
 
+export interface RoundaboutInfo {
+  id: number;
+  name?: string;
+  nodes: (number | string)[];
+  coords: [number, number][];
+  exitNodes: Set<number | string>;
+  entryNodes: Set<number | string>;
+}
+
 class LocalGraphRouterClass {
   private nodes: Map<number, GraphNode> = new Map();
   private adjacency: Map<number, GraphEdge[]> = new Map();
@@ -140,6 +160,9 @@ class LocalGraphRouterClass {
   private isInitialized = false;
   private hasLoadedFullRoads = false;
   private initPromise: Promise<void> | null = null;
+
+  public roundabouts = new Map<number, RoundaboutInfo>();
+  public nodeToRoundabout = new Map<number | string, number>();
 
   public bounds = {
     minLat: Infinity,
@@ -201,7 +224,9 @@ class LocalGraphRouterClass {
     speedMps: number,
     coords: [number, number][],
     isOneway: boolean = false,
-    roadType: string = ''
+    roadType: string = '',
+    isRoundabout: boolean = false,
+    roundaboutId?: number
   ) {
     if (u === v) return;
     if (!this.adjacency.has(u)) this.adjacency.set(u, []);
@@ -213,6 +238,8 @@ class LocalGraphRouterClass {
       coords,
       isOneway,
       roadType,
+      isRoundabout,
+      roundaboutId,
     });
   }
 
@@ -221,7 +248,9 @@ class LocalGraphRouterClass {
     isOneway: boolean = false,
     isReverse: boolean = false,
     roadType: string = '',
-    nodeIds?: (number | string)[]
+    nodeIds?: (number | string)[],
+    isRoundabout: boolean = false,
+    roundaboutId?: number
   ) {
     if (!coords || !Array.isArray(coords) || coords.length < 2) return;
     const profile = ROAD_PROFILES[roadType.toLowerCase()] || DEFAULT_ROAD_PROFILE;
@@ -243,15 +272,15 @@ class LocalGraphRouterClass {
         if (isOneway) {
           if (isReverse) {
             // Reverse oneway (e.g. oneway="-1"): edge goes v -> u
-            this.addEdge(v, u, d, weight, speedMps, [c2, c1], true, roadType);
+            this.addEdge(v, u, d, weight, speedMps, [c2, c1], true, roadType, isRoundabout, roundaboutId);
           } else {
             // Standard forward oneway (e.g. oneway="yes", roundabouts): edge goes u -> v
-            this.addEdge(u, v, d, weight, speedMps, [c1, c2], true, roadType);
+            this.addEdge(u, v, d, weight, speedMps, [c1, c2], true, roadType, isRoundabout, roundaboutId);
           }
         } else {
           // Standard two-way road: both directions are legal
-          this.addEdge(u, v, d, weight, speedMps, [c1, c2], false, roadType);
-          this.addEdge(v, u, d, weight, speedMps, [c2, c1], false, roadType);
+          this.addEdge(u, v, d, weight, speedMps, [c1, c2], false, roadType, isRoundabout, roundaboutId);
+          this.addEdge(v, u, d, weight, speedMps, [c2, c1], false, roadType, isRoundabout, roundaboutId);
         }
       }
     }
@@ -297,6 +326,8 @@ class LocalGraphRouterClass {
           this.grid.clear();
           this.osmNodeToGraphId.clear();
           this.coordToGraphId.clear();
+          this.roundabouts.clear();
+          this.nodeToRoundabout.clear();
           this.nextNodeId = 1;
           this.bounds = {
             minLat: Infinity,
@@ -326,6 +357,44 @@ class LocalGraphRouterClass {
             }];
           }
 
+          // Pass 1: Catalog all roundabout features and map their nodes
+          for (const r of data.roads) {
+            const props = r.properties || {};
+            const isRoundabout =
+              r.roundabout === true ||
+              r.roundabout === 1 ||
+              r.roundabout === 'yes' ||
+              r.junction === 'roundabout' ||
+              r.junction === 'circular' ||
+              props.roundabout === true ||
+              props.roundabout === 1 ||
+              props.roundabout === 'yes' ||
+              props.junction === 'roundabout' ||
+              props.junction === 'circular';
+
+            const nodeIds = Array.isArray(r.node_ids)
+              ? r.node_ids
+              : Array.isArray(r.nodes)
+              ? r.nodes
+              : undefined;
+
+            if (isRoundabout && nodeIds && nodeIds.length > 0) {
+              const rbInfo: RoundaboutInfo = {
+                id: r.id,
+                name: r.name,
+                nodes: nodeIds,
+                coords: r.coords || [],
+                exitNodes: new Set(),
+                entryNodes: new Set(),
+              };
+              this.roundabouts.set(r.id, rbInfo);
+              for (const nid of nodeIds) {
+                this.nodeToRoundabout.set(nid, r.id);
+              }
+            }
+          }
+
+          // Pass 2: Index all roads and determine exit/entry nodes for roundabouts
           for (const r of data.roads) {
             if (r.coords && Array.isArray(r.coords)) {
               const props = r.properties || {};
@@ -359,6 +428,7 @@ class LocalGraphRouterClass {
                 props.junction === 'roundabout' ||
                 props.junction === 'circular';
 
+              const isRoundabout = this.roundabouts.has(r.id);
               const isOneway = isForwardOneway || isReverse;
               const roadType = (r.type || r.highway || props.type || props.highway || '').toLowerCase();
               const nodeIds = Array.isArray(r.node_ids)
@@ -366,7 +436,40 @@ class LocalGraphRouterClass {
                 : Array.isArray(r.nodes)
                 ? r.nodes
                 : undefined;
-              this.indexPolyline(r.coords, isOneway, isReverse, roadType, nodeIds);
+
+              // If a connecting road touches a roundabout, record which branch it is (exit vs entrance)
+              if (!isRoundabout && nodeIds) {
+                for (let i = 0; i < nodeIds.length; i++) {
+                  const nid = nodeIds[i];
+                  const rbId = this.nodeToRoundabout.get(nid);
+                  if (rbId !== undefined) {
+                    const rb = this.roundabouts.get(rbId);
+                    if (rb) {
+                      if (!isOneway) {
+                        rb.exitNodes.add(nid);
+                        rb.entryNodes.add(nid);
+                      } else if (isReverse ? (i === nodeIds.length - 1) : (i === 0)) {
+                        rb.exitNodes.add(nid); // Road flows OUT of roundabout -> EXIT
+                      } else if (isReverse ? (i === 0) : (i === nodeIds.length - 1)) {
+                        rb.entryNodes.add(nid); // Road flows INTO roundabout -> ENTRANCE
+                      } else {
+                        rb.exitNodes.add(nid);
+                        rb.entryNodes.add(nid);
+                      }
+                    }
+                  }
+                }
+              }
+
+              this.indexPolyline(
+                r.coords,
+                isOneway,
+                isReverse,
+                roadType,
+                nodeIds,
+                isRoundabout,
+                isRoundabout ? r.id : undefined
+              );
             }
           }
           this.hasLoadedFullRoads = true;
@@ -547,12 +650,13 @@ class LocalGraphRouterClass {
           );
 
           let score = dist;
-          if (hasHeading) {
+          if (hasHeading && dist < 15) {
             const angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
             if (edge.isOneway) {
               if (angleDiff > 90) {
-                // Opposing direction on a one-way carriageway (e.g. wrong side of a divided highway)
-                score += 50.0;
+                // Mild penalty (+5m) as a tie-breaker between equidistant edges,
+                // but never large enough to leap across a solid median (12-30m away)
+                score += 5.0;
               } else if (angleDiff < 45) {
                 score -= 3.0;
               }
@@ -561,7 +665,7 @@ class LocalGraphRouterClass {
               if (angleDiff < 45) {
                 score -= 2.0;
               } else if (angleDiff > 135) {
-                score += 5.0;
+                score += 3.0;
               }
             }
           }
@@ -780,6 +884,126 @@ class LocalGraphRouterClass {
     return d <= maxDistanceMeters;
   }
 
+  /**
+   * Computes which exit number (1st, 2nd, 3rd, 4th...) a vehicle takes when traversing a roundabout.
+   */
+  public getExitNumber(
+    roundaboutId: number,
+    enterNode: number | string,
+    exitNode: number | string
+  ): number {
+    const rb = this.roundabouts.get(roundaboutId);
+    if (!rb || !rb.nodes.length) return 1;
+
+    const nodes = rb.nodes;
+    const enterIdx = nodes.indexOf(enterNode);
+    const exitIdx = nodes.indexOf(exitNode);
+    if (enterIdx === -1 || exitIdx === -1) return 1;
+
+    let count = 0;
+    let idx = enterIdx;
+    const n = nodes.length - 1;
+    if (n <= 0) return 1;
+
+    while (true) {
+      idx = (idx + 1) % n;
+      const nid = nodes[idx];
+      if (rb.exitNodes.has(nid)) {
+        count++;
+      }
+      if (nid === exitNode) {
+        break;
+      }
+      if (idx === enterIdx) break;
+    }
+    return Math.max(1, count);
+  }
+
+  /**
+   * Finds the closest roundabout node ID to a given coordinate.
+   */
+  public findClosestRbNode(rb: RoundaboutInfo, lng: number, lat: number): number | string {
+    let bestDist = Infinity;
+    let bestNid = rb.nodes[0];
+    for (let i = 0; i < rb.coords.length; i++) {
+      const c = rb.coords[i];
+      const dx = c[0] - lng;
+      const dy = c[1] - lat;
+      const dSq = dx * dx + dy * dy;
+      if (dSq < bestDist) {
+        bestDist = dSq;
+        if (rb.nodes[i] !== undefined) {
+          bestNid = rb.nodes[i];
+        }
+      }
+    }
+    return bestNid;
+  }
+
+  /**
+   * Detects all roundabout maneuvers traversed by an arbitrary route polyline.
+   */
+  public detectRoundaboutsInPolyline(coords: [number, number][]): RoundaboutManeuver[] {
+    if (!coords || coords.length < 3 || this.roundabouts.size === 0) return [];
+    const maneuvers: RoundaboutManeuver[] = [];
+
+    for (const [rbId, rb] of this.roundabouts.entries()) {
+      if (!rb.coords || rb.coords.length === 0) continue;
+
+      let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      for (const c of rb.coords) {
+        if (c[0] < minLng) minLng = c[0];
+        if (c[0] > maxLng) maxLng = c[0];
+        if (c[1] < minLat) minLat = c[1];
+        if (c[1] > maxLat) maxLat = c[1];
+      }
+      // Expand bbox by ~25 meters (~0.00025 deg)
+      minLng -= 0.0003; maxLng += 0.0003;
+      minLat -= 0.0003; maxLat += 0.0003;
+
+      let inRbStart = -1;
+      let inRbEnd = -1;
+
+      for (let i = 0; i < coords.length; i++) {
+        const pt = coords[i];
+        if (pt[0] >= minLng && pt[0] <= maxLng && pt[1] >= minLat && pt[1] <= maxLat) {
+          let close = false;
+          for (const rc of rb.coords) {
+            const d = calcDistance({ latitude: pt[1], longitude: pt[0] }, { latitude: rc[1], longitude: rc[0] });
+            if (d <= 20) {
+              close = true;
+              break;
+            }
+          }
+          if (close) {
+            if (inRbStart === -1) inRbStart = i;
+            inRbEnd = i;
+          } else if (inRbStart !== -1 && (i - inRbEnd > 2)) {
+            break;
+          }
+        } else if (inRbStart !== -1 && (i - inRbEnd > 2)) {
+          break;
+        }
+      }
+
+      if (inRbStart !== -1 && inRbEnd > inRbStart) {
+        const enterNode = this.findClosestRbNode(rb, coords[inRbStart][0], coords[inRbStart][1]);
+        const exitNode = this.findClosestRbNode(rb, coords[inRbEnd][0], coords[inRbEnd][1]);
+        const exitNumber = this.getExitNumber(rbId, enterNode, exitNode);
+
+        maneuvers.push({
+          entryIndex: inRbStart,
+          exitIndex: inRbEnd,
+          exitNumber,
+          name: rb.name || 'Roundabout',
+          roundaboutId: rbId,
+        });
+      }
+    }
+
+    return maneuvers.sort((a, b) => a.entryIndex - b.entryIndex);
+  }
+
   public calculateRoute(
     fromCoord: RouteCoord,
     toCoord: RouteCoord,
@@ -829,8 +1053,12 @@ class LocalGraphRouterClass {
     }
 
     const starts: StartCandidate[] = [];
+    const minStartDist = startCandidates.length > 0 ? startCandidates[0].dist : Infinity;
+    const maxAllowedStartDist = minStartDist <= 10 ? minStartDist + 3.0 : minStartDist + 8.0;
     for (const cand of startCandidates) {
-      if (cand.dist <= 150) {
+      // Disallow any candidate that is significantly farther than the true closest road
+      // (prevents leaping across solid highway medians 6-30m away)
+      if (cand.dist <= 150 && cand.dist <= maxAllowedStartDist) {
         // Forward entry into the graph at edge end node v
         starts.push({
           startId: cand.v,
@@ -867,12 +1095,16 @@ class LocalGraphRouterClass {
     }
 
     const targets: TargetCandidate[] = [];
+    const minEndDist = endCandidates.length > 0 ? endCandidates[0].dist : Infinity;
+    const maxAllowedEndDist = minEndDist <= 10 ? minEndDist + 3.0 : minEndDist + 8.0;
     for (const cand of endCandidates) {
-      targets.push({
-        targetId: cand.u,
-        curbCoord: cand.projCoord,
-        distToPin: cand.dist,
-      });
+      if (cand.dist <= 150 && cand.dist <= maxAllowedEndDist) {
+        targets.push({
+          targetId: cand.u,
+          curbCoord: cand.projCoord,
+          distToPin: cand.dist,
+        });
+      }
     }
 
     // Fallback to closest junction node if no edges matched
@@ -1049,10 +1281,13 @@ class LocalGraphRouterClass {
           Math.round(leadInDist / start.speedMps + totalRoadTimeSec + curbDist / 8.0)
         );
 
+        const roundabouts = this.detectRoundaboutsInPolyline(fullCoords);
+
         return {
           coordinates: fullCoords,
           distance: totalDist,
           duration: durationSec,
+          roundabouts,
         };
       }
     }

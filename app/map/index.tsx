@@ -75,6 +75,7 @@ import {
   createLineFeature,
   decodePolyline,
   findNearestPointIndex,
+  getOrdinal,
   getTurnInstruction,
   snapToRoute,
   toLngLat,
@@ -85,7 +86,7 @@ import { useAppContent } from "../../src/contexts/AppContentContext";
 import { useOfflineMap } from "../../src/hooks/useOfflineMap";
 import { useOfflineRouter } from "../../src/hooks/useOfflineRouter";
 import { useRouteLoader } from "../../src/hooks/useRouteLoader";
-import { LocalGraphRouter } from "../../src/services/LocalGraphRouter";
+import { LocalGraphRouter, RoundaboutManeuver } from "../../src/services/LocalGraphRouter";
 import { isValidData } from "../../src/utils/validation";
 import { useMapReset, useNavigationMode } from "../_layout";
 
@@ -374,13 +375,17 @@ function MapScreen() {
   const snapResult = useMemo(() => {
     if (!location) return null;
 
-    // Tier 1: When navigating, prioritize snapping directly to active route polyline within 15 meters
+    // Tier 1: When navigating, prioritize snapping directly to route polyline within 15 meters
+    const navRouteCoords = (
+      fullRouteRef.current?.features?.[0]?.geometry?.coordinates ?? activeRouteCoords
+    ) as [number, number][] | undefined;
+
     if (
       isNavigating &&
-      activeRouteCoords &&
-      activeRouteCoords.length >= 2
+      navRouteCoords &&
+      navRouteCoords.length >= 2
     ) {
-      const routeSnap = snapToRoute(location, activeRouteCoords, 15);
+      const routeSnap = snapToRoute(location, navRouteCoords, 15);
       if (routeSnap) {
         lastSnappedEdgeKey.current = undefined;
         return routeSnap;
@@ -1355,6 +1360,14 @@ function MapScreen() {
           return;
         }
 
+        // Heading is only meaningful when routing from live GPS ("Current Location"), never for static POIs
+        const isFromCurrentLoc =
+          from.title === "Current Location" || from.id === 999 || from.id === -1;
+        const navHeading =
+          isFromCurrentLoc && (headingRef.current || 0) > 0
+            ? headingRef.current
+            : undefined;
+
         // Get route from SQLite cache (falls back to OSRM if not cached)
         const result = await getRouteBetween(
           from.id,
@@ -1363,7 +1376,7 @@ function MapScreen() {
           from.coordinate,
           to.coordinate,
           stops.map((s) => s.coordinate),
-          headingRef.current || undefined,
+          navHeading,
         );
 
         if (!result.coordinates || result.coordinates.length < 2) {
@@ -1379,6 +1392,9 @@ function MapScreen() {
         }
 
         const coords = result.coordinates;
+        const roundabouts =
+          result.roundabouts ||
+          LocalGraphRouter.detectRoundaboutsInPolyline(coords);
 
         const routeData = {
           type: "FeatureCollection",
@@ -1389,6 +1405,7 @@ function MapScreen() {
                 id: "active-route",
                 startWaypoint: from,
                 endWaypoint: to,
+                roundabouts,
               },
               geometry: {
                 type: "LineString",
@@ -1565,35 +1582,44 @@ function MapScreen() {
       // Allows slight backward GPS jitter (-2 points) and forward search up to 25 points (~250-300m)
       // Prevents progress from leaping across U-turns, roundabouts, or to future sections of the route
       const minSearchIdx = Math.max(0, curIdx - 2);
-      const maxSearchIdx = Math.min(coords.length - 1, curIdx + 25);
+      const maxSearchIdx = Math.min(coords.length - 2, curIdx + 25);
 
-      let nearestIdx = curIdx;
-      let minDistance = Infinity;
+      const latRad = (location.latitude * Math.PI) / 180;
+      const cosLat = Math.cos(latRad);
+
+      let bestDist = Infinity;
+      let bestSegIdx = curIdx;
+      let bestProj: [number, number] = coords[Math.min(curIdx, coords.length - 1)];
 
       for (let i = minSearchIdx; i <= maxSearchIdx; i++) {
-        const pt = coords[i];
-        const d = calcDistance(location, { latitude: pt[1], longitude: pt[0] });
-        if (d < minDistance) {
-          minDistance = d;
-          nearestIdx = i;
+        const a = coords[i];
+        const b = coords[i + 1];
+        const dx = (b[0] - a[0]) * cosLat;
+        const dy = b[1] - a[1];
+        const lenSq = dx * dx + dy * dy;
+        let t = 0;
+        if (lenSq > 0) {
+          t = ((location.longitude - a[0]) * cosLat * dx + (location.latitude - a[1]) * dy) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+        }
+        const projLng = a[0] + t * (b[0] - a[0]);
+        const projLat = a[1] + t * (b[1] - a[1]);
+        const d = calcDistance(location, { latitude: projLat, longitude: projLng });
+        if (d < bestDist) {
+          bestDist = d;
+          bestSegIdx = i;
+          bestProj = [projLng, projLat];
         }
       }
 
       // Only advance progress forward when locked onto the path within 45 meters
-      if (minDistance <= 45) {
-        currentRouteIndexRef.current = Math.max(curIdx, nearestIdx);
+      if (bestDist <= 45) {
+        currentRouteIndexRef.current = Math.max(curIdx, bestSegIdx);
       }
       const effectiveIdx = currentRouteIndexRef.current;
 
       if (effectiveIdx >= 0 && coords[effectiveIdx]) {
-        const nearestCoord = {
-          longitude: coords[effectiveIdx][0],
-          latitude: coords[effectiveIdx][1],
-        };
-        const distanceToPath =
-          minDistance !== Infinity
-            ? minDistance
-            : calcDistance(location, nearestCoord);
+        const distanceToPath = bestDist;
 
         // Recalculate route if off-path (both offline router and online OSRM will handle it)
         const OFF_PATH_THRESHOLD = 50; // meters
@@ -1637,14 +1663,19 @@ function MapScreen() {
           }
         }
 
-        // Remaining distance — sum from verified progress index to end
-        const remaining = coords.slice(effectiveIdx);
+        // Remaining distance — sum from vehicle projected location to next vertex and to end
         let totalDist = 0;
-        for (let i = 0; i < remaining.length - 1; i++) {
+        if (effectiveIdx < coords.length - 1) {
           totalDist += calcDistance(
-            { latitude: remaining[i][1], longitude: remaining[i][0] },
-            { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] },
+            { latitude: bestProj[1], longitude: bestProj[0] },
+            { latitude: coords[effectiveIdx + 1][1], longitude: coords[effectiveIdx + 1][0] },
           );
+          for (let i = effectiveIdx + 1; i < coords.length - 1; i++) {
+            totalDist += calcDistance(
+              { latitude: coords[i][1], longitude: coords[i][0] },
+              { latitude: coords[i + 1][1], longitude: coords[i + 1][0] },
+            );
+          }
         }
         const distMi = totalDist / 1609.34;
         const timeMin = Math.max(1, Math.round(distMi * 2.5));
@@ -1654,71 +1685,171 @@ function MapScreen() {
           minute: "2-digit",
         });
 
-        // Next turn instruction — look ahead up to 2 km
+        // ── Active route polyline: begins EXACTLY at the vehicle position ───────
+        // Eliminates both the gap ahead of the arrow and the lingering tail behind it!
+        const activeCoords: [number, number][] = [
+          bestProj,
+          ...coords.slice(effectiveIdx + 1),
+        ];
+
+        // Next turn instruction — find the next genuine intersection maneuver ahead
+        const roundabouts: RoundaboutManeuver[] = feature.properties?.roundabouts || [];
+
         let instruction = {
           text: "Continue Straight",
           distance: "",
           icon: "straight" as never,
         };
-        if (remaining.length > 3) {
-          const curBearing = calculateBearing(
-            { latitude: remaining[0][1], longitude: remaining[0][0] },
-            { latitude: remaining[1][1], longitude: remaining[1][0] },
+
+        if (totalDist <= 40) {
+          instruction = {
+            text: `Arriving at ${toWP.title || "Destination"}`,
+            distance: totalDist > 10 ? `In ${Math.round(totalDist * 3.28084)} ft` : "Arrived",
+            icon: "location-on" as never,
+          };
+        } else {
+          // Check for active or upcoming roundabout
+          // 1. Is the vehicle currently inside a roundabout?
+          const currentRb = roundabouts.find(
+            (rb) => effectiveIdx >= rb.entryIndex && effectiveIdx < rb.exitIndex
           );
 
-          let distAcc = 0;
-          for (let i = 1; i < Math.min(remaining.length - 1, 80); i++) {
-            const segDist = calcDistance(
-              { latitude: remaining[i - 1][1], longitude: remaining[i - 1][0] },
-              { latitude: remaining[i][1], longitude: remaining[i][0] },
+          // 2. Is there an upcoming roundabout ahead?
+          const upcomingRb = !currentRb
+            ? roundabouts.find((rb) => effectiveIdx < rb.entryIndex)
+            : undefined;
+
+          // Distance along the route to upcoming roundabout entrance
+          let distToUpcomingRb = Infinity;
+          if (upcomingRb) {
+            distToUpcomingRb = calcDistance(
+              { latitude: bestProj[1], longitude: bestProj[0] },
+              {
+                latitude: coords[Math.min(effectiveIdx + 1, coords.length - 1)][1],
+                longitude: coords[Math.min(effectiveIdx + 1, coords.length - 1)][0],
+              }
             );
-            distAcc += segDist;
-            if (distAcc > 2000) break;
-            const segBearing = calculateBearing(
-              { latitude: remaining[i][1], longitude: remaining[i][0] },
-              { latitude: remaining[i + 1][1], longitude: remaining[i + 1][0] },
-            );
-            const turn = getTurnInstruction(curBearing, segBearing);
-            if (turn.text !== "Continue Straight") {
-              const distStr =
-                distAcc > 400
-                  ? `${(distAcc / 1609.34).toFixed(1)} mi`
-                  : `${Math.round(distAcc * 3.28084)} ft`;
-              instruction = { ...turn, distance: `In ${distStr}` } as any;
-              break;
+            for (let i = effectiveIdx + 1; i < upcomingRb.entryIndex; i++) {
+              distToUpcomingRb += calcDistance(
+                { latitude: coords[i][1], longitude: coords[i][0] },
+                { latitude: coords[i + 1][1], longitude: coords[i + 1][0] }
+              );
             }
           }
-          // If no turn found, show distance to next significant point
-          if (!instruction.distance) {
-            instruction.distance =
-              distMi > 0.1 ? `${distMi.toFixed(1)} mi` : "Arriving";
+
+          if (currentRb) {
+            // Vehicle is currently circulating inside the roundabout!
+            // Compute distance from vehicle position to exit
+            let distToExit = calcDistance(
+              { latitude: bestProj[1], longitude: bestProj[0] },
+              {
+                latitude: coords[Math.min(effectiveIdx + 1, coords.length - 1)][1],
+                longitude: coords[Math.min(effectiveIdx + 1, coords.length - 1)][0],
+              }
+            );
+            for (let i = effectiveIdx + 1; i < currentRb.exitIndex; i++) {
+              distToExit += calcDistance(
+                { latitude: coords[i][1], longitude: coords[i][0] },
+                { latitude: coords[i + 1][1], longitude: coords[i + 1][0] }
+              );
+            }
+
+            const ordinal = getOrdinal(currentRb.exitNumber);
+            const distStr =
+              distToExit > 400
+                ? `${(distToExit / 1609.34).toFixed(1)} mi`
+                : `${Math.round(distToExit * 3.28084)} ft`;
+
+            instruction = {
+              text: `Take the ${ordinal} exit`,
+              distance: `In ${distStr}`,
+              icon: "roundabout-left" as never,
+            };
+          } else if (upcomingRb && distToUpcomingRb <= 600) {
+            // Approaching roundabout within 600m (~2000 ft)
+            const ordinal = getOrdinal(upcomingRb.exitNumber);
+            const distStr =
+              distToUpcomingRb > 400
+                ? `${(distToUpcomingRb / 1609.34).toFixed(1)} mi`
+                : `${Math.round(distToUpcomingRb * 3.28084)} ft`;
+
+            instruction = {
+              text: `At the roundabout, take the ${ordinal} exit`,
+              distance: `In ${distStr}`,
+              icon: "roundabout-left" as never,
+            };
+          } else if (activeCoords.length > 2) {
+            let distAcc = 0;
+            let prevBearing = calculateBearing(
+              { latitude: activeCoords[0][1], longitude: activeCoords[0][0] },
+              { latitude: activeCoords[1][1], longitude: activeCoords[1][0] },
+            );
+
+            for (let i = 1; i < activeCoords.length - 1; i++) {
+              const segDist = calcDistance(
+                { latitude: activeCoords[i - 1][1], longitude: activeCoords[i - 1][0] },
+                { latitude: activeCoords[i][1], longitude: activeCoords[i][0] },
+              );
+              distAcc += segDist;
+              if (distAcc > 3000) break;
+
+              // Do NOT evaluate internal vertices of a roundabout as regular turns
+              const coordGlobalIdx = effectiveIdx + i;
+              const insideAnyRb = roundabouts.some(
+                (rb) => coordGlobalIdx >= rb.entryIndex && coordGlobalIdx <= rb.exitIndex
+              );
+              if (insideAnyRb) {
+                continue;
+              }
+
+              const segBearing = calculateBearing(
+                { latitude: activeCoords[i][1], longitude: activeCoords[i][0] },
+                { latitude: activeCoords[i + 1][1], longitude: activeCoords[i + 1][0] },
+              );
+
+              // Compute turn deflection angle AT this intersection node (between incoming and outgoing segments)
+              let diff = segBearing - prevBearing;
+              if (diff > 180) diff -= 360;
+              if (diff < -180) diff += 360;
+
+              // Only report genuine intersection turns (deflection >= 35 degrees)
+              if (Math.abs(diff) >= 35) {
+                const turn = getTurnInstruction(prevBearing, segBearing);
+                if (turn.text !== "Continue Straight") {
+                  const distStr =
+                    distAcc > 400
+                      ? `${(distAcc / 1609.34).toFixed(1)} mi`
+                      : `${Math.round(distAcc * 3.28084)} ft`;
+                  instruction = { ...turn, distance: `In ${distStr}` } as any;
+                  break;
+                }
+              }
+
+              prevBearing = segBearing;
+            }
+
+            // If no turn found, show distance to next significant point
+            if (!instruction.distance) {
+              instruction.distance =
+                distMi > 0.1 ? `${distMi.toFixed(1)} mi` : "Arriving";
+            }
           }
         }
 
-        let didSlice = false;
-        if (effectiveIdx !== lastSliceIdx.current) {
-          lastSliceIdx.current = effectiveIdx;
-          didSlice = true;
-          const routeSliceStart = Math.min(
-            effectiveIdx,
-            Math.max(0, coords.length - 2),
-          );
-          const activeCoords = coords.slice(routeSliceStart);
-          const slicedFeatureCollection = {
-            ...fullRouteRef.current,
-            features: [
-              {
-                ...feature,
-                geometry: {
-                  ...feature.geometry,
-                  coordinates: activeCoords,
-                },
+        const slicedFeatureCollection = {
+          ...fullRouteRef.current,
+          features: [
+            {
+              ...feature,
+              geometry: {
+                ...feature.geometry,
+                coordinates: activeCoords,
               },
-            ],
-          };
-          activeRouteRef.current = slicedFeatureCollection;
-          setActiveNavRouteData(slicedFeatureCollection);
-        }
+            },
+          ],
+        };
+        activeRouteRef.current = slicedFeatureCollection;
+        setActiveNavRouteData(slicedFeatureCollection);
 
         // ── Destination arrival detection ──────────────────────────────
         // Requires ALL conditions:
@@ -1759,7 +1890,6 @@ function MapScreen() {
             nextInstruction: instruction,
           };
           if (
-            !didSlice &&
             prev.distanceRemaining === next.distanceRemaining &&
             prev.timeRemaining === next.timeRemaining &&
             prev.arrivalTime === next.arrivalTime &&
@@ -1786,6 +1916,7 @@ function MapScreen() {
     lastSliceIdx.current = -1;
     currentRouteIndexRef.current = 0;
     consecutiveArrivalCount.current = 0;
+    headingRef.current = 0;
 
     router.setParams({
       routeToWaypointId: undefined,
@@ -2234,7 +2365,7 @@ function MapScreen() {
               <Marker
                 id="user-heading-arrow"
                 lngLat={[displayLocation.longitude, displayLocation.latitude]}
-                anchor="center"
+                anchor={{ x: 0.5, y: 0.5 }}
               >
                 {/* Pulse ring behind the arrow */}
                 <View style={styles.userArrowContainer}>
@@ -3738,8 +3869,6 @@ const createStyles = (
     userArrowContainer: {
       width: 48,
       height: 48,
-      marginTop: -24,
-      marginLeft: -24,
       justifyContent: "center",
       alignItems: "center",
     },

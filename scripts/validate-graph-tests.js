@@ -108,6 +108,38 @@ class TestGraphRouter {
     }
     return { path, distance: dists.get(targetId) };
   }
+
+  findNearestEdgeCandidates(coord, maxCandidates = 4, heading) {
+    const latRad = (coord.latitude * Math.PI) / 180;
+    const cosLat = Math.cos(latRad);
+    const results = [];
+
+    for (const [u, edges] of this.adjacency.entries()) {
+      for (const edge of edges) {
+        const segs = edge.coords;
+        if (!segs || segs.length < 2) continue;
+        for (let i = 0; i < segs.length - 1; i++) {
+          const a = segs[i];
+          const b = segs[i + 1];
+          const dx = (b[0] - a[0]) * cosLat;
+          const dy = b[1] - a[1];
+          const lenSq = dx * dx + dy * dy;
+          let t = lenSq === 0 ? 0 : ((coord.longitude - a[0]) * cosLat * dx + (coord.latitude - a[1]) * dy) / lenSq;
+          t = Math.max(0, Math.min(1, t));
+          const projX = a[0] + t * (b[0] - a[0]);
+          const projY = a[1] + t * (b[1] - a[1]);
+          const dist = calcDistance(coord, { latitude: projY, longitude: projX });
+          let score = dist;
+          if (heading !== undefined && dist < 15) {
+            score += 5.0;
+          }
+          results.push({ u, v: edge.to, dist, score });
+        }
+      }
+    }
+    results.sort((a, b) => a.score - b.score);
+    return results.slice(0, maxCandidates);
+  }
 }
 
 console.log('====================================================');
@@ -278,9 +310,99 @@ const turnPath = crossRouter.findPath(
 );
 assert('Legal turn from Main St onto Cross St is verified', turnPath !== null);
 
+// ----------------------------------------------------
+// TEST 9: Circular Chowk (Roundabout) Exit Detection & Counting
+// ----------------------------------------------------
+console.log('\nTest 9: Circular Chowk (Roundabout) Exit Detection & Counting');
+const rb703 = rawData.roads.find(r => r.id === 122459867);
+assert('Roundabout 122459867 exists in dataset', rb703 !== undefined);
+
+// Build exit nodes for roundabout 122459867
+const rbExitNodes = new Set();
+const rbNodeSet = new Set(rb703.node_ids);
+rawData.roads.forEach(r => {
+  if (r.id === rb703.id || !r.node_ids) return;
+  const isOneway = r.oneway === 'yes' || r.oneway === true || r.oneway === '1' || r.oneway === 1;
+  for (let i = 0; i < r.node_ids.length; i++) {
+    const nid = r.node_ids[i];
+    if (rbNodeSet.has(nid)) {
+      if (!isOneway) {
+        rbExitNodes.add(nid);
+      } else if (i === 0) {
+        rbExitNodes.add(nid);
+      }
+    }
+  }
+});
+
+function calculateExitNumber(nodes, exitNodesSet, enterNode, exitNode) {
+  const enterIdx = nodes.indexOf(enterNode);
+  const exitIdx = nodes.indexOf(exitNode);
+  if (enterIdx === -1 || exitIdx === -1) return 1;
+
+  let count = 0;
+  let idx = enterIdx;
+  const n = nodes.length - 1;
+  while (true) {
+    idx = (idx + 1) % n;
+    const nid = nodes[idx];
+    if (exitNodesSet.has(nid)) {
+      count++;
+    }
+    if (nid === exitNode) break;
+    if (idx === enterIdx) break;
+  }
+  return Math.max(1, count);
+}
+
+function getOrdinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const southEnterNode = 1368372313;
+const westExitNode = 10213488467;
+const northExitNode = 1368372321;
+const eastExitNode = 1368372314;
+const southExitNode = 1368372309;
+
+const exit1 = calculateExitNumber(rb703.node_ids, rbExitNodes, southEnterNode, westExitNode);
+const exit2 = calculateExitNumber(rb703.node_ids, rbExitNodes, southEnterNode, northExitNode);
+const exit3 = calculateExitNumber(rb703.node_ids, rbExitNodes, southEnterNode, eastExitNode);
+const exit4 = calculateExitNumber(rb703.node_ids, rbExitNodes, southEnterNode, southExitNode);
+
+assert('West branch from South entrance is Exit 1 (1st exit)', exit1 === 1);
+assert('North branch from South entrance is Exit 2 (2nd exit)', exit2 === 2);
+assert('East branch from South entrance is Exit 3 (3rd exit)', exit3 === 3);
+assert('South U-turn branch from South entrance is Exit 4 (4th exit)', exit4 === 4);
+
+assert('getOrdinal(3) produces "3rd"', getOrdinal(3) === '3rd');
+assert('Approaching instruction text is "At the roundabout, take the 3rd exit"', `At the roundabout, take the ${getOrdinal(exit3)} exit` === 'At the roundabout, take the 3rd exit');
+assert('Inside circle instruction text is "Take the 3rd exit"', `Take the ${getOrdinal(exit3)} exit` === 'Take the 3rd exit');
+
+// ----------------------------------------------------
+// TEST 10: Divided Road Isolation (No median jumping on recalculation or POI routing)
+// ----------------------------------------------------
+console.log('\nTest 10: Divided Road Isolation (No cross-median jumping on recalculation)');
+// Point on SB carriageway of NH703 (wSB, way 122459873)
+const sbPt = wSB.coords[5];
+const testPoint = { latitude: sbPt[1], longitude: sbPt[0] };
+
+// Nearest edge to testPoint on router
+const cands = router.findNearestEdgeCandidates(testPoint, 4, 45); // heading pointing North-East
+const minCandDist = cands[0].dist;
+const maxAllowedDist = minCandDist <= 10 ? minCandDist + 3.0 : minCandDist + 8.0;
+const acceptedStarts = cands.filter(c => c.dist <= 150 && c.dist <= maxAllowedDist);
+
+// Ensure all accepted starts belong to SB carriageway (sbNodeIds), NONE to NB carriageway across median
+const containsNbStart = acceptedStarts.some(s => nbNodeIds.has(s.u) || nbNodeIds.has(s.v));
+assert('Zero start candidates allowed across the solid median barrier (NB side rejected)', !containsNbStart);
+assert('Start candidate accurately bound to vehicle actual road (SB side)', acceptedStarts.length > 0 && sbNodeIds.has(acceptedStarts[0].v));
+
 console.log('\n====================================================');
 if (allPassed) {
-  console.log(' ALL 8 NAVIGATION & TOPOLOGY TEST CASES PASSED! ✓');
+  console.log(' ALL 10 NAVIGATION & TOPOLOGY TEST CASES PASSED! ✓');
 } else {
   console.log(' SOME TEST CASES FAILED! ✗');
   process.exit(1);

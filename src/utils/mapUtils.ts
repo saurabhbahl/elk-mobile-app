@@ -106,15 +106,25 @@ export function getTurnInstruction(bearing1: number, bearing2: number): { text: 
   if (diff > 180) diff -= 360;
   if (diff < -180) diff += 360;
 
-  if (Math.abs(diff) < 25) return { text: 'Continue Straight', icon: 'navigation' };
-  if (diff > 25 && diff < 65) return { text: 'Turn Slight Right', icon: 'navigation' };
-  if (diff >= 65 && diff < 115) return { text: 'Turn Right', icon: 'navigation' };
-  if (diff >= 115) return { text: 'Sharp Right Turn', icon: 'navigation' };
-  if (diff < -25 && diff > -65) return { text: 'Turn Slight Left', icon: 'navigation' };
-  if (diff <= -65 && diff > -115) return { text: 'Turn Left', icon: 'navigation' };
-  if (diff <= -115) return { text: 'Sharp Left Turn', icon: 'navigation' };
+  // Filter out minor lane curves and road wiggles (< 35 degrees)
+  if (Math.abs(diff) < 35) return { text: 'Continue Straight', icon: 'straight' };
+  if (diff >= 35 && diff < 65) return { text: 'Turn Slight Right', icon: 'turn-slight-right' };
+  if (diff >= 65 && diff < 120) return { text: 'Turn Right', icon: 'turn-right' };
+  if (diff >= 120) return { text: 'Sharp Right Turn', icon: 'turn-sharp-right' };
+  if (diff <= -35 && diff > -65) return { text: 'Turn Slight Left', icon: 'turn-slight-left' };
+  if (diff <= -65 && diff > -120) return { text: 'Turn Left', icon: 'turn-left' };
+  if (diff <= -120) return { text: 'Sharp Left Turn', icon: 'turn-sharp-left' };
   
   return { text: 'Continue Straight', icon: 'straight' };
+}
+
+/**
+ * Converts a positive integer into its ordinal string (e.g. 1 -> "1st", 2 -> "2nd", 3 -> "3rd", 4 -> "4th").
+ */
+export function getOrdinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 /**

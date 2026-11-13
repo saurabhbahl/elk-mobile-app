@@ -34,6 +34,8 @@ interface NavigationOverlayProps {
 /** Maps instruction text to a MaterialIcons name */
 function getTurnIcon(text: string): string {
   const t = text.toLowerCase();
+  if (t.includes('arriving') || t.includes('destination')) return 'location-on';
+  if (t.includes('roundabout') || t.includes('chowk') || t.includes('exit')) return 'roundabout-left';
   if (t.includes('sharp right')) return 'turn-sharp-right';
   if (t.includes('slight right')) return 'turn-slight-right';
   if (t.includes('right')) return 'turn-right';
