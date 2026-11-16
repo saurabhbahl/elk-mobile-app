@@ -654,18 +654,18 @@ class LocalGraphRouterClass {
             const angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
             if (edge.isOneway) {
               if (angleDiff > 90) {
-                // Mild penalty (+5m) as a tie-breaker between equidistant edges,
-                // but never large enough to leap across a solid median (12-30m away)
-                score += 5.0;
+                // Mild penalty (+1.5m) as a tie-breaker between nearly equidistant edges,
+                // but NEVER large enough to leap across a solid highway median (7-15m away)
+                score += 1.5;
               } else if (angleDiff < 45) {
-                score -= 3.0;
+                score -= 1.0;
               }
             } else {
               // Two-way road
               if (angleDiff < 45) {
-                score -= 2.0;
+                score -= 1.0;
               } else if (angleDiff > 135) {
-                score += 3.0;
+                score += 1.5;
               }
             }
           }
@@ -803,22 +803,22 @@ class LocalGraphRouterClass {
             score -= 4.0;
           }
 
-          // Heading & directionality: prevent snapping to opposite carriageway on divided roads
-          if (hasHeading) {
+          // Heading & directionality: mild tie-breaker between nearly equidistant road segments
+          if (hasHeading && dist < 15) {
             const angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
             if (edge.isOneway) {
               if (angleDiff > 90) {
-                // Opposite direction on one-way road (e.g. wrong carriageway)
-                score += 40.0;
+                // Mild penalty (+2m) as tie-breaker, NEVER 40m which leaps across medians
+                score += 2.0;
               } else if (angleDiff < 45) {
-                score -= 3.0;
+                score -= 1.5;
               }
             } else {
               // Two-way road: align with user's forward movement
               if (angleDiff < 45) {
-                score -= 2.0;
+                score -= 1.0;
               } else if (angleDiff > 135) {
-                score += 5.0;
+                score += 2.0;
               }
             }
           }
@@ -1053,7 +1053,10 @@ class LocalGraphRouterClass {
     }
 
     const starts: StartCandidate[] = [];
-    const minStartDist = startCandidates.length > 0 ? startCandidates[0].dist : Infinity;
+    const minStartDist = startCandidates.reduce(
+      (min, c) => Math.min(min, c.dist),
+      Infinity
+    );
     const maxAllowedStartDist = minStartDist <= 10 ? minStartDist + 3.0 : minStartDist + 8.0;
     for (const cand of startCandidates) {
       // Disallow any candidate that is significantly farther than the true closest road
@@ -1095,7 +1098,10 @@ class LocalGraphRouterClass {
     }
 
     const targets: TargetCandidate[] = [];
-    const minEndDist = endCandidates.length > 0 ? endCandidates[0].dist : Infinity;
+    const minEndDist = endCandidates.reduce(
+      (min, c) => Math.min(min, c.dist),
+      Infinity
+    );
     const maxAllowedEndDist = minEndDist <= 10 ? minEndDist + 3.0 : minEndDist + 8.0;
     for (const cand of endCandidates) {
       if (cand.dist <= 150 && cand.dist <= maxAllowedEndDist) {

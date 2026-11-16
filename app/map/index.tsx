@@ -63,6 +63,7 @@ import { NavigationOverlay } from "../../src/components/NavigationOverlay";
 import QuickLinks from "../../src/components/QuickLinks";
 import { RoutePlanner } from "../../src/components/RoutePlanner";
 import SameLocationPopup from "../../src/components/SameLocationPopup";
+import ExitNavigationPopup from "../../src/components/ExitNavigationPopup";
 import SectionHeader from "../../src/components/SectionHeader";
 import WebMapView from "../../src/components/WebMapView";
 
@@ -385,7 +386,7 @@ function MapScreen() {
       navRouteCoords &&
       navRouteCoords.length >= 2
     ) {
-      const routeSnap = snapToRoute(location, navRouteCoords, 15);
+      const routeSnap = snapToRoute(location, navRouteCoords, 8);
       if (routeSnap) {
         lastSnappedEdgeKey.current = undefined;
         return routeSnap;
@@ -492,6 +493,7 @@ function MapScreen() {
   });
   const [showArrivalPopup, setShowArrivalPopup] = useState(false);
   const [showSameLocationPopup, setShowSameLocationPopup] = useState(false);
+  const [showExitConfirmPopup, setShowExitConfirmPopup] = useState(false);
   const hasArrivedRef = useRef(false);
 
   // ── Search state ────────────────────────────────────────────────────────────
@@ -567,6 +569,7 @@ function MapScreen() {
   const consecutiveArrivalCount = useRef(0);
   const lastRecalculateTime = useRef(Date.now());
   const lastRecalculatePos = useRef<{ latitude: number; longitude: number } | null>(null);
+  const pendingRouteFitRef = useRef<[number, number][] | null>(null);
 
   // ── Detail sheet animation ──────────────────────────────────────────────────
   const detailSheetTranslateY = useSharedValue(windowHeight);
@@ -967,6 +970,16 @@ function MapScreen() {
       cameraRef.current &&
       !hasCenteredOnce.current
     ) {
+      if (pendingRouteFitRef.current) {
+        hasCenteredOnce.current = true;
+        const routeToFit = pendingRouteFitRef.current;
+        setTimeout(() => {
+          fitRouteToCamera(routeToFit, 1000);
+          setIsMapReady(true);
+        }, 150);
+        return;
+      }
+
       if (params.navigateToWaypointId || params.routeToWaypointId) {
         hasCenteredOnce.current = true;
         // Mark map ready after a tiny delay if we are navigating/routing to a specific pin
@@ -1455,9 +1468,15 @@ function MapScreen() {
         setShowPointPicker(false);
 
         if (!isRecalculating) {
-          requestAnimationFrame(() => {
-            fitRouteToCamera(coords, 1000);
-          });
+          pendingRouteFitRef.current = coords;
+          const animateRoute = () => {
+            if (cameraRef.current) {
+              fitRouteToCamera(coords, 1000);
+            }
+          };
+          requestAnimationFrame(animateRoute);
+          setTimeout(animateRoute, 300);
+          setTimeout(animateRoute, 700);
         }
       } catch (error: any) {
         if (error?.message === "offline_outside_elk_country") {
@@ -1587,9 +1606,20 @@ function MapScreen() {
       const latRad = (location.latitude * Math.PI) / 180;
       const cosLat = Math.cos(latRad);
 
+      const vehicleHeading =
+        snapResultRef.current?.bearing ??
+        (typeof headingRef.current === "number" && headingRef.current >= 0
+          ? headingRef.current
+          : (typeof location.heading === "number" && location.heading >= 0
+            ? location.heading
+            : undefined));
+      const hasHeading = typeof vehicleHeading === "number" && !isNaN(vehicleHeading);
+      const normHeading = hasHeading ? ((vehicleHeading % 360) + 360) % 360 : 0;
+
       let bestDist = Infinity;
       let bestSegIdx = curIdx;
       let bestProj: [number, number] = coords[Math.min(curIdx, coords.length - 1)];
+      let bestSegAngleDiff = 0;
 
       for (let i = minSearchIdx; i <= maxSearchIdx; i++) {
         const a = coords[i];
@@ -1605,15 +1635,29 @@ function MapScreen() {
         const projLng = a[0] + t * (b[0] - a[0]);
         const projLat = a[1] + t * (b[1] - a[1]);
         const d = calcDistance(location, { latitude: projLat, longitude: projLng });
-        if (d < bestDist) {
-          bestDist = d;
+
+        const segBearing = calculateBearing(
+          { latitude: a[1], longitude: a[0] },
+          { latitude: b[1], longitude: b[0] }
+        );
+        let angleDiff = 0;
+        if (hasHeading) {
+          angleDiff = Math.abs(((normHeading - segBearing + 180) % 360 + 360) % 360 - 180);
+        }
+
+        // When heading opposes segment by > 90°, penalize so it does not falsely match as forward progress
+        const effectiveD = hasHeading && angleDiff > 90 ? d + 40.0 : d;
+
+        if (effectiveD < bestDist) {
+          bestDist = effectiveD;
           bestSegIdx = i;
           bestProj = [projLng, projLat];
+          bestSegAngleDiff = angleDiff;
         }
       }
 
-      // Only advance progress forward when locked onto the path within 45 meters
-      if (bestDist <= 45) {
+      // Only advance progress forward when locked onto the path within 25 meters
+      if (bestDist <= 25) {
         currentRouteIndexRef.current = Math.max(curIdx, bestSegIdx);
       }
       const effectiveIdx = currentRouteIndexRef.current;
@@ -1621,9 +1665,12 @@ function MapScreen() {
       if (effectiveIdx >= 0 && coords[effectiveIdx]) {
         const distanceToPath = bestDist;
 
-        // Recalculate route if off-path (both offline router and online OSRM will handle it)
-        const OFF_PATH_THRESHOLD = 50; // meters
-        const cooldownElapsed = now - lastRecalculateTime.current > 5000;
+        // Recalculate route if off-path
+        // Threshold: 25m for aligned driving, or 8m if heading opposes route direction (e.g. opposite carriageway or wrong-way)
+        const isOpposingRoute = hasHeading && bestSegAngleDiff > 90;
+        const OFF_PATH_THRESHOLD = isOpposingRoute ? 8 : 25; // meters
+        const cooldownMs = isOpposingRoute ? 2000 : 4000;
+        const cooldownElapsed = now - lastRecalculateTime.current > cooldownMs;
         const isCurrentLocationStart =
           feature.properties?.startWaypoint?.id === 999 ||
           feature.properties?.startWaypoint?.id === -1;
@@ -1631,7 +1678,7 @@ function MapScreen() {
         if (distanceToPath > OFF_PATH_THRESHOLD) {
           const hasMovedSignificantly =
             !lastRecalculatePos.current ||
-            calcDistance(location, lastRecalculatePos.current) > 30;
+            calcDistance(location, lastRecalculatePos.current) > (isOpposingRoute ? 10 : 25);
 
           // Trigger off-path recalculation if starting from Current Location OR within 5km of the route (e.g. taking a detour/alternate road)
           if (
@@ -1928,7 +1975,9 @@ function MapScreen() {
     hasArrivedRef.current = false;
     isNavInFlightRef.current = false;
     lastRecalculatePos.current = null;
+    pendingRouteFitRef.current = null;
     setShowArrivalPopup(false);
+    setShowExitConfirmPopup(false);
     isNavigatingRef.current = false;
     setNavOrientationMode("north-up");
     cameraRef.current?.easeTo({
@@ -1958,11 +2007,28 @@ function MapScreen() {
     }
   }, []);
 
+  const handlePromptExitNavigation = useCallback(() => {
+    setShowExitConfirmPopup(true);
+  }, []);
+
+  const handleConfirmExitNavigation = useCallback(() => {
+    setShowExitConfirmPopup(false);
+    handleExitNavigation();
+  }, [handleExitNavigation]);
+
+  const handleCancelExitNavigation = useCallback(() => {
+    setShowExitConfirmPopup(false);
+  }, []);
+
   // Handle Android hardware back button in navigation mode
   useEffect(() => {
     if (!isNavigating) return;
     const onBackPress = () => {
-      handleExitNavigation();
+      if (showExitConfirmPopup) {
+        setShowExitConfirmPopup(false);
+        return true;
+      }
+      handlePromptExitNavigation();
       return true;
     };
     const subscription = BackHandler.addEventListener(
@@ -1972,7 +2038,7 @@ function MapScreen() {
     return () => {
       subscription.remove();
     };
-  }, [isNavigating, handleExitNavigation]);
+  }, [isNavigating, handlePromptExitNavigation, showExitConfirmPopup]);
 
   // ── Memoized waypoint marker ────────────────────────────────────────────────
   const WaypointMarker = useMemo(() => {
@@ -2233,6 +2299,20 @@ function MapScreen() {
             }}
             onDidFinishLoadingMap={() => {
               setIsMapLoaded(true);
+              if (pendingRouteFitRef.current) {
+                const routeToFit = pendingRouteFitRef.current;
+                setTimeout(() => {
+                  fitRouteToCamera(routeToFit, 1000);
+                  setIsMapReady(true);
+                }, 150);
+                return;
+              }
+              if (params.navigateToWaypointId || params.routeToWaypointId) {
+                setTimeout(() => {
+                  setIsMapReady(true);
+                }, 300);
+                return;
+              }
               const validCoords = getValidPoiCoords(waypoints);
               if (validCoords.length > 0 && !hasCenteredOnce.current) {
                 hasCenteredOnce.current = true;
@@ -2365,10 +2445,10 @@ function MapScreen() {
               <Marker
                 id="user-heading-arrow"
                 lngLat={[displayLocation.longitude, displayLocation.latitude]}
-                anchor={{ x: 0.5, y: 0.5 }}
+                anchor="center"
               >
                 {/* Pulse ring behind the arrow */}
-                <View style={styles.userArrowContainer}>
+                <View style={styles.userArrowContainer} collapsable={false}>
                   <View style={styles.userArrowPulse} />
                   <Animated.View
                     style={[
@@ -2467,7 +2547,7 @@ function MapScreen() {
                   key={`stop-point-${stop.id}-${idx}`}
                   id={`stop-point-${stop.id}-${idx}`}
                   lngLat={[stop.coordinate.longitude, stop.coordinate.latitude]}
-                  anchor={{ x: 0.5, y: 1.0 }}
+                  anchor="bottom"
                   onPress={() => !isNavigating && setSelectedWaypoint(stop)}
                 >
                   <TouchableOpacity
@@ -3002,7 +3082,7 @@ function MapScreen() {
             <NavigationHeader
               fromTitle={startPoint?.title ?? "Starting point"}
               toTitle={destinationPoint?.title ?? "Destination"}
-              onExit={handleExitNavigation}
+              onExit={handlePromptExitNavigation}
             />
             <NavigationOverlay
               destinationTitle={destinationPoint?.title}
@@ -3010,7 +3090,7 @@ function MapScreen() {
               timeRemaining={navigationData.timeRemaining}
               arrivalTime={navigationData.arrivalTime}
               nextInstruction={navigationData.nextInstruction}
-              onExit={handleExitNavigation}
+              onExit={handlePromptExitNavigation}
               onRecenter={handleRecenter}
               onResetNorth={handleResetNorth}
               mapBearingAnim={mapBearingAnim}
@@ -3376,6 +3456,12 @@ function MapScreen() {
         <SameLocationPopup
           visible={showSameLocationPopup}
           onClose={() => setShowSameLocationPopup(false)}
+        />
+        {/* Exit navigation confirmation popup */}
+        <ExitNavigationPopup
+          visible={showExitConfirmPopup}
+          onCancel={handleCancelExitNavigation}
+          onConfirm={handleConfirmExitNavigation}
         />
       </View>
     </View>
@@ -3871,6 +3957,7 @@ const createStyles = (
       height: 48,
       justifyContent: "center",
       alignItems: "center",
+      overflow: "hidden",
     },
     userArrowPulse: {
       position: "absolute",
