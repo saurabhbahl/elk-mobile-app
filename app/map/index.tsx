@@ -376,13 +376,22 @@ function MapScreen() {
   const snapResult = useMemo(() => {
     if (!location) return null;
 
-    // Tier 1: When navigating, prioritize snapping directly to route polyline within 15 meters
+    // Check if actively navigating from Current Location
+    const startWP = fullRouteRef.current?.features?.[0]?.properties?.startWaypoint ?? startPoint;
+    const isLiveNav =
+      isNavigating &&
+      Boolean(
+        startWP &&
+          (startWP.id === 999 || startWP.id === -1 || startWP.title === "Current Location"),
+      );
+
+    // Tier 1: When navigating from Current Location, prioritize snapping directly to route polyline within 15 meters
     const navRouteCoords = (
       fullRouteRef.current?.features?.[0]?.geometry?.coordinates ?? activeRouteCoords
     ) as [number, number][] | undefined;
 
     if (
-      isNavigating &&
+      isLiveNav &&
       navRouteCoords &&
       navRouteCoords.length >= 2
     ) {
@@ -393,39 +402,39 @@ function MapScreen() {
       }
     }
 
-    // Tier 2: Snap to nearest road edge in the offline road graph within 25 meters (handles wrong-side walking, parallel carriageways, off-route)
-    const roadSnap = LocalGraphRouter.snapToNearestRoad(
-      location,
-      headingRef.current,
-      25,
-      lastSnappedEdgeKey.current
-    );
-    if (roadSnap) {
-      lastSnappedEdgeKey.current = roadSnap.edgeKey;
-      return {
-        coordinate: roadSnap.coordinate,
-        bearing: roadSnap.bearing,
-        distance: roadSnap.distance,
-      };
+    // Tier 2: Snap to nearest road edge in the offline road graph ONLY during live current-location navigation
+    if (isLiveNav) {
+      const roadSnap = LocalGraphRouter.snapToNearestRoad(
+        location,
+        headingRef.current,
+        25,
+        lastSnappedEdgeKey.current
+      );
+      if (roadSnap) {
+        lastSnappedEdgeKey.current = roadSnap.edgeKey;
+        return {
+          coordinate: roadSnap.coordinate,
+          bearing: roadSnap.bearing,
+          distance: roadSnap.distance,
+        };
+      }
     }
 
     lastSnappedEdgeKey.current = undefined;
     return null;
-  }, [isNavigating, location, activeRouteCoords, routeVersion]);
+  }, [isNavigating, location, activeRouteCoords, routeVersion, startPoint]);
 
   const snapResultRef = useRef(snapResult);
   snapResultRef.current = snapResult;
 
   // True if user is navigating starting from their actual current GPS location
   const isFromCurrentLocation = useMemo(() => {
-    if (!startPoint) return true;
-    if (startPoint.title === "Current Location" || startPoint.id === 999) return true;
-    if (location && startPoint.coordinate) {
-      const dist = calcDistance(startPoint.coordinate, location);
-      if (dist <= 30) return true;
-    }
-    return false;
-  }, [startPoint, location]);
+    const startWP = fullRouteRef.current?.features?.[0]?.properties?.startWaypoint ?? startPoint;
+    if (!startWP) return false;
+    return Boolean(
+      startWP.id === 999 || startWP.id === -1 || startWP.title === "Current Location",
+    );
+  }, [startPoint, routeVersion]);
 
   const displayLocation = snapResult ? snapResult.coordinate : location;
 
@@ -469,7 +478,7 @@ function MapScreen() {
         );
 
         // When in heading-up mode, rotate the map camera to the arrow pointer direction!
-        if (navOrientationMode === "heading-up") {
+        if (navOrientationMode === "heading-up" && isFromCurrentLocation) {
           const loc = snapResult.coordinate || location;
           cameraRef.current?.easeTo({
             bearing: roadBearing,
@@ -479,7 +488,7 @@ function MapScreen() {
         }
       }
     }
-  }, [isNavigating, snapResult, navOrientationMode, location]);
+  }, [isNavigating, snapResult, navOrientationMode, location, isFromCurrentLocation]);
 
   const [navigationData, setNavigationData] = useState({
     distanceRemaining: "0.0 mi",
@@ -1590,6 +1599,20 @@ function MapScreen() {
     try {
       const feature = fullRouteRef.current.features?.[0];
       if (!feature) return;
+
+      // ── CRITICAL: Turn-by-turn tracking & route slicing ONLY runs for Current Location ──
+      // Dropped Pin and POI routes are strictly static previews:
+      // NEVER slice the route, NEVER track GPS progress, NEVER recalculate!
+      const startWP = feature.properties?.startWaypoint ?? startPoint;
+      const isLiveNavigation = Boolean(
+        startWP &&
+          (startWP.id === 999 || startWP.id === -1 || startWP.title === "Current Location"),
+      );
+
+      if (!isLiveNavigation) {
+        return;
+      }
+
       const coords: [number, number][] = feature.geometry?.coordinates;
       if (!coords || coords.length === 0) return;
       const toWP = feature.properties?.endWaypoint;
@@ -1672,6 +1695,7 @@ function MapScreen() {
         const cooldownMs = isOpposingRoute ? 2000 : 4000;
         const cooldownElapsed = now - lastRecalculateTime.current > cooldownMs;
         const isCurrentLocationStart =
+          feature.properties?.startWaypoint?.title === "Current Location" ||
           feature.properties?.startWaypoint?.id === 999 ||
           feature.properties?.startWaypoint?.id === -1;
 
@@ -1680,9 +1704,9 @@ function MapScreen() {
             !lastRecalculatePos.current ||
             calcDistance(location, lastRecalculatePos.current) > (isOpposingRoute ? 10 : 25);
 
-          // Trigger off-path recalculation if starting from Current Location OR within 5km of the route (e.g. taking a detour/alternate road)
+          // Trigger off-path recalculation ONLY when starting from Current Location
           if (
-            (isCurrentLocationStart || distanceToPath < 5000) &&
+            isCurrentLocationStart &&
             cooldownElapsed &&
             hasMovedSignificantly
           ) {
@@ -1702,10 +1726,6 @@ function MapScreen() {
               stopPointsRef.current,
               true, // isRecalculating
             );
-            return;
-          } else if (!isCurrentLocationStart && distanceToPath >= 5000) {
-            // User is previewing a route from far away.
-            // Do NOT snap progress to the end of the route (which would show 0.0 mi).
             return;
           }
         }
@@ -1950,7 +1970,7 @@ function MapScreen() {
     } catch (err: unknown) {
       console.error("CRASH PREVENTED in NavUpdate:", err);
     }
-  }, [location, isNavigating, isCalculatingRoute, startActualNavigation]);
+  }, [location, isNavigating, isCalculatingRoute, startActualNavigation, isFromCurrentLocation]);
 
   // ── Exit navigation ─────────────────────────────────────────────────────────
   const handleExitNavigation = useCallback(() => {
