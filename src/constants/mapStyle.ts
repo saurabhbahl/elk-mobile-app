@@ -61,11 +61,6 @@ export const BASE_OFFLINE_STYLE = {
       type: 'vector',
       url: `mbtiles://${MBTILES_FILE_PATH}`,
     },
-    // Secondary source reuses primary as fallback (only overridden when 2nd file is downloaded)
-    'india-vector-source': {
-      type: 'vector',
-      url: `mbtiles://${MBTILES_FILE_PATH}`,
-    },
   },
   layers: [
     // ── Base ────────────────────────────────────────────────────────────────
@@ -265,38 +260,6 @@ export const BASE_OFFLINE_STYLE = {
         'text-halo-width': 2,
       },
     },
-
-    // --- INDIA LAYERS (Optimized) ---
-    {
-      id: 'water-fill-india',
-      type: 'fill',
-      source: 'india-vector-source',
-      'source-layer': 'water',
-      paint: { 'fill-color': '#8ec8d0', 'fill-opacity': 0.6 },
-    },
-    {
-      id: 'roads-fill-india',
-      type: 'line',
-      source: 'india-vector-source',
-      'source-layer': 'transportation',
-      paint: { 'line-color': '#c89d6a', 'line-width': 2, 'line-opacity': 0.8 },
-    },
-    {
-      id: 'place-labels-india',
-      type: 'symbol',
-      source: 'india-vector-source',
-      'source-layer': 'place',
-      layout: {
-        'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']],
-        'text-font': ['Open Sans Bold'],
-        'text-size': 12,
-      },
-      paint: {
-        'text-color': '#1f2d23',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 1.5,
-      },
-    },
   ],
 };
 
@@ -306,18 +269,13 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
   // Deep clone the base style so we don't mutate static constants
   const style = JSON.parse(JSON.stringify(base));
 
-  // Inject/override vector sources using downloaded file paths.
-  // secondary always falls back to primary (never references a file that may not exist).
+  // Inject/override primary vector source using downloaded file path
   if (hasMap) {
     const primary = downloadedMaps && downloadedMaps.length > 0 ? downloadedMaps[0] : MBTILES_FILE_PATH;
-    const secondary = downloadedMaps && downloadedMaps.length > 1 ? downloadedMaps[1] : primary;
+
     style.sources[OFFLINE_VECTOR_SOURCE_ID] = {
       type: 'vector',
       url: `mbtiles://${primary}`,
-    };
-    style.sources['india-vector-source'] = {
-      type: 'vector',
-      url: `mbtiles://${secondary}`,
     };
 
     // Point to locally downloaded glyphs on disk so the map never requires internet to load on first launch
@@ -337,7 +295,7 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       layer.paint = { 'background-color': '#111413' };
     } else if (layer.id === 'osm-base') {
       layer.paint = { 'raster-opacity': 0.25 };
-    } else if (layer.id === 'water-fill' || layer.id === 'water-fill-india') {
+    } else if (layer.id === 'water-fill') {
       layer.paint = { 'fill-color': '#1d3e42', 'fill-opacity': 0.95 };
     } else if (layer.id === 'waterway-line') {
       layer.paint = { 'line-color': '#1d3e42', 'line-width': 1.5, 'line-opacity': 0.9 };
@@ -351,7 +309,7 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       layer.paint = { 'fill-color': '#2e3131', 'fill-opacity': 0.7 };
     } else if (layer.id === 'roads-casing') {
       layer.paint = { 'line-color': '#212624', 'line-width': 5, 'line-opacity': 0.9 };
-    } else if (layer.id === 'roads-fill' || layer.id === 'roads-fill-india') {
+    } else if (layer.id === 'roads-fill') {
       layer.paint = { 'line-color': '#8c6b45', 'line-width': 3, 'line-opacity': 0.95 };
     } else if (layer.id === 'minor-roads') {
       layer.paint = { 'line-color': '#423d30', 'line-width': 1.5, 'line-opacity': 0.8 };
@@ -363,7 +321,7 @@ export function getMapStyle(isDark: boolean, hasMap: boolean, downloadedMaps: st
       layer.paint = { 'text-color': '#a8d498', 'text-halo-color': '#111413', 'text-halo-width': 1.5 };
     } else if (layer.id === 'poi-labels') {
       layer.paint = { 'text-color': '#ddc1b3', 'text-halo-color': '#111413', 'text-halo-width': 1.4 };
-    } else if (layer.id === 'place-labels' || layer.id === 'place-labels-india') {
+    } else if (layer.id === 'place-labels') {
       layer.paint = { 'text-color': '#eff1f0', 'text-halo-color': '#111413', 'text-halo-width': 2 };
     } else if (layer.id === 'territory-labels') {
       layer.paint = { 'text-color': '#a8d498', 'text-halo-color': '#111413', 'text-halo-width': 2, 'text-opacity': 0.55 };

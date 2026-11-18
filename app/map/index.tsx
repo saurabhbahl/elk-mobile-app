@@ -93,10 +93,11 @@ import { useMapReset, useNavigationMode } from "../_layout";
 
 // ── Configurable arrival detection thresholds (in meters) ────────────────────
 // Both conditions must be satisfied before marking destination as reached:
-// 1. Straight-line distance from raw GPS location to destination pin <= DESTINATION_PROXIMITY_THRESHOLD_METERS
+// 1. Straight-line distance from raw GPS location to destination pin OR route endpoint <= DESTINATION_PROXIMITY_THRESHOLD_METERS
 // 2. Remaining driving route path distance from current route progress to end <= REMAINING_ROUTE_THRESHOLD_METERS
 export const DESTINATION_PROXIMITY_THRESHOLD_METERS = 20;
 export const REMAINING_ROUTE_THRESHOLD_METERS = 20;
+export const SAME_LOCATION_THRESHOLD_METERS = 25;
 
 const isExpoGo = Constants.appOwnership === "expo";
 
@@ -272,10 +273,22 @@ function MapScreen() {
   } = useOfflineMap();
 
   const [mapTimestamp, setMapTimestamp] = useState(Date.now());
+  const wasDownloadingRef = useRef(isDownloading);
   useEffect(() => {
-    if (!isDownloading && hasMap && !isInitializing)
+    // Only force-remount <Map> when a download actually completes — never on initial mount
+    // when isInitializing flips to false (which caused duplicate MapLibre instances/workers).
+    if (wasDownloadingRef.current && !isDownloading && hasMap && !isInitializing) {
       setMapTimestamp(Date.now());
+    }
+    wasDownloadingRef.current = isDownloading;
   }, [isDownloading, hasMap, isInitializing]);
+
+  const downloadedMapFilesKey = downloadedMapFiles.join("|");
+  const memoizedMapStyle = useMemo(
+    () => getMapStyle(isDark, hasMap, downloadedMapFiles),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDark, hasMap, downloadedMapFilesKey],
+  );
 
   // ── Route data ──────────────────────────────────────────────────────────────
   const { mainRouteCoordinates, orangeRouteCoordinates } = useRouteLoader();
@@ -1315,48 +1328,23 @@ function MapScreen() {
           return;
         }
 
-        // Prevent calculating routes between the same locations (exclude drop locations / pins)
-        const allPoints = [from, ...stops, to];
-        let hasDuplicateLocation = false;
-
-        const isDropLocation = (p: Waypoint) =>
-          p.id === 888 ||
-          (typeof p.id === "number" && p.id < 0) ||
-          p.title?.trim().toLowerCase() === "dropped pin" ||
-          p.description === "Custom point selected on map";
-
-        for (let i = 0; i < allPoints.length - 1; i++) {
-          for (let j = i + 1; j < allPoints.length; j++) {
-            const p1 = allPoints[i];
-            const p2 = allPoints[j];
-
-            // Exclude drop locations from same location check
-            if (isDropLocation(p1) || isDropLocation(p2)) {
-              continue;
-            }
-
-            const isSame =
-              (p1.id !== undefined && p2.id !== undefined && p1.id === p2.id) ||
-              (Boolean(p1.title) &&
-                Boolean(p2.title) &&
-                p1.title.trim().toLowerCase() === p2.title.trim().toLowerCase()) ||
-              (p1.coordinate &&
-                p2.coordinate &&
-                calcDistance(p1.coordinate, p2.coordinate) < 25);
-
-            if (isSame) {
-              hasDuplicateLocation = true;
-              break;
-            }
+        // Show same-location popup if any selected route points are within 25m (never while navigating/recalculating)
+        if (!isRecalculating && !isNavigatingRef.current) {
+          const allPoints = [from, ...stops, to];
+          const hasSameLocation = allPoints.some((p1, i) =>
+            allPoints.slice(i + 1).some(
+              (p2) =>
+                p1?.coordinate &&
+                p2?.coordinate &&
+                calcDistance(p1.coordinate, p2.coordinate) < SAME_LOCATION_THRESHOLD_METERS,
+            ),
+          );
+          if (hasSameLocation) {
+            setShowSameLocationPopup(true);
+            setIsCalculatingRoute(false);
+            isNavInFlightRef.current = false;
+            return;
           }
-          if (hasDuplicateLocation) break;
-        }
-
-        if (hasDuplicateLocation) {
-          setShowSameLocationPopup(true);
-          setIsCalculatingRoute(false);
-          isNavInFlightRef.current = false;
-          return;
         }
 
         if (!isRecalculating) {
@@ -1687,8 +1675,22 @@ function MapScreen() {
 
       if (effectiveIdx >= 0 && coords[effectiveIdx]) {
         const distanceToPath = bestDist;
+        const routeEndCoord = coords[coords.length - 1];
+        const distToDestinationMeters = calcDistance(location, {
+          latitude: toWP.coordinate.latitude,
+          longitude: toWP.coordinate.longitude,
+        });
+        const distToRouteEndMeters = routeEndCoord
+          ? calcDistance(location, {
+              latitude: routeEndCoord[1],
+              longitude: routeEndCoord[0],
+            })
+          : Infinity;
+        const isAtDestinationOrRouteEnd =
+          distToDestinationMeters <= DESTINATION_PROXIMITY_THRESHOLD_METERS ||
+          distToRouteEndMeters <= DESTINATION_PROXIMITY_THRESHOLD_METERS;
 
-        // Recalculate route if off-path
+        // Recalculate route if off-path (skip if already physically at destination pin or route endpoint)
         // Threshold: 25m for aligned driving, or 8m if heading opposes route direction (e.g. opposite carriageway or wrong-way)
         const isOpposingRoute = hasHeading && bestSegAngleDiff > 90;
         const OFF_PATH_THRESHOLD = isOpposingRoute ? 8 : 25; // meters
@@ -1699,7 +1701,7 @@ function MapScreen() {
           feature.properties?.startWaypoint?.id === 999 ||
           feature.properties?.startWaypoint?.id === -1;
 
-        if (distanceToPath > OFF_PATH_THRESHOLD) {
+        if (!isAtDestinationOrRouteEnd && distanceToPath > OFF_PATH_THRESHOLD) {
           const hasMovedSignificantly =
             !lastRecalculatePos.current ||
             calcDistance(location, lastRecalculatePos.current) > (isOpposingRoute ? 10 : 25);
@@ -1920,16 +1922,12 @@ function MapScreen() {
 
         // ── Destination arrival detection ──────────────────────────────
         // Requires ALL conditions:
-        // 1. Straight-line physical GPS proximity to destination pin <= 20m
+        // 1. Straight-line physical GPS proximity to destination pin OR road route endpoint <= 20m
+        //    (handles off-road park/trailhead pins whose road route ends on the nearest road)
         // 2. Remaining driving route distance along geometry <= 20m
         // 3. Monotonic progress has traversed near the final segment of the route (preventing false arrival on loops)
         // 4. Confirmed over at least 2 consecutive updates to prevent single GPS glitch triggers
-        const distToDestinationMeters = calcDistance(location, {
-          latitude: toWP.coordinate.latitude,
-          longitude: toWP.coordinate.longitude,
-        });
-        const isProximityReached =
-          distToDestinationMeters <= DESTINATION_PROXIMITY_THRESHOLD_METERS;
+        const isProximityReached = isAtDestinationOrRouteEnd;
         const isRouteCompleted =
           totalDist <= REMAINING_ROUTE_THRESHOLD_METERS;
         const isNearFinalSegment =
@@ -2305,7 +2303,7 @@ function MapScreen() {
             key={`map-${hasMap ? "offline" : "online"}-${mapTimestamp}`}
             ref={mapRef}
             style={styles.map}
-            mapStyle={getMapStyle(isDark, hasMap, downloadedMapFiles)}
+            mapStyle={memoizedMapStyle}
             compass={false}
             touchRotate={true}
             touchPitch={true}
@@ -3474,7 +3472,7 @@ function MapScreen() {
         )}
         {/* Duplicate / same location warning modal */}
         <SameLocationPopup
-          visible={showSameLocationPopup}
+          visible={showSameLocationPopup && !isNavigating}
           onClose={() => setShowSameLocationPopup(false)}
         />
         {/* Exit navigation confirmation popup */}

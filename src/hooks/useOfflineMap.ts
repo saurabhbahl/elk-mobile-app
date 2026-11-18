@@ -23,8 +23,6 @@ export const MBTILES_PATHS = MBTILES_FILES.map(filename => {
 });
 
 export const MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
-// Fallback secondary path reuses primary to avoid crashes when only 1 file is present
-export const SECONDARY_MBTILES_FILE_PATH = MBTILES_PATHS[0].path;
 
 const isExpoGo = Constants.appOwnership === 'expo';
 const CONSENT_KEY = 'MAP_DOWNLOAD_CONSENT';
@@ -113,10 +111,23 @@ function emit() {
   listeners.forEach(l => l());
 }
 
+/**
+ * Unmount any active offline <Map> and wait briefly so MapLibre Native's
+ * MBTilesFileSource closes its SQLite handle before deleting or replacing
+ * .mbtiles files on disk (prevents SIGABRT in org.maplibre.mbgl.MBTilesFileSource).
+ */
+async function releaseActiveMbtilesHandles(waitMs = 450): Promise<void> {
+  if (!globalHasMap && globalDownloadedMapFiles.length === 0) return;
+  globalHasMap = false;
+  globalDownloadedMapFiles = [];
+  emit();
+  await new Promise(resolve => setTimeout(resolve, waitMs));
+}
+
 import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
-/** Check if a file at the given URI is a valid SQLite/MBTiles database and not empty */
+/** Check if a file at the given URI is a valid SQLite/MBTiles database with tiles & metadata tables */
 async function isValidMbtiles(uri: string): Promise<boolean> {
   if (Platform.OS === 'web') return true;
   try {
@@ -127,28 +138,36 @@ async function isValidMbtiles(uri: string): Promise<boolean> {
     }
 
     try {
-      // Fast check: Read first 16 bytes - must match SQLite 3 magic header ("SQLite format 3\0")
+      // Fast reject: first 16 bytes must match SQLite 3 magic header ("SQLite format 3\0")
       const header = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
         length: 16,
         position: 0,
       });
-      if (header && header.startsWith('U1FMaXRlIGZvcm1hdCAzAA')) {
-        return true;
+      if (header && !header.startsWith('U1FMaXRlIGZvcm1hdCAzAA')) {
+        return false;
       }
     } catch {
-      // If reading header via FileSystem fails, fall back to SQLite open
+      // Fall through to SQLite open check below
     }
 
+    // Verify required MBTiles schema (tiles + metadata) using a dedicated non-cached connection
     const cleanPath = uri.replace('file://', '');
     const lastSlash = cleanPath.lastIndexOf('/');
     const dir = lastSlash !== -1 ? cleanPath.substring(0, lastSlash) : undefined;
     const fileName = lastSlash !== -1 ? cleanPath.substring(lastSlash + 1) : cleanPath;
     let tempDb: SQLite.SQLiteDatabase | null = null;
     try {
-      tempDb = SQLite.openDatabaseSync(fileName, undefined, dir);
-      tempDb.execSync('SELECT count(*) FROM sqlite_master;');
-      return true;
+      tempDb = SQLite.openDatabaseSync(fileName, { useNewConnection: true }, dir);
+      const tables = tempDb.getAllSync<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name IN ('tiles', 'metadata');"
+      );
+      if (tables.length < 2) {
+        return false;
+      }
+      const sampleMeta = tempDb.getFirstSync<{ name: string }>('SELECT name FROM metadata LIMIT 1;');
+      const sampleTile = tempDb.getFirstSync<{ zoom_level: number }>('SELECT zoom_level FROM tiles LIMIT 1;');
+      return Boolean(sampleMeta && sampleTile);
     } catch {
       return false;
     } finally {
@@ -323,6 +342,7 @@ export const useOfflineMap = () => {
         const valid = await isValidMbtiles(file.uri);
         if (!valid) {
           console.warn(`${file.uri} exists but is not a valid MBTiles database. Deleting corrupted file.`);
+          await releaseActiveMbtilesHandles();
           await FileSystem.deleteAsync(file.uri, { idempotent: true });
           allExist = false;
           break;
@@ -457,6 +477,7 @@ export const useOfflineMap = () => {
             continue;
           } else {
             console.warn(`${file.name} exists but is NOT a valid MBTiles database. Deleting and re-downloading...`);
+            await releaseActiveMbtilesHandles();
             await FileSystem.deleteAsync(file.uri, { idempotent: true });
           }
         }
@@ -578,6 +599,10 @@ export const useOfflineMap = () => {
             );
           }
 
+          // Release any open MapLibre MBTiles handles before replacing the destination file
+          await releaseActiveMbtilesHandles();
+          await FileSystem.deleteAsync(file.uri, { idempotent: true });
+
           // Rename the tmp file to the final destination ONLY when 100% complete and valid
           await FileSystem.moveAsync({
             from: tmpUri,
@@ -664,6 +689,9 @@ export const useOfflineMap = () => {
 
   const deleteMap = async () => {
     try {
+      // Unmount offline <Map> and let MapLibre close MBTilesFileSource BEFORE deleting files on disk
+      await releaseActiveMbtilesHandles();
+
       // Delete all dynamically tracked files
       let filesToDelete = MBTILES_PATHS.map(f => f.uri);
       try {
@@ -757,7 +785,13 @@ export const useOfflineMap = () => {
         } catch (e) { }
       }
 
-      let updatesMade = false;
+      const stagedUpdates: Array<{
+        filename: string;
+        uri: string;
+        tmpUri: string;
+        url: string;
+        modified_at?: string;
+      }> = [];
 
       for (const rf of remoteFiles) {
         const local = storedMeta[rf.filename];
@@ -782,12 +816,13 @@ export const useOfflineMap = () => {
             const isLargeEnough = finalInfo.exists && finalInfo.size > 1024 * 1024;
 
             if (valid && isLargeEnough) {
-              await FileSystem.moveAsync({ from: tmpUri, to: uri });
-              storedMeta[rf.filename] = {
+              stagedUpdates.push({
+                filename: rf.filename,
+                uri,
+                tmpUri,
                 url: rf.url,
                 modified_at: rf.modified_at,
-              };
-              updatesMade = true;
+              });
             } else {
               await FileSystem.deleteAsync(tmpUri, { idempotent: true });
             }
@@ -797,7 +832,19 @@ export const useOfflineMap = () => {
         }
       }
 
-      if (updatesMade) {
+      if (stagedUpdates.length > 0) {
+        // Release MapLibre's open MBTiles SQLite handles BEFORE replacing files on disk
+        await releaseActiveMbtilesHandles();
+
+        for (const item of stagedUpdates) {
+          await FileSystem.deleteAsync(item.uri, { idempotent: true });
+          await FileSystem.moveAsync({ from: item.tmpUri, to: item.uri });
+          storedMeta[item.filename] = {
+            url: item.url,
+            modified_at: item.modified_at,
+          };
+        }
+
         await AsyncStorage.setItem('@elk_downloaded_maps_meta', JSON.stringify(storedMeta));
         await checkMapStatus();
         prefetchGlyphs().catch(() => { });
